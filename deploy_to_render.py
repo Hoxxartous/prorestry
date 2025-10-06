@@ -9,15 +9,12 @@ import sys
 import subprocess
 import logging
 
-# Add compatibility for psycopg2 -> psycopg migration
+# PostgreSQL driver compatibility - prefer psycopg2-binary if available
 try:
     import psycopg2
 except ImportError:
-    try:
-        import psycopg as psycopg2
-        sys.modules['psycopg2'] = psycopg2
-    except ImportError:
-        pass
+    # Fallback to psycopg if psycopg2 not available
+    pass
 
 from flask import Flask
 from flask_migrate import Migrate, upgrade, init, migrate as flask_migrate
