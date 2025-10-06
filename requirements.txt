@@ -13,7 +13,7 @@ python-engineio==4.9.0
 
 # Production server with async support
 gunicorn==22.0.0
-eventlet==0.36.1
+eventlet
 # gevent has Python 3.13 compatibility issues, using eventlet only
 
 # PostgreSQL database support - using psycopg (v3) for Python 3.13 compatibility
