@@ -1,0 +1,1551 @@
+2025-10-04 01:10:50,523 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 01:10:51,401 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 01:11:08,094 INFO: Order ORD-20251004-86ZG marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1751]
+2025-10-04 01:13:21,530 INFO: Order ORD-20251004-ET53 marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1751]
+2025-10-04 01:30:04,514 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 01:30:04,517 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 01:30:04,518 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 01:30:04,729 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 01:33:45,741 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 01:33:48,053 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 01:35:13,314 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 01:35:14,393 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 01:37:33,988 INFO: Order ORD-20251004-5LZS marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1751]
+2025-10-04 01:38:27,465 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 01:38:27,466 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 01:38:27,468 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 01:38:27,592 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 01:41:06,779 INFO: Order ORD-20251004-9HWN marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1751]
+2025-10-04 01:41:36,820 ERROR: Exception on /superuser/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\superuser\views.py", line 988, in reports
+    func.sum(func.case([(Order.status == OrderStatus.PAID, 1)], else_=0)).label('paid_orders'),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\functions.py", line 909, in __call__
+    return Function(
+           ^^^^^^^^^
+TypeError: Function.__init__() got an unexpected keyword argument 'else_'
+2025-10-04 01:41:42,155 ERROR: Exception on /superuser/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\superuser\views.py", line 988, in reports
+    func.sum(func.case([(Order.status == OrderStatus.PAID, 1)], else_=0)).label('paid_orders'),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\functions.py", line 909, in __call__
+    return Function(
+           ^^^^^^^^^
+TypeError: Function.__init__() got an unexpected keyword argument 'else_'
+2025-10-04 01:41:48,927 ERROR: Exception on /superuser/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\superuser\views.py", line 988, in reports
+    func.sum(func.case([(Order.status == OrderStatus.PAID, 1)], else_=0)).label('paid_orders'),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\functions.py", line 909, in __call__
+    return Function(
+           ^^^^^^^^^
+TypeError: Function.__init__() got an unexpected keyword argument 'else_'
+2025-10-04 01:41:53,666 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 01:41:54,428 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 01:41:55,683 ERROR: Exception on /superuser/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\superuser\views.py", line 988, in reports
+    func.sum(func.case([(Order.status == OrderStatus.PAID, 1)], else_=0)).label('paid_orders'),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\functions.py", line 909, in __call__
+    return Function(
+           ^^^^^^^^^
+TypeError: Function.__init__() got an unexpected keyword argument 'else_'
+2025-10-04 01:43:13,413 ERROR: Exception on /superuser/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\superuser\views.py", line 988, in reports
+    func.sum(func.case([(Order.status == OrderStatus.PAID, 1)], else_=0)).label('paid_orders'),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\functions.py", line 909, in __call__
+    return Function(
+           ^^^^^^^^^
+TypeError: Function.__init__() got an unexpected keyword argument 'else_'
+2025-10-04 01:43:14,309 ERROR: Exception on /superuser/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\superuser\views.py", line 988, in reports
+    func.sum(func.case([(Order.status == OrderStatus.PAID, 1)], else_=0)).label('paid_orders'),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\functions.py", line 909, in __call__
+    return Function(
+           ^^^^^^^^^
+TypeError: Function.__init__() got an unexpected keyword argument 'else_'
+2025-10-04 01:43:14,936 ERROR: Exception on /superuser/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\superuser\views.py", line 988, in reports
+    func.sum(func.case([(Order.status == OrderStatus.PAID, 1)], else_=0)).label('paid_orders'),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\functions.py", line 909, in __call__
+    return Function(
+           ^^^^^^^^^
+TypeError: Function.__init__() got an unexpected keyword argument 'else_'
+2025-10-04 01:43:15,477 ERROR: Exception on /superuser/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\superuser\views.py", line 988, in reports
+    func.sum(func.case([(Order.status == OrderStatus.PAID, 1)], else_=0)).label('paid_orders'),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\functions.py", line 909, in __call__
+    return Function(
+           ^^^^^^^^^
+TypeError: Function.__init__() got an unexpected keyword argument 'else_'
+2025-10-04 01:44:54,779 ERROR: Exception on /superuser/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\superuser\views.py", line 988, in reports
+    func.count(Order.id).label('total_orders'),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\functions.py", line 909, in __call__
+    return Function(
+           ^^^^^^^^^
+TypeError: Function.__init__() got an unexpected keyword argument 'else_'
+2025-10-04 01:45:16,166 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 01:45:16,167 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 01:45:16,168 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 01:45:16,292 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 01:45:29,218 ERROR: Exception on /superuser/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\superuser\views.py", line 989, in reports
+    func.sum(case([(Order.status == OrderStatus.PAID, 1)], else_=0)).label('paid_orders'),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\_elements_constructors.py", line 850, in case
+    return Case(*whens, value=value, else_=else_)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\elements.py", line 3390, in __init__
+    new_whens: Iterable[Any] = coercions._expression_collection_was_a_list(
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\coercions.py", line 152, in _expression_collection_was_a_list
+    raise exc.ArgumentError(
+sqlalchemy.exc.ArgumentError: The "whens" argument to case(), when referring to a sequence of items, is now passed as a series of positional elements, rather than as a list. 
+2025-10-04 01:45:38,108 ERROR: Exception on /superuser/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\superuser\views.py", line 989, in reports
+    func.sum(case([(Order.status == OrderStatus.PAID, 1)], else_=0)).label('paid_orders'),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\_elements_constructors.py", line 850, in case
+    return Case(*whens, value=value, else_=else_)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\elements.py", line 3390, in __init__
+    new_whens: Iterable[Any] = coercions._expression_collection_was_a_list(
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\coercions.py", line 152, in _expression_collection_was_a_list
+    raise exc.ArgumentError(
+sqlalchemy.exc.ArgumentError: The "whens" argument to case(), when referring to a sequence of items, is now passed as a series of positional elements, rather than as a list. 
+2025-10-04 01:46:50,097 ERROR: Exception on /superuser/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\superuser\views.py", line 989, in reports
+    func.sum(case((Order.status == OrderStatus.PAID, 1), else_=0)).label('paid_orders'),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\_elements_constructors.py", line 850, in case
+    return Case(*whens, value=value, else_=else_)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\elements.py", line 3390, in __init__
+    new_whens: Iterable[Any] = coercions._expression_collection_was_a_list(
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\sqlalchemy\sql\coercions.py", line 152, in _expression_collection_was_a_list
+    raise exc.ArgumentError(
+sqlalchemy.exc.ArgumentError: The "whens" argument to case(), when referring to a sequence of items, is now passed as a series of positional elements, rather than as a list. 
+2025-10-04 01:47:12,107 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 01:47:12,108 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 01:47:12,109 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 01:47:12,229 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 02:15:35,990 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 02:15:35,991 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 02:15:35,992 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 02:15:36,116 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 02:18:53,678 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 02:18:54,485 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 02:19:08,429 INFO: User logged out: waiter1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 02:19:38,366 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 02:19:39,128 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 02:19:43,554 INFO: Order ORD-20251004-EEK1 marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1751]
+2025-10-04 02:28:44,987 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 02:28:44,988 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 02:28:44,989 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 02:28:44,993 INFO: Database not initialized or incomplete, starting automatic initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:74]
+2025-10-04 02:28:49,527 INFO: Database tables created successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:23]
+2025-10-04 02:28:49,736 INFO: Starting fresh multi-branch database initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:30]
+2025-10-04 02:28:49,753 INFO: Created 5 branches [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:34]
+2025-10-04 02:28:50,544 INFO: Created super user [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:41]
+2025-10-04 02:28:50,675 INFO: Created default data for branch: Main Branch [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 02:28:50,805 INFO: Created default data for branch: Branch 2 - City Center [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 02:28:50,924 INFO: Created default data for branch: Branch 3 - Villaggio [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 02:28:51,022 INFO: Created default data for branch: Branch 4 - The Pearl [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 02:28:51,125 INFO: Created default data for branch: Branch 5 - West Bay [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 02:28:59,452 INFO: Created sample users [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:50]
+2025-10-04 02:28:59,573 INFO: Multi-branch database initialization completed successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:54]
+2025-10-04 02:29:04,930 ERROR: Exception on /admin/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\admin\views.py", line 1590, in reports
+    return render_template('admin/reports.html',
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\environment.py", line 1301, in render
+    self.environment.handle_exception()
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\admin\reports.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\base.html", line 178, in top-level template code
+    {% block content %}{% endblock %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\admin\reports.html", line 136, in block 'content'
+    <div class="h4 mb-0" id="totalRevenue">QAR {{ "%.2f"|format(total_revenue) }}</div>
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\filters.py", line 1002, in do_format
+    return soft_str(value) % (kwargs or args)
+           ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+jinja2.exceptions.UndefinedError: 'total_revenue' is undefined
+2025-10-04 02:29:42,924 ERROR: Exception on /admin/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\admin\views.py", line 1590, in reports
+    return render_template('admin/reports.html',
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\environment.py", line 1301, in render
+    self.environment.handle_exception()
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\admin\reports.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\base.html", line 178, in top-level template code
+    {% block content %}{% endblock %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\admin\reports.html", line 136, in block 'content'
+    <div class="h4 mb-0" id="totalRevenue">QAR {{ "%.2f"|format(total_revenue) }}</div>
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\filters.py", line 1002, in do_format
+    return soft_str(value) % (kwargs or args)
+           ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+jinja2.exceptions.UndefinedError: 'total_revenue' is undefined
+2025-10-04 02:29:49,209 ERROR: Exception on /admin/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\admin\views.py", line 1590, in reports
+    return render_template('admin/reports.html',
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\environment.py", line 1301, in render
+    self.environment.handle_exception()
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\admin\reports.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\base.html", line 178, in top-level template code
+    {% block content %}{% endblock %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\admin\reports.html", line 136, in block 'content'
+    <div class="h4 mb-0" id="totalRevenue">QAR {{ "%.2f"|format(total_revenue) }}</div>
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\filters.py", line 1002, in do_format
+    return soft_str(value) % (kwargs or args)
+           ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+jinja2.exceptions.UndefinedError: 'total_revenue' is undefined
+2025-10-04 02:29:59,591 ERROR: Exception on /admin/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\admin\views.py", line 1590, in reports
+    return render_template('admin/reports.html',
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\environment.py", line 1301, in render
+    self.environment.handle_exception()
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\admin\reports.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\base.html", line 178, in top-level template code
+    {% block content %}{% endblock %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\admin\reports.html", line 136, in block 'content'
+    <div class="h4 mb-0" id="totalRevenue">QAR {{ "%.2f"|format(total_revenue) }}</div>
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\filters.py", line 1002, in do_format
+    return soft_str(value) % (kwargs or args)
+           ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+jinja2.exceptions.UndefinedError: 'total_revenue' is undefined
+2025-10-04 02:31:05,446 INFO: Order ORD-20251004-HKUS marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1751]
+2025-10-04 02:31:37,856 ERROR: Exception on /admin/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\admin\views.py", line 1590, in reports
+    return render_template('admin/reports.html',
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\environment.py", line 1301, in render
+    self.environment.handle_exception()
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\admin\reports.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\base.html", line 178, in top-level template code
+    {% block content %}{% endblock %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\admin\reports.html", line 136, in block 'content'
+    <div class="h4 mb-0" id="totalRevenue">QAR {{ "%.2f"|format(total_revenue) }}</div>
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\filters.py", line 1002, in do_format
+    return soft_str(value) % (kwargs or args)
+           ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+jinja2.exceptions.UndefinedError: 'total_revenue' is undefined
+2025-10-04 02:37:39,345 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 02:37:39,346 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 02:37:39,347 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 02:37:39,505 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 02:38:16,471 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 02:38:16,473 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 02:38:16,473 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 02:38:16,477 INFO: Database not initialized or incomplete, starting automatic initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:74]
+2025-10-04 02:38:23,706 INFO: Database tables created successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:23]
+2025-10-04 02:38:23,842 INFO: Starting fresh multi-branch database initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:30]
+2025-10-04 02:38:23,857 INFO: Created 5 branches [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:34]
+2025-10-04 02:38:24,561 INFO: Created super user [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:41]
+2025-10-04 02:38:24,822 INFO: Created default data for branch: Main Branch [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 02:38:24,926 INFO: Created default data for branch: Branch 2 - City Center [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 02:38:25,035 INFO: Created default data for branch: Branch 3 - Villaggio [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 02:38:25,173 INFO: Created default data for branch: Branch 4 - The Pearl [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 02:38:25,313 INFO: Created default data for branch: Branch 5 - West Bay [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 02:38:33,100 INFO: Created sample users [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:50]
+2025-10-04 02:38:33,226 INFO: Multi-branch database initialization completed successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:54]
+2025-10-04 02:38:42,284 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 02:38:43,379 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 02:39:12,856 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 02:39:13,706 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 02:39:37,373 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 02:39:38,364 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 02:40:02,933 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 02:40:03,917 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 02:40:06,418 ERROR: Exception on /admin/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\admin\views.py", line 1590, in reports
+    return render_template('admin/reports.html',
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\environment.py", line 1301, in render
+    self.environment.handle_exception()
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\admin\reports.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\base.html", line 178, in top-level template code
+    {% block content %}{% endblock %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\admin\reports.html", line 136, in block 'content'
+    <div class="h4 mb-0" id="totalRevenue">QAR {{ "%.2f"|format(total_revenue) }}</div>
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\filters.py", line 1002, in do_format
+    return soft_str(value) % (kwargs or args)
+           ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+jinja2.exceptions.UndefinedError: 'total_revenue' is undefined
+2025-10-04 02:41:12,913 INFO: Order ORD-20251004-O5WU marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1751]
+2025-10-04 02:43:37,255 INFO: Order ORD-20251004-6JUI marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1751]
+2025-10-04 02:57:42,312 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 02:57:42,314 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 02:57:42,314 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 02:57:42,446 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 03:05:17,194 INFO: Order ORD-20251004-XV2X marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1751]
+2025-10-04 03:05:18,281 INFO: Order ORD-20251004-OVZQ marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1751]
+2025-10-04 03:05:19,325 INFO: Order ORD-20251004-HU2Q marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1751]
+2025-10-04 03:05:19,978 INFO: Order ORD-20251004-YGX4 marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1751]
+2025-10-04 03:15:09,929 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 03:15:09,930 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 03:15:09,931 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 03:15:09,973 ERROR: Database initialization error: Could not determine join condition between parent/child tables on relationship User.orders - there are multiple foreign key paths linking the tables.  Specify the 'foreign_keys' argument, providing a list of those columns which should be counted as containing a foreign key reference to the parent table. [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:103]
+2025-10-04 03:16:52,634 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 03:16:52,635 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 03:16:52,635 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 03:16:52,746 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 03:31:24,169 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 03:31:24,170 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 03:31:24,171 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 03:31:24,341 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 03:33:08,395 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 03:33:08,397 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 03:33:08,398 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 03:33:08,402 INFO: Database not initialized or incomplete, starting automatic initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:74]
+2025-10-04 03:33:14,396 INFO: Database tables created successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:23]
+2025-10-04 03:33:14,697 INFO: Starting fresh multi-branch database initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:30]
+2025-10-04 03:33:14,730 INFO: Created 5 branches [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:34]
+2025-10-04 03:33:16,654 INFO: Created super user [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:41]
+2025-10-04 03:33:17,101 INFO: Created default data for branch: Main Branch [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 03:33:17,484 INFO: Created default data for branch: Branch 2 - City Center [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 03:33:17,956 INFO: Created default data for branch: Branch 3 - Villaggio [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 03:33:18,256 INFO: Created default data for branch: Branch 4 - The Pearl [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 03:33:18,589 INFO: Created default data for branch: Branch 5 - West Bay [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 03:33:37,332 INFO: Created sample users [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:50]
+2025-10-04 03:33:37,451 INFO: Multi-branch database initialization completed successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:54]
+2025-10-04 03:34:46,023 INFO: User logged out: admin1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 03:34:54,066 INFO: Login attempt for username: cashier2_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 03:34:55,610 INFO: Successful login for user: cashier2_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 03:37:48,266 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 03:37:48,268 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 03:37:48,269 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 03:37:48,421 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 03:38:39,990 INFO: User logged out: superadmin [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 03:38:49,656 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 03:38:50,391 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 03:39:07,738 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 03:39:08,712 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 03:41:34,329 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 03:41:34,344 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 03:41:34,376 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 03:41:34,737 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 03:42:30,884 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 03:42:30,884 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 03:42:30,885 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 03:42:31,022 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 03:43:14,446 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 03:43:15,377 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 03:44:28,681 INFO: User logged out: admin1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 03:44:31,287 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 03:44:32,173 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 03:45:21,881 INFO: Order ORD-20251004-P1DS marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1770]
+2025-10-04 03:48:13,512 INFO: Order ORD-20251004-SNLF marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1770]
+2025-10-04 03:48:15,887 INFO: Order ORD-20251004-1RU7 marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1770]
+2025-10-04 03:49:21,882 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 03:49:21,883 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 03:49:21,884 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 03:49:21,887 INFO: Database not initialized or incomplete, starting automatic initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:74]
+2025-10-04 03:49:26,256 INFO: Database tables created successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:23]
+2025-10-04 03:49:26,403 INFO: Starting fresh multi-branch database initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:30]
+2025-10-04 03:49:26,419 INFO: Created 5 branches [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:34]
+2025-10-04 03:49:27,398 INFO: Created super user [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:41]
+2025-10-04 03:49:27,571 INFO: Created default data for branch: Main Branch [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 03:49:27,686 INFO: Created default data for branch: Branch 2 - City Center [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 03:49:27,854 INFO: Created default data for branch: Branch 3 - Villaggio [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 03:49:27,969 INFO: Created default data for branch: Branch 4 - The Pearl [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 03:49:28,073 INFO: Created default data for branch: Branch 5 - West Bay [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 03:49:37,918 INFO: Created sample users [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:50]
+2025-10-04 03:49:38,056 INFO: Multi-branch database initialization completed successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:54]
+2025-10-04 03:55:35,152 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 03:55:35,154 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 03:55:35,154 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 03:55:35,157 INFO: Database not initialized or incomplete, starting automatic initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:74]
+2025-10-04 03:55:40,086 INFO: Database tables created successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:23]
+2025-10-04 03:55:40,250 INFO: Starting fresh multi-branch database initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:30]
+2025-10-04 03:55:40,262 INFO: Created 5 branches [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:34]
+2025-10-04 03:55:40,932 INFO: Created super user [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:41]
+2025-10-04 03:55:41,059 INFO: Created default data for branch: Main Branch [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 03:55:41,224 INFO: Created default data for branch: Branch 2 - City Center [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 03:55:41,344 INFO: Created default data for branch: Branch 3 - Villaggio [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 03:55:41,447 INFO: Created default data for branch: Branch 4 - The Pearl [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 03:55:41,550 INFO: Created default data for branch: Branch 5 - West Bay [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 03:55:49,360 INFO: Created sample users [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:50]
+2025-10-04 03:55:49,530 INFO: Multi-branch database initialization completed successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:54]
+2025-10-04 03:56:28,447 INFO: User logged out: cashier2_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 03:56:39,136 INFO: Login attempt for username: cashier1_2 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 03:56:40,135 INFO: Successful login for user: cashier1_2 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 03:57:43,995 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 03:57:56,036 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 03:57:57,091 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 03:58:21,384 INFO: Order ORD-20251004-RJN0 marked as paid by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1794]
+2025-10-04 04:00:26,030 INFO: Order ORD-20251004-J6E6 marked as paid by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1794]
+2025-10-04 09:41:03,267 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 09:41:04,196 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 09:41:22,927 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 09:41:35,735 INFO: Login attempt for username: cashier2_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 09:41:36,922 INFO: Successful login for user: cashier2_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 09:41:55,886 INFO: User logged out: cashier2_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 09:42:08,130 INFO: Login attempt for username: cashier1_2 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 09:42:09,000 INFO: Successful login for user: cashier1_2 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 09:42:43,849 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 09:42:44,740 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 09:43:25,871 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 09:43:25,872 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 09:43:25,872 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 09:43:25,876 INFO: Database not initialized or incomplete, starting automatic initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:74]
+2025-10-04 09:43:32,660 INFO: Database tables created successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:23]
+2025-10-04 09:43:32,797 INFO: Starting fresh multi-branch database initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:30]
+2025-10-04 09:43:32,814 INFO: Created 5 branches [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:34]
+2025-10-04 09:43:33,484 INFO: Created super user [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:41]
+2025-10-04 09:43:33,611 INFO: Created default data for branch: Main Branch [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 09:43:33,716 INFO: Created default data for branch: Branch 2 - City Center [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 09:43:33,821 INFO: Created default data for branch: Branch 3 - Villaggio [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 09:43:33,923 INFO: Created default data for branch: Branch 4 - The Pearl [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 09:43:34,042 INFO: Created default data for branch: Branch 5 - West Bay [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 09:43:42,324 INFO: Created sample users [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:50]
+2025-10-04 09:43:42,456 INFO: Multi-branch database initialization completed successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:54]
+2025-10-04 09:44:06,820 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 09:44:07,712 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 09:45:19,756 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 09:45:20,676 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 09:45:55,988 INFO: Order ORD-20251004-KGC6 marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1845]
+2025-10-04 22:42:11,687 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 22:42:11,687 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 22:42:11,687 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 22:42:11,822 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 22:42:26,804 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 22:42:28,547 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 22:43:03,353 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 22:43:04,316 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 22:44:22,614 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 22:44:23,489 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 22:44:42,622 INFO: Login attempt for username: cashier2_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 22:44:43,456 INFO: Successful login for user: cashier2_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 22:45:18,342 INFO: User logged out: cashier2_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 22:45:22,876 INFO: Login attempt for username: cashier1_2 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 22:45:23,915 INFO: Successful login for user: cashier1_2 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 22:48:18,934 INFO: Order ORD-20251004-930Y marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1845]
+2025-10-04 22:51:33,793 INFO: Order ORD-20251004-ARR7 marked as paid by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1845]
+2025-10-04 22:54:03,961 INFO: Clear waiter requests called by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1510]
+2025-10-04 22:54:03,966 INFO: Found 1 waiter orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1532]
+2025-10-04 22:54:03,969 INFO: Starting to clear 1 paid orders from waiter requests [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1548]
+2025-10-04 22:54:03,969 INFO: Clearing order 3 from waiter requests [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1551]
+2025-10-04 22:54:03,972 INFO: Committing clearing of 1 orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1557]
+2025-10-04 22:54:04,084 INFO: Commit successful [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1559]
+2025-10-04 22:54:04,084 INFO: Cashier Cashier2 Branch1 cleared 1 paid waiter orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1571]
+2025-10-04 22:57:30,277 INFO: Clear waiter requests called by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1510]
+2025-10-04 22:57:30,279 INFO: Found 3 waiter orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1532]
+2025-10-04 22:57:30,280 INFO: Starting to clear 2 paid orders from waiter requests [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1548]
+2025-10-04 22:57:30,281 INFO: Clearing order 1 from waiter requests [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1551]
+2025-10-04 22:57:30,282 INFO: Clearing order 2 from waiter requests [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1551]
+2025-10-04 22:57:30,283 INFO: Committing clearing of 2 orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1557]
+2025-10-04 22:57:30,441 INFO: Commit successful [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1559]
+2025-10-04 22:57:30,441 INFO: Cashier Cashier1 Branch1 cleared 2 paid waiter orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1571]
+2025-10-04 22:58:25,390 INFO: Order ORD-20251004-TAPK marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1845]
+2025-10-04 22:58:31,585 INFO: Clear waiter requests called by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1510]
+2025-10-04 22:58:31,589 INFO: Found 1 waiter orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1532]
+2025-10-04 22:58:31,589 INFO: Starting to clear 1 paid orders from waiter requests [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1548]
+2025-10-04 22:58:31,589 INFO: Clearing order 4 from waiter requests [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1551]
+2025-10-04 22:58:31,594 INFO: Committing clearing of 1 orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1557]
+2025-10-04 22:58:31,788 INFO: Commit successful [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1559]
+2025-10-04 22:58:31,788 INFO: Cashier Cashier1 Branch1 cleared 1 paid waiter orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1571]
+2025-10-04 23:02:49,411 INFO: User logged out: cashier1_2 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 23:02:57,584 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 23:03:01,307 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 23:03:03,502 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 23:04:01,193 INFO: Login attempt for username: cashier2_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 23:04:02,781 INFO: Successful login for user: cashier2_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 23:04:14,909 INFO: User logged out: cashier2_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 23:04:20,530 INFO: Login attempt for username: cashier1_2 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 23:04:22,211 INFO: Successful login for user: cashier1_2 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 23:11:20,425 INFO: User logged out: cashier1_2 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 23:11:27,238 INFO: Login attempt for username: cashier1_2 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 23:11:28,300 INFO: Successful login for user: cashier1_2 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 23:11:49,242 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 23:11:51,062 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 23:11:51,990 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 23:11:54,620 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 23:11:55,742 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 23:11:57,537 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 23:14:41,072 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 23:14:41,072 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 23:14:41,072 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 23:14:41,214 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 23:15:38,042 INFO: Order ORD-20251004-DWUW marked as paid by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1845]
+2025-10-04 23:16:48,411 INFO: Clear waiter requests called by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1510]
+2025-10-04 23:16:48,414 INFO: Found 1 waiter orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1532]
+2025-10-04 23:16:48,423 INFO: Starting to clear 1 paid orders from waiter requests [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1548]
+2025-10-04 23:16:48,425 INFO: Clearing order 6 from waiter requests [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1551]
+2025-10-04 23:16:48,426 INFO: Committing clearing of 1 orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1557]
+2025-10-04 23:16:48,804 INFO: Commit successful [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1559]
+2025-10-04 23:16:48,804 INFO: Cashier Cashier2 Branch1 cleared 1 paid waiter orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1571]
+2025-10-04 23:22:28,494 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 23:22:28,558 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 23:22:28,642 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 23:22:29,271 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 23:23:45,815 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 23:23:45,816 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 23:23:45,817 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 23:23:45,950 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 23:26:11,579 INFO: Order ORD-20251004-I4WF marked as paid by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1845]
+2025-10-04 23:30:06,603 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 23:30:06,611 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 23:30:06,611 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 23:30:06,614 INFO: Database not initialized or incomplete, starting automatic initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:74]
+2025-10-04 23:30:11,414 INFO: Database tables created successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:23]
+2025-10-04 23:30:11,545 INFO: Starting fresh multi-branch database initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:30]
+2025-10-04 23:30:11,550 INFO: Created 5 branches [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:34]
+2025-10-04 23:30:12,171 INFO: Created super user [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:41]
+2025-10-04 23:30:12,300 INFO: Created default data for branch: Main Branch [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 23:30:12,432 INFO: Created default data for branch: Branch 2 - City Center [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 23:30:12,541 INFO: Created default data for branch: Branch 3 - Villaggio [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 23:30:12,637 INFO: Created default data for branch: Branch 4 - The Pearl [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 23:30:12,733 INFO: Created default data for branch: Branch 5 - West Bay [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-04 23:30:20,322 INFO: Created sample users [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:50]
+2025-10-04 23:30:20,429 INFO: Multi-branch database initialization completed successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:54]
+2025-10-04 23:32:29,077 INFO: User logged out: cashier1_2 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 23:32:31,827 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 23:32:32,861 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 23:36:36,761 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-04 23:36:36,761 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-04 23:36:36,761 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-04 23:36:36,895 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-04 23:37:41,833 ERROR: Exception on /admin/reports [GET] [in C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py:1414]
+Traceback (most recent call last):
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\admin\views.py", line 1590, in reports
+    return render_template('admin/reports.html',
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\templating.py", line 151, in render_template
+    return _render(app, template, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\templating.py", line 132, in _render
+    rv = template.render(context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\environment.py", line 1301, in render
+    self.environment.handle_exception()
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\admin\reports.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\base.html", line 178, in top-level template code
+    {% block content %}{% endblock %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\templates\admin\reports.html", line 136, in block 'content'
+    <div class="h4 mb-0" id="totalRevenue">QAR {{ "%.2f"|format(total_revenue) }}</div>
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Edgar\AppData\Local\Programs\Python\Python311\Lib\site-packages\jinja2\filters.py", line 1002, in do_format
+    return soft_str(value) % (kwargs or args)
+           ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+jinja2.exceptions.UndefinedError: 'total_revenue' is undefined
+2025-10-04 23:39:19,044 INFO: Order ORD-20251004-F6SD marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1845]
+2025-10-04 23:39:52,539 INFO: Clear waiter requests called by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1510]
+2025-10-04 23:39:52,556 INFO: Found 1 waiter orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1532]
+2025-10-04 23:39:52,556 INFO: Starting to clear 1 paid orders from waiter requests [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1548]
+2025-10-04 23:39:52,561 INFO: Clearing order 1 from waiter requests [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1551]
+2025-10-04 23:39:52,561 INFO: Committing clearing of 1 orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1557]
+2025-10-04 23:39:52,722 INFO: Commit successful [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1559]
+2025-10-04 23:39:52,722 INFO: Cashier Cashier1 Branch1 cleared 1 paid waiter orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1571]
+2025-10-04 23:40:37,088 INFO: User logged out: admin1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 23:40:43,772 INFO: Login attempt for username: cashier2_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 23:40:44,704 INFO: Successful login for user: cashier2_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 23:40:57,669 INFO: User logged out: cashier2_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 23:41:02,636 INFO: Login attempt for username: cashier1_2 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-04 23:41:03,451 INFO: Successful login for user: cashier1_2 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-04 23:41:17,188 INFO: User logged out: cashier1_2 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-04 23:41:23,684 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 02:05:25,892 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 02:05:25,892 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 02:05:25,892 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 02:05:26,013 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 02:06:08,082 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 02:06:09,405 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 02:06:10,113 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 02:17:42,028 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 02:17:42,028 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 02:17:42,028 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 02:17:42,039 INFO: Database not initialized or incomplete, starting automatic initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:74]
+2025-10-05 02:17:45,464 INFO: Database tables created successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:23]
+2025-10-05 02:17:45,684 INFO: Starting fresh multi-branch database initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:30]
+2025-10-05 02:17:45,705 INFO: Created 5 branches [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:34]
+2025-10-05 02:17:46,677 INFO: Created super user [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:41]
+2025-10-05 02:17:46,895 INFO: Created default data for branch: Main Branch [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 02:17:47,058 INFO: Created default data for branch: Branch 2 - City Center [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 02:17:47,215 INFO: Created default data for branch: Branch 3 - Villaggio [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 02:17:47,355 INFO: Created default data for branch: Branch 4 - The Pearl [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 02:17:47,504 INFO: Created default data for branch: Branch 5 - West Bay [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 02:17:56,615 INFO: Created sample users [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:50]
+2025-10-05 02:17:56,740 INFO: Multi-branch database initialization completed successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:54]
+2025-10-05 02:20:30,548 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 02:20:34,103 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 02:20:35,021 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 02:22:18,220 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 02:22:19,734 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 02:22:20,523 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 02:23:59,619 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 02:24:13,926 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 02:24:14,665 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 02:26:09,630 INFO: Login attempt for username: cashier1_2 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 02:26:11,228 INFO: Successful login for user: cashier1_2 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 02:26:56,456 INFO: Order ORD-20251005-0244 marked as paid by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:2109]
+2025-10-05 02:26:57,263 INFO: Order ORD-20251005-ROB4 marked as paid by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:2109]
+2025-10-05 02:27:00,382 INFO: User logged out: cashier1_2 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 02:28:35,136 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 02:28:35,138 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 02:28:35,138 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 02:28:35,143 INFO: Database not initialized or incomplete, starting automatic initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:74]
+2025-10-05 02:28:39,702 INFO: Database tables created successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:23]
+2025-10-05 02:28:39,882 INFO: Starting fresh multi-branch database initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:30]
+2025-10-05 02:28:39,903 INFO: Created 5 branches [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:34]
+2025-10-05 02:28:40,653 INFO: Created super user [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:41]
+2025-10-05 02:28:40,913 INFO: Created default data for branch: Main Branch [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 02:28:41,197 INFO: Created default data for branch: Branch 2 - City Center [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 02:28:41,409 INFO: Created default data for branch: Branch 3 - Villaggio [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 02:28:41,560 INFO: Created default data for branch: Branch 4 - The Pearl [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 02:28:41,720 INFO: Created default data for branch: Branch 5 - West Bay [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 02:28:49,692 INFO: Created sample users [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:50]
+2025-10-05 02:28:49,892 INFO: Multi-branch database initialization completed successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:54]
+2025-10-05 02:30:01,029 INFO: Login attempt for username: cashier1_2 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 02:30:03,320 INFO: Successful login for user: cashier1_2 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 02:32:43,903 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 02:32:45,006 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 02:32:45,992 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 02:33:02,495 INFO: User logged out: waiter1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 02:33:03,947 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 02:33:04,869 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 02:34:00,013 INFO: Order ORD-20251005-FIC5 marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:2112]
+2025-10-05 02:34:03,734 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 02:34:26,472 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 02:34:27,332 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 02:34:32,178 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 02:34:33,246 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 02:34:34,007 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 02:35:06,078 INFO: Clear waiter requests called by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1777]
+2025-10-05 02:35:06,078 INFO: Found 1 waiter orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1799]
+2025-10-05 02:35:06,078 INFO: Starting to clear 1 paid orders from waiter requests [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1815]
+2025-10-05 02:35:06,086 INFO: Clearing order 2 from waiter requests [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1818]
+2025-10-05 02:35:06,086 INFO: Committing clearing of 1 orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1824]
+2025-10-05 02:35:06,220 INFO: Commit successful [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1826]
+2025-10-05 02:35:06,222 INFO: Cashier Cashier1 Branch1 cleared 1 paid waiter orders [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:1838]
+2025-10-05 02:35:52,294 INFO: Order ORD-20251005-RVYP marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:2112]
+2025-10-05 02:41:35,428 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 02:41:35,428 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 02:41:35,428 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 02:41:35,428 INFO: Database not initialized or incomplete, starting automatic initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\__init__.py:74]
+2025-10-05 02:41:40,519 INFO: Database tables created successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:23]
+2025-10-05 02:41:40,698 INFO: Starting fresh multi-branch database initialization... [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:30]
+2025-10-05 02:41:40,718 INFO: Created 5 branches [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:34]
+2025-10-05 02:41:41,453 INFO: Created super user [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:41]
+2025-10-05 02:41:41,637 INFO: Created default data for branch: Main Branch [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 02:41:41,792 INFO: Created default data for branch: Branch 2 - City Center [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 02:41:41,966 INFO: Created default data for branch: Branch 3 - Villaggio [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 02:41:42,128 INFO: Created default data for branch: Branch 4 - The Pearl [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 02:41:42,258 INFO: Created default data for branch: Branch 5 - West Bay [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 02:41:52,264 INFO: Created sample users [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:50]
+2025-10-05 02:41:52,415 INFO: Multi-branch database initialization completed successfully [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\db_init.py:54]
+2025-10-05 02:42:42,923 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 02:42:44,127 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 02:42:45,230 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 02:44:36,258 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 02:44:37,525 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 02:44:38,292 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 02:44:49,402 INFO: Order ORD-20251005-F2SS marked as paid by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\restaurantPOS - Copy (37)\app\pos\views.py:2150]
+2025-10-05 13:05:33,545 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 13:05:33,563 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 13:05:33,564 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 13:05:33,658 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 13:05:35,519 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 13:05:35,519 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 13:05:35,519 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 13:05:35,688 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 13:06:00,648 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 13:06:00,648 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 13:06:00,665 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 13:06:00,816 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 13:06:20,424 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:06:26,501 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 13:06:44,317 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:06:45,397 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 13:06:57,829 INFO: Login attempt for username: cashier2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:06:58,606 INFO: Successful login for user: cashier2_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 13:07:23,338 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:07:24,056 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 13:08:44,507 INFO: Order ORD-20251005-W7RS marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2150]
+2025-10-05 13:09:26,310 INFO: User logged out: cashier2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 13:09:30,029 INFO: Login attempt for username: cashier1_2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:09:30,760 INFO: Successful login for user: cashier1_2 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 13:09:40,654 INFO: Order ORD-20251005-H8EO marked as paid by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2150]
+2025-10-05 13:09:42,597 INFO: Clear waiter requests called by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1815]
+2025-10-05 13:09:42,597 INFO: Found 2 waiter orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1837]
+2025-10-05 13:09:42,604 INFO: Starting to clear 2 paid orders from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1853]
+2025-10-05 13:09:42,605 INFO: Clearing order 2 from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1856]
+2025-10-05 13:09:42,606 INFO: Clearing order 4 from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1856]
+2025-10-05 13:09:42,607 INFO: Committing clearing of 2 orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1862]
+2025-10-05 13:09:42,840 INFO: Commit successful [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1864]
+2025-10-05 13:09:42,843 INFO: Cashier Cashier2 Branch1 cleared 2 paid waiter orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1876]
+2025-10-05 13:11:20,996 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 13:11:20,997 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 13:11:20,999 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 13:11:21,002 INFO: Database not initialized or incomplete, starting automatic initialization... [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:74]
+2025-10-05 13:11:24,852 INFO: Database tables created successfully [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:23]
+2025-10-05 13:11:24,978 INFO: Starting fresh multi-branch database initialization... [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:30]
+2025-10-05 13:11:24,996 INFO: Created 5 branches [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:34]
+2025-10-05 13:11:25,588 INFO: Created super user [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:41]
+2025-10-05 13:11:25,695 INFO: Created default data for branch: Main Branch [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 13:11:25,799 INFO: Created default data for branch: Branch 2 - City Center [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 13:11:25,895 INFO: Created default data for branch: Branch 3 - Villaggio [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 13:11:25,994 INFO: Created default data for branch: Branch 4 - The Pearl [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 13:11:26,106 INFO: Created default data for branch: Branch 5 - West Bay [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 13:11:33,937 INFO: Created sample users [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:50]
+2025-10-05 13:11:34,126 INFO: Multi-branch database initialization completed successfully [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:54]
+2025-10-05 13:13:33,869 INFO: User logged out: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 13:13:51,453 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:13:51,965 WARNING: Failed login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:55]
+2025-10-05 13:14:03,887 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:14:04,581 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 13:16:01,619 INFO: Login attempt for username: waiter2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:16:02,378 INFO: Successful login for user: waiter2_1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 13:18:57,338 INFO: Login attempt for username: waiter2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:18:58,404 INFO: Successful login for user: waiter2 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 13:19:15,411 INFO: Order ORD-20251005-VIAE marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2150]
+2025-10-05 13:19:16,311 INFO: Order ORD-20251005-SO5M marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2150]
+2025-10-05 13:19:20,759 INFO: Clear waiter requests called by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1815]
+2025-10-05 13:19:20,764 INFO: Found 2 waiter orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1837]
+2025-10-05 13:19:20,764 INFO: Starting to clear 2 paid orders from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1853]
+2025-10-05 13:19:20,765 INFO: Clearing order 1 from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1856]
+2025-10-05 13:19:20,766 INFO: Clearing order 2 from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1856]
+2025-10-05 13:19:20,768 INFO: Committing clearing of 2 orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1862]
+2025-10-05 13:19:20,891 INFO: Commit successful [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1864]
+2025-10-05 13:19:20,893 INFO: Cashier Cashier1 Branch1 cleared 2 paid waiter orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1876]
+2025-10-05 13:22:13,046 INFO: User logged out: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 13:22:21,624 INFO: Login attempt for username: cashier2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:22:22,101 WARNING: Failed login attempt for username: cashier2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:55]
+2025-10-05 13:22:32,395 INFO: Login attempt for username: cashier2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:22:33,138 INFO: Successful login for user: cashier2_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 13:22:53,219 INFO: Order ORD-20251005-2JQZ marked as paid by Cashier1 Branch2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2150]
+2025-10-05 13:24:09,144 INFO: User logged out: cashier2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 13:24:25,479 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:24:25,987 WARNING: Failed login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:55]
+2025-10-05 13:24:35,369 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:24:36,047 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 13:26:15,745 INFO: Order ORD-20251005-IEJU marked as paid by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2150]
+2025-10-05 13:46:18,320 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 13:46:18,320 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 13:46:18,320 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 13:46:18,326 INFO: Database not initialized or incomplete, starting automatic initialization... [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:74]
+2025-10-05 13:46:23,784 INFO: Database tables created successfully [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:23]
+2025-10-05 13:46:23,941 INFO: Starting fresh multi-branch database initialization... [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:30]
+2025-10-05 13:46:23,957 INFO: Created 5 branches [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:34]
+2025-10-05 13:46:24,602 INFO: Created super user [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:41]
+2025-10-05 13:46:24,747 INFO: Created default data for branch: Main Branch [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 13:46:24,864 INFO: Created default data for branch: Branch 2 - City Center [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 13:46:25,206 INFO: Created default data for branch: Branch 3 - Villaggio [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 13:46:25,315 INFO: Created default data for branch: Branch 4 - The Pearl [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 13:46:25,431 INFO: Created default data for branch: Branch 5 - West Bay [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 13:46:34,070 INFO: Created sample users [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:50]
+2025-10-05 13:46:34,351 INFO: Multi-branch database initialization completed successfully [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:54]
+2025-10-05 13:47:06,190 INFO: Login attempt for username: waiter2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:47:06,196 WARNING: Failed login attempt for username: waiter2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:55]
+2025-10-05 13:49:18,043 INFO: User logged out: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 13:49:29,783 INFO: Login attempt for username: waiter2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:49:29,783 WARNING: Failed login attempt for username: waiter2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:55]
+2025-10-05 13:49:39,280 INFO: Login attempt for username: waiter1_2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:49:40,230 INFO: Successful login for user: waiter1_2 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 13:52:01,476 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 13:52:01,476 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 13:52:01,479 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 13:52:01,601 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 13:57:11,341 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 13:57:11,342 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 13:57:11,343 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 13:57:11,346 INFO: Database not initialized or incomplete, starting automatic initialization... [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:74]
+2025-10-05 13:57:15,778 INFO: Database tables created successfully [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:23]
+2025-10-05 13:57:15,911 INFO: Starting fresh multi-branch database initialization... [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:30]
+2025-10-05 13:57:15,927 INFO: Created 5 branches [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:34]
+2025-10-05 13:57:16,550 INFO: Created super user [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:41]
+2025-10-05 13:57:16,676 INFO: Created default data for branch: Main Branch [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 13:57:16,782 INFO: Created default data for branch: Branch 2 - City Center [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 13:57:16,879 INFO: Created default data for branch: Branch 3 - Villaggio [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 13:57:16,984 INFO: Created default data for branch: Branch 4 - The Pearl [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 13:57:17,099 INFO: Created default data for branch: Branch 5 - West Bay [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 13:57:24,774 INFO: Created sample users [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:50]
+2025-10-05 13:57:24,878 INFO: Multi-branch database initialization completed successfully [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:54]
+2025-10-05 13:59:17,617 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 13:59:18,366 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 14:00:23,423 INFO: User logged out: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 14:00:39,047 INFO: Login attempt for username: ali.mohsen [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 14:00:39,847 INFO: Successful login for user: ali.mohsen (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 14:02:42,747 INFO: Order ORD-20251005-XC86 marked as paid by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2217]
+2025-10-05 14:02:55,955 INFO: User logged out: cashier1_2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 14:03:21,782 INFO: Login attempt for username: cashier2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 14:03:22,503 INFO: Successful login for user: cashier2_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 14:04:16,235 INFO: Order ORD-20251005-QBCS marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2217]
+2025-10-05 14:04:16,901 INFO: Order ORD-20251005-HJ9L marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2217]
+2025-10-05 14:04:23,940 INFO: Clear waiter requests called by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1869]
+2025-10-05 14:04:23,946 INFO: Found 2 waiter orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1891]
+2025-10-05 14:04:23,947 INFO: Starting to clear 2 paid orders from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1907]
+2025-10-05 14:04:23,947 INFO: Clearing order 1 from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1910]
+2025-10-05 14:04:23,950 INFO: Clearing order 3 from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1910]
+2025-10-05 14:04:23,950 INFO: Committing clearing of 2 orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1916]
+2025-10-05 14:04:24,083 INFO: Commit successful [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1918]
+2025-10-05 14:04:24,084 INFO: Cashier Cashier1 Branch1 cleared 2 paid waiter orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1930]
+2025-10-05 14:04:48,298 INFO: User logged out: ali.mohsen [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 14:04:54,583 INFO: Login attempt for username: waiter2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 14:04:55,333 INFO: Successful login for user: waiter2 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 14:29:06,428 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 14:29:07,600 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 14:29:31,867 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 14:29:32,714 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 14:40:32,147 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 14:40:32,147 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 14:40:32,147 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 14:40:32,157 INFO: Database not initialized or incomplete, starting automatic initialization... [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:74]
+2025-10-05 14:40:36,270 INFO: Database tables created successfully [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:23]
+2025-10-05 14:40:36,397 INFO: Starting fresh multi-branch database initialization... [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:30]
+2025-10-05 14:40:36,397 INFO: Created 5 branches [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:34]
+2025-10-05 14:40:37,020 INFO: Created super user [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:41]
+2025-10-05 14:40:37,129 INFO: Created default data for branch: Main Branch [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 14:40:37,264 INFO: Created default data for branch: Branch 2 - City Center [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 14:40:37,371 INFO: Created default data for branch: Branch 3 - Villaggio [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 14:40:37,479 INFO: Created default data for branch: Branch 4 - The Pearl [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 14:40:37,584 INFO: Created default data for branch: Branch 5 - West Bay [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 14:40:45,780 INFO: Created sample users [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:50]
+2025-10-05 14:40:45,888 INFO: Multi-branch database initialization completed successfully [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:54]
+2025-10-05 14:43:57,145 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 14:43:57,145 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 14:43:57,145 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 14:43:57,247 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 14:44:02,412 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 14:44:02,414 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 14:44:02,415 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 14:44:02,558 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 14:47:27,563 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 14:47:27,563 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 14:47:27,563 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 14:47:27,570 INFO: Database not initialized or incomplete, starting automatic initialization... [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:74]
+2025-10-05 14:47:31,613 INFO: Database tables created successfully [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:23]
+2025-10-05 14:47:31,720 INFO: Starting fresh multi-branch database initialization... [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:30]
+2025-10-05 14:47:31,735 INFO: Created 5 branches [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:34]
+2025-10-05 14:47:32,384 INFO: Created super user [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:41]
+2025-10-05 14:47:32,526 INFO: Created default data for branch: Main Branch [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 14:47:32,670 INFO: Created default data for branch: Branch 2 - City Center [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 14:47:32,783 INFO: Created default data for branch: Branch 3 - Villaggio [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 14:47:32,898 INFO: Created default data for branch: Branch 4 - The Pearl [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 14:47:33,100 INFO: Created default data for branch: Branch 5 - West Bay [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:46]
+2025-10-05 14:47:42,689 INFO: Created sample users [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:50]
+2025-10-05 14:47:42,820 INFO: Multi-branch database initialization completed successfully [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\db_init.py:54]
+2025-10-05 14:47:44,930 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 14:47:44,932 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 14:47:44,932 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 14:47:45,034 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 14:47:52,533 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 14:47:53,546 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 14:48:01,586 INFO: User logged out: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 14:48:04,497 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 14:48:05,521 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 14:50:22,462 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 14:50:22,462 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 14:50:22,462 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 14:50:22,654 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 14:50:59,879 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 14:50:59,879 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 14:50:59,883 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 14:51:00,095 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 14:51:45,680 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 14:51:45,681 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 14:51:45,682 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 14:51:45,833 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 14:53:26,108 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 14:53:28,936 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 14:53:30,526 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 14:54:24,138 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 14:54:24,197 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 14:54:24,203 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 14:54:24,501 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 18:48:31,609 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 18:48:31,609 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 18:48:31,609 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 18:48:31,723 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 18:48:33,858 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 18:48:33,858 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 18:48:33,858 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 18:48:33,959 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 18:48:41,117 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 18:48:41,993 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 18:51:56,685 INFO: User logged out: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 18:51:58,880 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 18:51:59,967 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 18:58:53,403 INFO: Login attempt for username: cashier2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 18:58:54,325 INFO: Successful login for user: cashier2_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 18:59:11,857 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 18:59:12,894 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 18:59:28,498 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 18:59:29,275 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 18:59:40,914 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 18:59:57,942 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 18:59:58,930 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 19:01:25,071 INFO: User logged out: cashier2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 19:01:31,867 INFO: Login attempt for username: cashier1_2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 19:01:32,699 INFO: Successful login for user: cashier1_2 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 19:03:33,587 INFO: Order ORD-20251005-GYXS marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2217]
+2025-10-05 19:03:34,530 INFO: Order ORD-20251005-LD2M marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2217]
+2025-10-05 19:03:37,470 INFO: Order ORD-20251005-9OH5 marked as paid by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2217]
+2025-10-05 19:27:30,769 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 19:27:30,770 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 19:27:30,771 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 19:27:30,851 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 19:27:41,675 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 19:27:41,675 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 19:27:41,682 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 19:27:41,757 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 19:28:27,681 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 19:28:27,683 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 19:28:27,683 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 19:28:27,766 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 19:28:38,359 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 19:28:38,359 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 19:28:38,359 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 19:28:38,447 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 19:28:48,244 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 19:28:48,244 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 19:28:48,244 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 19:28:48,338 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 19:29:04,044 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 19:29:04,044 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 19:29:04,055 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 19:29:04,124 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 19:42:00,285 INFO: User logged out: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 19:42:11,838 INFO: Login attempt for username: cashier2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 19:42:13,044 INFO: Successful login for user: cashier2_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 19:45:12,324 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 19:45:12,326 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 19:45:12,328 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 19:45:12,412 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 19:45:38,383 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 19:45:38,383 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 19:45:38,383 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 19:45:38,478 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 19:46:13,929 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 19:46:13,945 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 19:46:13,949 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 19:46:14,118 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 19:46:23,599 INFO: User logged out: cashier2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 19:46:31,581 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 19:46:33,562 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 19:51:24,174 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 19:51:24,257 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 19:51:24,294 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 19:51:24,441 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 19:53:15,330 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 19:53:16,083 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 19:59:31,275 INFO: User logged out: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 19:59:33,502 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 19:59:34,306 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 20:00:00,254 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:00:00,790 WARNING: Failed login attempt for username: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:55]
+2025-10-05 20:00:07,501 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:00:08,307 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 20:10:10,912 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 20:10:10,913 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 20:10:10,915 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 20:10:11,030 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 20:10:59,699 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:11:00,658 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 20:11:25,157 INFO: Clear waiter requests called by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1893]
+2025-10-05 20:11:25,157 INFO: Found 2 waiter orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1915]
+2025-10-05 20:11:25,157 INFO: Starting to clear 2 paid orders from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1931]
+2025-10-05 20:11:25,157 INFO: Clearing order 1 from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1934]
+2025-10-05 20:11:25,157 INFO: Clearing order 3 from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1934]
+2025-10-05 20:11:25,166 INFO: Committing clearing of 2 orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1940]
+2025-10-05 20:11:25,269 INFO: Commit successful [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1942]
+2025-10-05 20:11:25,278 INFO: Cashier Cashier1 Branch1 cleared 2 paid waiter orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1954]
+2025-10-05 20:12:12,173 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 20:12:17,626 INFO: Login attempt for username: cashier1_2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:12:18,388 INFO: Successful login for user: cashier1_2 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 20:13:19,868 INFO: Login attempt for username: admin2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:13:20,452 WARNING: Failed login attempt for username: admin2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:55]
+2025-10-05 20:13:24,906 INFO: Login attempt for username: admin2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:13:25,982 INFO: Successful login for user: admin2 (Role: branch_admin) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 20:13:45,629 INFO: User logged out: admin2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 20:13:52,291 INFO: Login attempt for username: cashier1_2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:13:53,811 INFO: Successful login for user: cashier1_2 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 20:14:09,404 INFO: Order ORD-20251005-PGEJ marked as paid by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2241]
+2025-10-05 20:14:12,045 INFO: Clear waiter requests called by Cashier2 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1893]
+2025-10-05 20:14:12,062 INFO: Found 2 waiter orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1915]
+2025-10-05 20:14:12,075 INFO: Starting to clear 2 paid orders from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1931]
+2025-10-05 20:14:12,108 INFO: Clearing order 2 from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1934]
+2025-10-05 20:14:12,143 INFO: Clearing order 4 from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1934]
+2025-10-05 20:14:12,176 INFO: Committing clearing of 2 orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1940]
+2025-10-05 20:14:12,283 INFO: Commit successful [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1942]
+2025-10-05 20:14:12,286 INFO: Cashier Cashier2 Branch1 cleared 2 paid waiter orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1954]
+2025-10-05 20:14:16,644 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 20:14:16,644 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 20:14:16,648 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 20:14:16,735 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 20:14:38,956 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 20:14:38,956 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 20:14:38,956 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 20:14:39,028 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 20:15:03,652 INFO: User logged out: cashier1_2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 20:15:12,157 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:15:12,916 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 20:15:49,436 INFO: User logged out: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 20:16:00,321 INFO: Login attempt for username: waiter2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:16:01,318 INFO: Successful login for user: waiter2 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 20:16:52,359 INFO: User logged out: waiter2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 20:16:55,679 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:16:56,364 WARNING: Failed login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:55]
+2025-10-05 20:17:05,359 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:17:07,027 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 20:17:52,991 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 20:17:52,992 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 20:17:52,994 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 20:17:53,110 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 20:18:42,083 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 20:18:42,083 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 20:18:42,083 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 20:18:42,175 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 20:19:09,398 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 20:19:09,398 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 20:19:09,398 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 20:19:09,483 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 20:20:27,938 INFO: Order ORD-20251005-0SLO marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2241]
+2025-10-05 20:20:28,801 INFO: Order ORD-20251005-5U0N marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2241]
+2025-10-05 20:20:49,381 INFO: User logged out: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 20:20:55,733 INFO: Login attempt for username: waiter2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:20:56,590 INFO: Successful login for user: waiter2 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 20:21:09,839 INFO: User logged out: cashier1_2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 20:21:46,003 INFO: Login attempt for username: cashier1_2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:21:46,767 INFO: Successful login for user: cashier1_2 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 20:21:57,272 INFO: User logged out: cashier1_2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 20:22:02,544 INFO: Login attempt for username: cashier2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:22:03,320 INFO: Successful login for user: cashier2_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 20:22:35,383 INFO: Clear waiter requests called by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1893]
+2025-10-05 20:22:35,387 INFO: Found 2 waiter orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1915]
+2025-10-05 20:22:35,388 INFO: Starting to clear 2 paid orders from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1931]
+2025-10-05 20:22:35,389 INFO: Clearing order 5 from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1934]
+2025-10-05 20:22:35,390 INFO: Clearing order 6 from waiter requests [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1934]
+2025-10-05 20:22:35,391 INFO: Committing clearing of 2 orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1940]
+2025-10-05 20:22:35,503 INFO: Commit successful [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1942]
+2025-10-05 20:22:35,505 INFO: Cashier Cashier1 Branch1 cleared 2 paid waiter orders [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:1954]
+2025-10-05 20:23:11,848 INFO: Order ORD-20251005-P4LJ marked as paid by Cashier1 Branch2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2241]
+2025-10-05 20:23:44,750 INFO: User logged out: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 20:23:50,004 INFO: Login attempt for username: admin2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:23:50,744 INFO: Successful login for user: admin2 (Role: branch_admin) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-05 20:29:51,319 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-05 20:29:51,319 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-05 20:29:51,319 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-05 20:29:51,428 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-05 20:37:07,198 INFO: Order ORD-20251005-2JAQ marked as paid by Cashier1 Branch2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2241]
+2025-10-05 20:37:58,729 INFO: User logged out: waiter2 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-05 20:38:05,493 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-05 20:38:06,281 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 03:05:57,579 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 03:05:57,579 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 03:05:57,579 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 03:05:57,705 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 03:17:43,398 INFO: User logged out: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 03:17:44,902 INFO: Login attempt for username: waiter2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 03:17:44,907 WARNING: Failed login attempt for username: waiter2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:55]
+2025-10-06 03:17:46,107 INFO: Login attempt for username: waiter2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 03:17:46,107 WARNING: Failed login attempt for username: waiter2_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:55]
+2025-10-06 03:20:34,756 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 03:20:35,998 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 03:21:34,509 INFO: User logged out: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 03:21:41,713 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 03:21:42,619 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 03:23:17,280 INFO: User logged out: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 03:23:23,013 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 03:23:23,960 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 03:29:10,238 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 03:29:11,009 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 03:39:45,108 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 03:39:54,537 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 03:39:55,055 WARNING: Failed login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:55]
+2025-10-06 03:40:10,691 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 03:40:11,206 WARNING: Failed login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:55]
+2025-10-06 03:40:25,747 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 03:40:26,528 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 03:46:54,192 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 03:46:54,193 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 03:46:54,194 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 03:46:54,364 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 03:48:52,437 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 03:48:52,454 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 03:48:52,478 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 03:48:52,669 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 03:51:22,800 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 03:51:22,803 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 03:51:22,804 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 03:51:23,060 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 03:52:12,330 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 03:52:12,330 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 03:52:12,330 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 03:52:12,472 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 04:12:16,673 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 04:12:16,673 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 04:12:16,673 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 04:12:16,797 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 04:12:50,430 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 04:12:50,430 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 04:12:50,436 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 04:12:50,563 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 04:16:22,786 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 04:16:22,786 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 04:16:22,786 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 04:16:22,923 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 04:21:40,987 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 04:21:41,495 WARNING: Failed login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:55]
+2025-10-06 04:21:54,592 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 04:21:55,904 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 04:26:27,232 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 04:26:27,233 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 04:26:27,234 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 04:26:27,363 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 04:29:07,269 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 04:29:08,473 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 04:35:17,403 INFO: User logged out: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 04:39:58,791 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 04:40:00,829 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 04:43:53,927 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 04:43:53,927 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 04:43:53,927 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 04:43:54,105 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 04:44:26,475 INFO: Order ORD-20251006-BQV1 marked as paid by Cashier1 Branch1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\pos\views.py:2241]
+2025-10-06 04:52:36,868 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 04:52:36,871 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 04:52:36,871 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 04:52:36,997 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 19:38:05,825 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 19:38:05,827 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 19:38:05,828 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 19:38:05,958 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 19:40:45,415 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 19:40:48,068 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 19:42:24,056 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 19:42:32,452 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 19:42:33,504 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 19:49:52,237 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 19:49:52,237 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 19:49:52,237 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 19:49:52,349 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 19:49:54,907 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 19:49:54,907 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 19:49:54,907 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 19:49:55,007 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 20:15:17,429 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 20:15:17,431 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 20:15:17,431 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 20:15:17,524 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 20:15:19,454 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 20:15:19,455 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 20:15:19,457 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 20:15:19,559 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 20:40:06,935 INFO: User logged out: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 20:40:10,323 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 20:40:11,073 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 20:41:14,784 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 20:41:21,614 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 20:41:22,540 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 20:42:11,985 INFO: User logged out: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 20:42:20,245 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 20:42:21,047 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 20:44:53,185 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 20:44:54,215 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 20:48:31,728 INFO: User logged out: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 20:48:35,728 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 20:48:36,545 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 20:49:16,259 INFO: User logged out: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 20:49:22,103 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 20:49:22,943 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 20:50:49,936 INFO: User logged out: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 20:50:57,042 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 20:50:57,951 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 20:54:26,611 INFO: User logged out: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 20:54:47,689 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 20:54:51,626 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 20:54:52,472 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 20:55:11,053 INFO: User logged out: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 20:55:13,162 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 20:55:13,939 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 20:55:29,148 INFO: User logged out: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 20:55:32,155 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 20:55:32,875 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 20:56:01,241 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 20:56:02,243 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 21:02:10,303 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 21:02:13,381 INFO: Login attempt for username: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 21:02:14,098 INFO: Successful login for user: waiter1 (Role: waiter) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 21:02:23,643 INFO: User logged out: waiter1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 21:02:27,664 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 21:02:28,399 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 21:03:05,950 INFO: User logged out: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 21:03:09,041 INFO: Login attempt for username: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 21:03:09,999 INFO: Successful login for user: superadmin (Role: super_user) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 21:06:53,743 INFO: User logged out: superadmin [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 21:06:56,671 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 21:06:57,641 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 21:07:42,911 INFO: User logged out: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 21:07:49,136 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 21:07:50,022 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 21:10:12,371 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 21:10:15,499 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 21:10:16,162 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 21:10:54,135 INFO: User logged out: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 21:10:56,301 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 21:10:57,335 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 21:11:02,534 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 21:11:19,758 INFO: Login attempt for username: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 21:11:20,518 INFO: Successful login for user: cashier1_1 (Role: cashier) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 21:17:29,034 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 21:17:29,036 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 21:17:29,061 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 21:17:29,215 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 21:38:26,158 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 21:38:26,159 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 21:38:26,161 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 21:38:26,248 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 21:43:27,961 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 21:43:27,962 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 21:43:27,964 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 21:43:28,096 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 21:43:44,263 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 21:43:44,264 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 21:43:44,265 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 21:43:44,365 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 21:44:08,132 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 21:44:08,133 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 21:44:08,134 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 21:44:08,241 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-06 21:59:44,459 INFO: User logged out: cashier1_1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:70]
+2025-10-06 21:59:48,612 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-06 21:59:49,302 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
+2025-10-06 22:05:15,266 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-06 22:05:15,267 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-06 22:05:15,268 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-06 22:05:15,387 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-07 00:14:16,736 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-07 00:14:16,737 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-07 00:14:16,738 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-07 00:14:16,849 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-07 00:14:18,857 INFO: Restaurant POS application startup [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:150]
+2025-10-07 00:14:18,858 INFO: Log level set to: INFO [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:151]
+2025-10-07 00:14:18,859 INFO: Debug mode: False [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:152]
+2025-10-07 00:14:18,955 INFO: Database already initialized with data [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\__init__.py:100]
+2025-10-07 00:14:23,809 INFO: Login attempt for username: admin1 [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:20]
+2025-10-07 00:14:25,268 INFO: Successful login for user: admin1 (Role: branch_admin) [in C:\Users\Edgar\Desktop\pos\restaurantPOS - Copy (37)\app\auth\views.py:45]
