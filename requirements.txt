@@ -10,7 +10,7 @@ Werkzeug==2.3.6
 # WebSocket support
 python-socketio==5.11.0
 python-engineio==4.9.0
-
+psycopg2
 # Production server with async support
 gunicorn==22.0.0
 eventlet
