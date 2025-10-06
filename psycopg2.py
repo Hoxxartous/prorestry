@@ -45,6 +45,35 @@ except ImportError:
         def register_default_jsonb(conn_or_curs=None, globally=False, loads=None):
             # JSONB registration compatibility - psycopg v3 handles this automatically
             pass
+        
+        @staticmethod
+        def HstoreAdapter(dict_obj):
+            # Hstore adapter compatibility - psycopg v3 handles this automatically
+            return dict_obj
+        
+        @staticmethod
+        def register_hstore(conn_or_curs=None, globally=False, unicode=False):
+            # Hstore registration compatibility - psycopg v3 handles this automatically
+            pass
+        
+        @staticmethod
+        def Json(obj, dumps=None):
+            # JSON wrapper compatibility
+            return obj
+        
+        @staticmethod
+        def execute_batch(cur, sql, argslist, template=None, page_size=100):
+            # Batch execution compatibility - basic implementation
+            for args in argslist:
+                cur.execute(sql, args)
+        
+        @staticmethod
+        def execute_values(cur, sql, argslist, template=None, page_size=100, fetch=False):
+            # Values execution compatibility - basic implementation
+            for args in argslist:
+                cur.execute(sql, args)
+            if fetch:
+                return cur.fetchall()
     
     class extensions:
         # Use string constants instead of enum values
