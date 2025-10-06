@@ -7,7 +7,7 @@ Handles data migration and PostgreSQL-specific optimizations
 import os
 import sys
 import sqlite3
-import psycopg2
+import psycopg
 import logging
 from urllib.parse import urlparse
 from datetime import datetime
@@ -45,7 +45,7 @@ def get_database_connections():
         logger.info(f"Connected to SQLite database: {sqlite_path}")
         
         # Connect to PostgreSQL
-        postgres_conn = psycopg2.connect(postgres_url)
+        postgres_conn = psycopg.connect(postgres_url)
         logger.info("Connected to PostgreSQL database")
         
         return sqlite_conn, postgres_conn
