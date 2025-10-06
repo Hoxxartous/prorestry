@@ -13,12 +13,12 @@ cpu_cores = multiprocessing.cpu_count()
 # Formula: (CPU cores * 4) for I/O-bound + async worker class
 workers = max(cpu_cores * 4, 4)  # Minimum 4 workers, scale with cores
 
-# Worker class - gevent for maximum async performance and WebSocket support
-# gevent is generally faster than eventlet for high-concurrency scenarios
-worker_class = "gevent"
+# Worker class - eventlet for async performance and WebSocket support
+# eventlet provides excellent compatibility and async performance
+worker_class = "eventlet"
 
 # Worker connections - maximum simultaneous clients per worker
-# With gevent, we can handle many more concurrent connections
+# With eventlet, we can handle many concurrent connections
 worker_connections = 2000  # Increased for maximum concurrency
 
 # Timeout settings optimized for restaurant POS
