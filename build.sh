@@ -13,11 +13,10 @@ pip install -r requirements.txt
 
 # Verify PostgreSQL driver installation
 echo "🔍 Verifying PostgreSQL driver..."
-python -c "import psycopg2; print('✅ PostgreSQL driver (psycopg2) installed successfully')"
+python -c "import psycopg; print('✅ PostgreSQL driver (psycopg) installed successfully')"
 
-# Verify gevent installation for async performance
+# Verify eventlet installation for async performance
 echo "🔍 Verifying async libraries..."
-python -c "import gevent; print('✅ Gevent installed successfully')"
 python -c "import eventlet; print('✅ Eventlet installed successfully')"
 
 # Set up environment for production
