@@ -187,7 +187,7 @@ class MenuItem(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Visual customization
-    card_color = db.Column(db.String(7), default='transparent')
+    card_color = db.Column(db.String(20), default='transparent')
     size_flag = db.Column(db.String(10), default='')
     portion_type = db.Column(db.String(20), default='')
     visual_priority = db.Column(db.String(10), default='')
