@@ -16,6 +16,11 @@ except ImportError:
     # Map psycopg2 functions to psycopg equivalents
     connect = psycopg.connect
     
+    # DB API 2.0 required attributes
+    paramstyle = 'pyformat'
+    threadsafety = 2
+    apilevel = '2.0'
+    
     # Create compatibility classes and functions
     class extras:
         @staticmethod
