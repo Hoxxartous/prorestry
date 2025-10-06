@@ -164,7 +164,7 @@ Warning: High response times detected
 
 ```bash
 # Check database connection
-python -c "import psycopg2; print('PostgreSQL OK')"
+python -c "import psycopg; print('PostgreSQL OK')"
 
 # Verify environment
 python -c "import os; print(os.environ.get('DATABASE_URL', 'Not set'))"
