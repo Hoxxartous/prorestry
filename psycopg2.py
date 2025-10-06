@@ -27,13 +27,23 @@ except ImportError:
             return dict_row
     
     class extensions:
-        ISOLATION_LEVEL_AUTOCOMMIT = psycopg.IsolationLevel.AUTOCOMMIT
-        ISOLATION_LEVEL_READ_COMMITTED = psycopg.IsolationLevel.READ_COMMITTED
-        ISOLATION_LEVEL_SERIALIZABLE = psycopg.IsolationLevel.SERIALIZABLE
+        # Use string constants instead of enum values
+        ISOLATION_LEVEL_AUTOCOMMIT = 'autocommit'
+        ISOLATION_LEVEL_READ_COMMITTED = 'read_committed'
+        ISOLATION_LEVEL_SERIALIZABLE = 'serializable'
         
         @staticmethod
         def set_isolation_level(conn, level):
-            conn.isolation_level = level
+            # Map string levels to psycopg IsolationLevel enum
+            level_map = {
+                'autocommit': psycopg.IsolationLevel.AUTOCOMMIT,
+                'read_committed': psycopg.IsolationLevel.READ_COMMITTED,
+                'serializable': psycopg.IsolationLevel.SERIALIZABLE
+            }
+            if level in level_map:
+                conn.isolation_level = level_map[level]
+            else:
+                conn.isolation_level = level
     
     # Map common exceptions
     Error = psycopg.Error
@@ -49,5 +59,7 @@ except ImportError:
     class pool:
         @staticmethod
         def SimpleConnectionPool(*args, **kwargs):
-            # Basic pool implementation
-            return psycopg.ConnectionPool(*args, **kwargs)
+            # Return a simple connection function for basic compatibility
+            def get_connection():
+                return psycopg.connect(*args, **kwargs)
+            return get_connection
