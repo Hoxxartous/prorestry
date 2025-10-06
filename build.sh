@@ -13,7 +13,18 @@ pip install -r requirements.txt
 
 # Verify PostgreSQL driver installation
 echo "🔍 Verifying PostgreSQL driver..."
-python -c "import psycopg; print('✅ PostgreSQL driver (psycopg) installed successfully')"
+python -c "
+try:
+    import psycopg2
+    print('✅ PostgreSQL driver (psycopg2) installed successfully')
+except ImportError:
+    try:
+        import psycopg
+        print('✅ PostgreSQL driver (psycopg) installed successfully')
+    except ImportError:
+        print('❌ No PostgreSQL driver found')
+        exit(1)
+"
 
 # Verify eventlet installation for async performance
 echo "🔍 Verifying async libraries..."
