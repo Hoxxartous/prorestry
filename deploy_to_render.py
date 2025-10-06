@@ -40,10 +40,9 @@ def setup_environment():
 def create_app():
     """Create Flask application for deployment"""
     from app import create_app as app_factory
-    from config import config
     
-    config_name = os.environ.get('FLASK_ENV', 'production')
-    app = app_factory(config_name)
+    # Use default config (will use FLASK_ENV environment variable)
+    app = app_factory()
     
     return app
 
@@ -77,8 +76,8 @@ def setup_database():
             logger.info("🚀 Applying database migrations...")
             upgrade()
             
-            # Create initial data if needed
-            create_initial_data(db)
+            # Create initial data using comprehensive multi-branch initialization
+            create_comprehensive_initial_data(app)
             
             logger.info("✅ Database setup completed successfully!")
             
@@ -86,76 +85,34 @@ def setup_database():
             logger.error(f"❌ Database setup failed: {e}")
             sys.exit(1)
 
-def create_initial_data(db):
-    """Create initial data for the restaurant POS system"""
-    logger.info("🏪 Creating initial restaurant data...")
+def create_comprehensive_initial_data(app):
+    """Create comprehensive initial data using the multi-branch initialization"""
+    logger.info("🏪 Creating comprehensive restaurant data...")
     
     try:
-        from app.models import Role, Branch, User, Category, MenuItem
+        # Import the comprehensive initialization function
+        from app.db_init import init_multibranch_db
         
-        # Create roles if they don't exist
-        roles = ['SUPER_ADMIN', 'ADMIN', 'CASHIER', 'WAITER']
-        for role_name in roles:
-            role = Role.query.filter_by(name=role_name).first()
-            if not role:
-                role = Role(name=role_name)
-                db.session.add(role)
-                logger.info(f"Created role: {role_name}")
+        # Run the comprehensive multi-branch initialization
+        init_multibranch_db(app)
         
-        # Create default branch if it doesn't exist
-        branch = Branch.query.filter_by(name='Main Branch').first()
-        if not branch:
-            branch = Branch(
-                name='Main Branch',
-                address='123 Restaurant Street',
-                phone='+974-1234-5678'
-            )
-            db.session.add(branch)
-            logger.info("Created default branch: Main Branch")
-        
-        db.session.commit()
-        
-        # Create super admin user if it doesn't exist
-        super_admin_role = Role.query.filter_by(name='SUPER_ADMIN').first()
-        admin_user = User.query.filter_by(username='admin').first()
-        
-        if not admin_user and super_admin_role:
-            admin_user = User(
-                username='admin',
-                email='admin@restaurant.com',
-                role_id=super_admin_role.id,
-                branch_id=branch.id,
-                is_active=True
-            )
-            admin_user.set_password('admin123')  # Change this password!
-            db.session.add(admin_user)
-            logger.info("Created default admin user (username: admin, password: admin123)")
-            logger.warning("⚠️  Please change the default admin password after first login!")
-        
-        # Create sample categories if none exist
-        if Category.query.count() == 0:
-            categories = [
-                {'name': 'Appetizers', 'description': 'Starter dishes'},
-                {'name': 'Main Courses', 'description': 'Main dishes'},
-                {'name': 'Beverages', 'description': 'Drinks and beverages'},
-                {'name': 'Desserts', 'description': 'Sweet treats'}
-            ]
-            
-            for cat_data in categories:
-                category = Category(
-                    name=cat_data['name'],
-                    description=cat_data['description'],
-                    branch_id=branch.id
-                )
-                db.session.add(category)
-                logger.info(f"Created category: {cat_data['name']}")
-        
-        db.session.commit()
-        logger.info("✅ Initial data created successfully!")
+        logger.info("✅ Comprehensive multi-branch data created successfully!")
+        logger.info("🏢 Created 5 branches with complete data:")
+        logger.info("   • Main Branch (MAIN)")
+        logger.info("   • City Center (CC01)")
+        logger.info("   • Villaggio (VIL1)")
+        logger.info("   • The Pearl (PRL1)")
+        logger.info("   • West Bay (WB01)")
+        logger.info("👥 Created users: superadmin, admin1-5, cashier1_1-2, waiter1-5")
+        logger.info("🍽️  Created complete menu with categories and items")
+        logger.info("🪑 Created tables for each branch")
+        logger.info("🚚 Created delivery companies")
+        logger.info("🔐 Default login: superadmin / SuperAdmin123!")
+        logger.warning("⚠️  Please change default passwords after first login!")
         
     except Exception as e:
-        logger.error(f"❌ Failed to create initial data: {e}")
-        db.session.rollback()
+        logger.error(f"❌ Failed to create comprehensive initial data: {e}")
+        raise
 
 def optimize_for_production():
     """Apply production optimizations"""
