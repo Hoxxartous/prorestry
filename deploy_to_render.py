@@ -73,16 +73,25 @@ def setup_database():
                 logger.info("📁 Initializing database migrations...")
                 init()
             
-            # Create migration if needed
-            logger.info("📝 Creating database migration...")
-            try:
-                flask_migrate(message='Deploy to PostgreSQL')
-            except Exception as e:
-                logger.warning(f"Migration creation warning: {e}")
+            # Check if database needs migration
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            existing_tables = inspector.get_table_names()
             
-            # Apply migrations
-            logger.info("🚀 Applying database migrations...")
-            upgrade()
+            if existing_tables:
+                logger.info("📊 Database tables already exist, skipping migration creation")
+                logger.info(f"   Found {len(existing_tables)} existing tables")
+            else:
+                # Create migration if needed
+                logger.info("📝 Creating database migration...")
+                try:
+                    flask_migrate(message='Deploy to PostgreSQL')
+                except Exception as e:
+                    logger.warning(f"Migration creation warning: {e}")
+                
+                # Apply migrations
+                logger.info("🚀 Applying database migrations...")
+                upgrade()
             
             # Create initial data using comprehensive multi-branch initialization
             create_comprehensive_initial_data(app)
