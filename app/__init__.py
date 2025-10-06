@@ -1,12 +1,20 @@
+import os
+import sys
+import logging
+from logging.handlers import RotatingFileHandler
+
+# PostgreSQL driver compatibility - prefer psycopg2-binary if available
+try:
+    import psycopg2
+except ImportError:
+    # Fallback to psycopg if psycopg2 not available
+    pass
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_socketio import SocketIO
 from config import Config
-import os
-import logging
-from logging.handlers import RotatingFileHandler
-import sys
 
 # Initialize extensions
 db = SQLAlchemy()
