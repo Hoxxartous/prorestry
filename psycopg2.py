@@ -30,6 +30,21 @@ except ImportError:
         @staticmethod
         def DictCursor():
             return dict_row
+        
+        @staticmethod
+        def register_uuid(oids=None, conn_or_curs=None):
+            # UUID registration compatibility - psycopg v3 handles this automatically
+            pass
+        
+        @staticmethod
+        def register_default_json(conn_or_curs=None, globally=False, loads=None):
+            # JSON registration compatibility - psycopg v3 handles this automatically
+            pass
+        
+        @staticmethod
+        def register_default_jsonb(conn_or_curs=None, globally=False, loads=None):
+            # JSONB registration compatibility - psycopg v3 handles this automatically
+            pass
     
     class extensions:
         # Use string constants instead of enum values
