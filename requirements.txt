@@ -16,8 +16,8 @@ gunicorn==21.2.0
 eventlet==0.35.2
 # gevent has Python 3.13 compatibility issues, using eventlet only
 
-# PostgreSQL database support
-psycopg2-binary==2.9.9
+# PostgreSQL database support - using psycopg (v3) for Python 3.13 compatibility
+psycopg[binary]==3.1.19
 SQLAlchemy==2.0.21
 
 # Connection pooling handled by SQLAlchemy
