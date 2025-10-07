@@ -23,31 +23,48 @@ def init_multibranch_db(app):
             app.logger.info("Database tables created successfully")
             
             # Check if data already exists - comprehensive check to prevent duplicates
-            if Branch.query.first() or User.query.first():
-                app.logger.info("Database already initialized, skipping initialization")
+            existing_branches = Branch.query.count()
+            existing_users = User.query.count()
+            
+            if existing_branches > 0 and existing_users > 0:
+                app.logger.info(f"Database already initialized (branches: {existing_branches}, users: {existing_users}), skipping initialization")
                 return
             
-            app.logger.info("Starting fresh multi-branch database initialization...")
+            app.logger.info(f"Partial initialization detected (branches: {existing_branches}, users: {existing_users}), continuing with missing data...")
             
-            # Create default branches
-            branches = create_default_branches()
-            app.logger.info(f"Created {len(branches)} branches")
+            app.logger.info("Starting multi-branch database initialization...")
             
-            # Commit branches first to get their IDs
-            db.session.commit()
+            # Create or get default branches
+            if existing_branches == 0:
+                branches = create_default_branches()
+                app.logger.info(f"Created {len(branches)} new branches")
+                # Commit branches first to get their IDs
+                db.session.commit()
+            else:
+                branches = Branch.query.all()
+                app.logger.info(f"Using {len(branches)} existing branches")
             
-            # Create super user
-            super_user = create_super_user(branches[0].id)
-            app.logger.info("Created super user")
+            # Create users if they don't exist
+            if existing_users == 0:
+                # Create super user
+                super_user = create_super_user(branches[0].id)
+                app.logger.info("Created super user")
+                
+                # Create sample users for demonstration
+                create_sample_users(branches)
+                app.logger.info("Created sample users")
+            else:
+                app.logger.info("Users already exist, skipping user creation")
             
-            # Create default data for each branch
+            # Create default data for each branch (if needed)
             for branch in branches:
-                create_branch_default_data(branch.id)
-                app.logger.info(f"Created default data for branch: {branch.name}")
-            
-            # Create sample users for demonstration
-            create_sample_users(branches)
-            app.logger.info("Created sample users")
+                # Check if branch already has data
+                existing_categories = Category.query.filter_by(branch_id=branch.id).count()
+                if existing_categories == 0:
+                    create_branch_default_data(branch.id)
+                    app.logger.info(f"Created default data for branch: {branch.name}")
+                else:
+                    app.logger.info(f"Branch {branch.name} already has data, skipping")
             
             # Final commit
             db.session.commit()
