@@ -12,20 +12,20 @@ workers = 2  # Fixed 2 workers for free plan stability
 # Worker class - eventlet for async performance and WebSocket support
 worker_class = "eventlet"
 
-# Worker connections - reduced for free plan
-# With eventlet, we can handle many concurrent connections but limit for free plan
-worker_connections = 500  # Reduced for free plan stability
+# Worker connections - minimal for 512MB RAM free plan
+# With eventlet, we can handle many concurrent connections but severely limit for free plan
+worker_connections = 100  # Minimal for 512MB RAM limit
 
 # Timeout settings optimized for restaurant POS
 timeout = 120  # Longer timeout for complex operations
 keepalive = 5   # Keep connections alive longer
 
 # Worker lifecycle management
-max_requests = 2000        # Handle more requests before recycling
-max_requests_jitter = 100  # Add randomness to prevent thundering herd
+max_requests = 500        # Recycle workers more frequently on free plan
+max_requests_jitter = 50  # Smaller jitter for free plan
 
-# Memory and performance optimizations
-preload_app = True         # Preload for better memory usage and faster startup
+# Memory and performance optimizations for FREE PLAN
+preload_app = True         # Load app before forking workers (saves memory)
 worker_tmp_dir = "/dev/shm"  # Use shared memory for better performance (Linux)
 
 # User and group to run as (for production)
