@@ -1,3 +1,7 @@
+# CRITICAL: Monkey patch eventlet BEFORE any other imports
+import eventlet
+eventlet.monkey_patch()
+
 import os
 import logging
 from app import create_app, socketio
