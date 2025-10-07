@@ -82,45 +82,70 @@ def create_app(config_class=Config):
     # Initialize database automatically on app startup
     def init_db():
         """Initialize database with multi-branch support automatically"""
-        try:
-            from sqlalchemy import inspect
-            inspector = inspect(db.engine)
-            existing_tables = inspector.get_table_names()
-            
-            # Check if database is completely empty or missing key tables
-            if not existing_tables or 'users' not in existing_tables or 'branches' not in existing_tables:
-                app.logger.info("Database not initialized or incomplete, starting automatic initialization...")
-                print("=" * 60)
-                print("FIRST TIME SETUP - INITIALIZING DATABASE...")
-                print("=" * 60)
+        max_retries = 3
+        retry_delay = 2
+        
+        for attempt in range(max_retries):
+            try:
+                app.logger.info(f"Database initialization attempt {attempt + 1}/{max_retries}")
                 
-                from app.db_init import init_multibranch_db
-                init_multibranch_db(app)
+                # Test basic database connection first
+                from sqlalchemy import text
+                db.session.execute(text("SELECT 1")).scalar()
+                app.logger.info("✅ Database connection successful")
                 
-                print("=" * 60)
-                print("DATABASE INITIALIZATION COMPLETED!")
-                print("Default Login Credentials:")
-                print("   Super Admin: superadmin / SuperAdmin123!")
-                print("   Branch Admin: admin1 / admin123")
-                print("   Cashier: cashier1_1 / cashier123")
-                print("=" * 60)
+                from sqlalchemy import inspect
+                inspector = inspect(db.engine)
+                existing_tables = inspector.get_table_names()
+                app.logger.info(f"Found {len(existing_tables)} existing tables: {existing_tables}")
                 
-            else:
-                # Double-check that we have actual data, not just empty tables
-                from app.models import Branch, User
-                if not Branch.query.first() and not User.query.first():
-                    app.logger.info("Tables exist but no data found, initializing data...")
-                    print("INITIALIZING DATA FOR EXISTING TABLES...")
+                # Check if database is completely empty or missing key tables
+                if not existing_tables or 'users' not in existing_tables or 'branches' not in existing_tables:
+                    app.logger.info("Database not initialized or incomplete, starting automatic initialization...")
+                    print("=" * 60)
+                    print("FIRST TIME SETUP - INITIALIZING DATABASE...")
+                    print("=" * 60)
+                    
                     from app.db_init import init_multibranch_db
                     init_multibranch_db(app)
-                    print("DATA INITIALIZATION COMPLETED!")
+                    
+                    print("=" * 60)
+                    print("DATABASE INITIALIZATION COMPLETED!")
+                    print("Default Login Credentials:")
+                    print("   Super Admin: superadmin / SuperAdmin123!")
+                    print("   Branch Admin: admin1 / admin123")
+                    print("   Cashier: cashier1_1 / cashier123")
+                    print("=" * 60)
+                    
                 else:
-                    app.logger.info("Database already initialized with data")
+                    # Double-check that we have actual data, not just empty tables
+                    from app.models import Branch, User
+                    branch_count = Branch.query.count()
+                    user_count = User.query.count()
+                    app.logger.info(f"Found {branch_count} branches and {user_count} users")
+                    
+                    if branch_count == 0 and user_count == 0:
+                        app.logger.info("Tables exist but no data found, initializing data...")
+                        print("INITIALIZING DATA FOR EXISTING TABLES...")
+                        from app.db_init import init_multibranch_db
+                        init_multibranch_db(app)
+                        print("DATA INITIALIZATION COMPLETED!")
+                    else:
+                        app.logger.info("Database already initialized with data")
                 
-        except Exception as e:
-            app.logger.error(f"Database initialization error: {str(e)}")
-            print(f"Database initialization failed: {str(e)}")
-            print("Please check your database configuration and try again.")
+                # If we get here, initialization was successful
+                break
+                
+            except Exception as e:
+                app.logger.error(f"Database initialization attempt {attempt + 1} failed: {str(e)}")
+                if attempt < max_retries - 1:
+                    app.logger.info(f"Retrying in {retry_delay} seconds...")
+                    import time
+                    time.sleep(retry_delay)
+                else:
+                    app.logger.error("All database initialization attempts failed")
+                    print(f"Database initialization failed after {max_retries} attempts: {str(e)}")
+                    print("Please check your database configuration and try again.")
     
     # Configure logging
     configure_logging(app)
