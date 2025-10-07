@@ -1,7 +1,7 @@
 # Ensure eventlet monkey patching happens first (for production)
 try:
     import eventlet
-    eventlet.monkey_patch(socket=True, dns=True, time=True, select=True, thread=False, os=False)
+    eventlet.monkey_patch(socket=True, time=True, select=True, thread=False, os=False)
 except ImportError:
     pass
 
