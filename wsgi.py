@@ -1,6 +1,6 @@
 # CRITICAL: Monkey patch eventlet BEFORE any other imports
 import eventlet
-eventlet.monkey_patch(socket=True, time=True, select=True, thread=False, os=False)
+eventlet.monkey_patch()
 
 import os
 import logging
@@ -37,9 +37,9 @@ def init_db():
 with app.app_context():
     init_db()
 
-# Expose the socketio app for Gunicorn
+# Expose the Flask app for Gunicorn (socketio wraps it automatically)
 # Gunicorn will use this when running with eventlet worker
-application = socketio
+application = app
 
 if __name__ == "__main__":
     # Development mode - use socketio.run() for WebSocket support
