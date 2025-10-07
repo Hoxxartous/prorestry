@@ -85,3 +85,61 @@ def test_login(username):
             'status': 'error',
             'error': str(e)
         }), 500
+
+@debug_bp.route('/init-db')
+def init_database():
+    """Manually initialize the database"""
+    try:
+        current_app.logger.info("Manual database initialization requested")
+        
+        # Check current state
+        from sqlalchemy import text, inspect
+        
+        # Test connection
+        db.session.execute(text("SELECT 1")).scalar()
+        
+        inspector = inspect(db.engine)
+        existing_tables = inspector.get_table_names()
+        
+        from app.models import Branch, User
+        branch_count = Branch.query.count() if 'branches' in existing_tables else 0
+        user_count = User.query.count() if 'users' in existing_tables else 0
+        
+        if branch_count > 0 or user_count > 0:
+            return jsonify({
+                'status': 'info',
+                'message': 'Database already initialized',
+                'branch_count': branch_count,
+                'user_count': user_count,
+                'tables': existing_tables
+            })
+        
+        # Initialize database
+        current_app.logger.info("Starting manual database initialization...")
+        from app.db_init import init_multibranch_db
+        init_multibranch_db(current_app)
+        
+        # Verify initialization
+        new_branch_count = Branch.query.count()
+        new_user_count = User.query.count()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Database initialized successfully',
+            'branch_count': new_branch_count,
+            'user_count': new_user_count,
+            'tables': inspector.get_table_names(),
+            'credentials': {
+                'superadmin': 'SuperAdmin123!',
+                'admin1': 'admin123',
+                'cashier1_1': 'cashier123'
+            }
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Manual database initialization failed: {e}")
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'message': 'Database initialization failed'
+        }), 500
