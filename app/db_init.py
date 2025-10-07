@@ -22,6 +22,62 @@ def init_multibranch_db(app):
             db.create_all()
             app.logger.info("Database tables created successfully")
             
+            # Fix menu_items schema if needed (PostgreSQL column size issue)
+            try:
+                from sqlalchemy import text
+                app.logger.info("🔧 Checking menu_items schema for PostgreSQL compatibility...")
+                
+                # Check all problematic columns
+                result = db.session.execute(text("""
+                    SELECT column_name, character_maximum_length 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'menu_items' 
+                    AND column_name IN ('card_color', 'size_flag', 'portion_type', 'visual_priority')
+                    ORDER BY column_name;
+                """)).fetchall()
+                
+                app.logger.info(f"Current column sizes: {[(r[0], r[1]) for r in result]}")
+                
+                # Check if any column needs fixing
+                needs_fix = any(r[1] and r[1] < 10 for r in result if r[1] is not None)
+                
+                if needs_fix or not result:
+                    app.logger.info("🔧 Fixing menu_items column sizes for PostgreSQL compatibility...")
+                    migrations = [
+                        "ALTER TABLE menu_items ALTER COLUMN card_color TYPE VARCHAR(20);",
+                        "ALTER TABLE menu_items ALTER COLUMN size_flag TYPE VARCHAR(10);", 
+                        "ALTER TABLE menu_items ALTER COLUMN portion_type TYPE VARCHAR(20);",
+                        "ALTER TABLE menu_items ALTER COLUMN visual_priority TYPE VARCHAR(10);"
+                    ]
+                    
+                    for migration in migrations:
+                        try:
+                            db.session.execute(text(migration))
+                            app.logger.info(f"✅ Applied: {migration}")
+                        except Exception as e:
+                            app.logger.warning(f"⚠️ Migration warning: {migration} - {str(e)}")
+                    
+                    db.session.commit()
+                    app.logger.info("✅ Menu items schema fixed successfully")
+                    
+                    # Verify the fix
+                    result_after = db.session.execute(text("""
+                        SELECT column_name, character_maximum_length 
+                        FROM information_schema.columns 
+                        WHERE table_name = 'menu_items' 
+                        AND column_name IN ('card_color', 'size_flag', 'portion_type', 'visual_priority')
+                        ORDER BY column_name;
+                    """)).fetchall()
+                    app.logger.info(f"Updated column sizes: {[(r[0], r[1]) for r in result_after]}")
+                else:
+                    app.logger.info("✅ Menu items schema is already correct")
+                    
+            except Exception as e:
+                app.logger.error(f"❌ Schema fix failed: {str(e)}")
+                db.session.rollback()
+                # Don't continue if schema fix fails - this is critical
+                raise e
+            
             # Check if data already exists - comprehensive check to prevent duplicates
             existing_branches = Branch.query.count()
             existing_users = User.query.count()
