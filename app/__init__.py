@@ -47,15 +47,18 @@ def create_app(config_class=Config):
     from app.auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
     
-    from app.admin import admin as admin_blueprint
-    app.register_blueprint(admin_blueprint, url_prefix='/admin')
-    
     from app.pos import pos as pos_blueprint
     app.register_blueprint(pos_blueprint, url_prefix='/pos')
     
-    # Register Super User blueprint for multi-branch management
+    from app.admin import admin as admin_blueprint
+    app.register_blueprint(admin_blueprint, url_prefix='/admin')
+    
     from app.superuser import superuser as superuser_blueprint
     app.register_blueprint(superuser_blueprint, url_prefix='/superuser')
+    
+    # Register debug blueprint (for troubleshooting)
+    from app.debug_routes import debug_bp
+    app.register_blueprint(debug_bp)
     
     # User loader for Flask-Login
     @login_manager.user_loader
