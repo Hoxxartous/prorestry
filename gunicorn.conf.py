@@ -5,16 +5,16 @@ import os
 bind = "0.0.0.0:" + str(os.environ.get('PORT', 8000))
 backlog = 2048
 
-# Calculate optimal workers based on CPU cores (reduced for stability)
+# Optimized for Render FREE PLAN - very limited resources
 cpu_cores = multiprocessing.cpu_count()
-workers = min(cpu_cores * 2, 16)  # 2 workers per core, max 16 for stability
+workers = 2  # Fixed 2 workers for free plan stability
 
 # Worker class - eventlet for async performance and WebSocket support
 worker_class = "eventlet"
 
-# Worker connections - maximum simultaneous clients per worker
-# With eventlet, we can handle many concurrent connections
-worker_connections = 2000  # Increased for maximum concurrency
+# Worker connections - reduced for free plan
+# With eventlet, we can handle many concurrent connections but limit for free plan
+worker_connections = 500  # Reduced for free plan stability
 
 # Timeout settings optimized for restaurant POS
 timeout = 120  # Longer timeout for complex operations
