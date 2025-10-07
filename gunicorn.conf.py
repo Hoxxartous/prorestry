@@ -5,16 +5,11 @@ import os
 bind = "0.0.0.0:" + str(os.environ.get('PORT', 8000))
 backlog = 2048
 
-# Calculate optimal worker count based on CPU cores and workload type
+# Calculate optimal workers based on CPU cores (reduced for stability)
 cpu_cores = multiprocessing.cpu_count()
-
-# For I/O-intensive applications like restaurant POS with WebSockets:
-# Use more workers to handle concurrent connections
-# Formula: (CPU cores * 4) for I/O-bound + async worker class
-workers = max(cpu_cores * 4, 4)  # Minimum 4 workers, scale with cores
+workers = min(cpu_cores * 2, 16)  # 2 workers per core, max 16 for stability
 
 # Worker class - eventlet for async performance and WebSocket support
-# eventlet provides excellent compatibility and async performance
 worker_class = "eventlet"
 
 # Worker connections - maximum simultaneous clients per worker
