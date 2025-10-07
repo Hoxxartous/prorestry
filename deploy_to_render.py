@@ -8,6 +8,7 @@ import os
 import sys
 import subprocess
 import logging
+import time
 
 # PostgreSQL driver compatibility - prefer psycopg2-binary if available
 try:
@@ -95,6 +96,9 @@ def setup_database():
             
             # Create initial data using comprehensive multi-branch initialization
             create_comprehensive_initial_data(app)
+            
+            # Ensure all data is committed
+            db.session.commit()
             
             logger.info("✅ Database setup completed successfully!")
             
@@ -192,12 +196,13 @@ def main():
         # Apply optimizations
         optimize_for_production()
         
+        # Small delay to ensure database commits are fully processed
+        time.sleep(2)
+        
         # Verify deployment
         if verify_deployment():
             logger.info("🎉 Deployment completed successfully!")
-            logger.info("🌐 Your Restaurant POS is ready for production!")
-            logger.info("📱 Access your application at your Render URL")
-            logger.info("🔐 Default login: admin / admin123 (please change!)")
+            logger.info("🌐 Your Restaurant POS is now live on Render!")
         else:
             logger.error("❌ Deployment verification failed")
             sys.exit(1)
