@@ -33,6 +33,17 @@ def login():
             
             user = User.query.filter_by(username=username).first()
             
+            # Debug logging
+            if user:
+                current_app.logger.info(f"User found: {user.username}, Active: {user.is_active}, Role: {user.role.value}")
+                password_valid = user.check_password(password)
+                current_app.logger.info(f"Password validation result: {password_valid}")
+            else:
+                current_app.logger.warning(f"User not found: {username}")
+                # Check if any users exist at all
+                user_count = User.query.count()
+                current_app.logger.info(f"Total users in database: {user_count}")
+            
             if user and user.check_password(password) and user.is_active:
                 login_user(user, remember=remember_me)
                 
