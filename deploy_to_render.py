@@ -153,20 +153,20 @@ def verify_deployment():
     
     with app.app_context():
         from app import db
-        from app.models import User, Role, Branch
+        from app.models import User, UserRole, Branch
         
         try:
             # Test database connection
             user_count = User.query.count()
-            role_count = Role.query.count()
             branch_count = Branch.query.count()
+            role_types = len([role for role in UserRole])
             
             logger.info(f"📊 Database verification:")
             logger.info(f"   • Users: {user_count}")
-            logger.info(f"   • Roles: {role_count}")
+            logger.info(f"   • Role types available: {role_types}")
             logger.info(f"   • Branches: {branch_count}")
             
-            if user_count > 0 and role_count > 0 and branch_count > 0:
+            if user_count > 0 and branch_count > 0:
                 logger.info("✅ Database verification passed!")
                 return True
             else:
