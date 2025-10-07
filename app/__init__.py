@@ -124,14 +124,14 @@ def create_app(config_class=Config):
                     user_count = User.query.count()
                     app.logger.info(f"Found {branch_count} branches and {user_count} users")
                     
-                    if branch_count == 0 and user_count == 0:
-                        app.logger.info("Tables exist but no data found, initializing data...")
-                        print("INITIALIZING DATA FOR EXISTING TABLES...")
+                    if branch_count == 0 or user_count == 0:
+                        app.logger.info(f"Incomplete data found (branches: {branch_count}, users: {user_count}), initializing missing data...")
+                        print("INITIALIZING MISSING DATA...")
                         from app.db_init import init_multibranch_db
                         init_multibranch_db(app)
                         print("DATA INITIALIZATION COMPLETED!")
                     else:
-                        app.logger.info("Database already initialized with data")
+                        app.logger.info(f"Database already initialized with data (branches: {branch_count}, users: {user_count})")
                 
                 # If we get here, initialization was successful
                 break
