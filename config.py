@@ -46,7 +46,8 @@ class Config:
                 'connect_args': {
                     'connect_timeout': 10,
                     'application_name': 'restaurant_pos',
-                    'options': '-c default_transaction_isolation=read_committed -c timezone=UTC'
+                    'options': '-c default_transaction_isolation=read_committed -c timezone=UTC',
+                    'sslmode': 'require'  # Fix SSL connection issues
                 },
                 
                 # Engine options for performance
