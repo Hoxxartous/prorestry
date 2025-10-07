@@ -1,7 +1,7 @@
 # Ensure eventlet monkey patching happens first (for production)
 try:
     import eventlet
-    eventlet.monkey_patch(socket=True, time=True, select=True, thread=False, os=False)
+    eventlet.monkey_patch()
 except ImportError:
     pass
 
@@ -63,6 +63,9 @@ def create_app(config_class=Config):
     # User loader for Flask-Login
     @login_manager.user_loader
     def load_user(user_id):
+        # Import User model inside the function to avoid circular imports
+        from app.models import User
+        
         # Add retry logic for SSL connection issues
         max_retries = 3
         for attempt in range(max_retries):
