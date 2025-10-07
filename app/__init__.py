@@ -1,3 +1,10 @@
+# Ensure eventlet monkey patching happens first (for production)
+try:
+    import eventlet
+    eventlet.monkey_patch()
+except ImportError:
+    pass
+
 import os
 import sys
 import logging
