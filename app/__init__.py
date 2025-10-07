@@ -1,7 +1,7 @@
 # Ensure eventlet monkey patching happens first (for production)
 try:
     import eventlet
-    eventlet.monkey_patch()
+    eventlet.monkey_patch(socket=True, dns=True, time=True, select=True, thread=False, os=False)
 except ImportError:
     pass
 
@@ -63,8 +63,21 @@ def create_app(config_class=Config):
     # User loader for Flask-Login
     @login_manager.user_loader
     def load_user(user_id):
-        from app.models import User
-        return User.query.get(int(user_id))
+        # Add retry logic for SSL connection issues
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                return User.query.get(int(user_id))
+            except Exception as e:
+                if attempt < max_retries - 1 and 'SSL error' in str(e):
+                    app.logger.warning(f"SSL error in user loader, retrying... ({attempt + 1}/{max_retries})")
+                    import time
+                    time.sleep(0.5)  # Brief delay before retry
+                    continue
+                else:
+                    app.logger.error(f"User loader failed after {max_retries} attempts: {e}")
+                    return None
+        return None
     
     # Context processors for templates
     @app.context_processor
