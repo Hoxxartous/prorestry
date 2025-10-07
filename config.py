@@ -32,22 +32,26 @@ class Config:
         cpu_cores = multiprocessing.cpu_count()
         
         if is_postgresql:
-            # PostgreSQL optimizations for maximum performance
+            # PostgreSQL optimizations for Render FREE PLAN (limited resources)
             return {
                 'poolclass': QueuePool,
-                'pool_size': cpu_cores * 4,           # 4 connections per CPU core
-                'max_overflow': cpu_cores * 8,        # 8 overflow connections per core
-                'pool_timeout': 30,                   # Connection timeout
-                'pool_recycle': 3600,                # Recycle connections every hour
-                'pool_pre_ping': True,               # Validate connections
-                'pool_reset_on_return': 'commit',    # Reset connections on return
+                'pool_size': 2,                      # Very small pool for free plan
+                'max_overflow': 3,                   # Limited overflow
+                'pool_timeout': 60,                  # Longer timeout for free plan
+                'pool_recycle': 1800,               # Recycle connections every 30 min
+                'pool_pre_ping': True,              # Validate connections (critical for SSL issues)
+                'pool_reset_on_return': 'commit',   # Reset connections on return
                 
-                # PostgreSQL-specific optimizations
+                # PostgreSQL-specific optimizations with SSL stability
                 'connect_args': {
-                    'connect_timeout': 10,
+                    'connect_timeout': 30,
                     'application_name': 'restaurant_pos',
-                    'options': '-c default_transaction_isolation=read_committed -c timezone=UTC'
-                    # Remove SSL mode to let PostgreSQL handle it automatically
+                    'options': '-c default_transaction_isolation=read_committed -c timezone=UTC',
+                    'sslmode': 'prefer',
+                    'sslcert': None,
+                    'sslkey': None,
+                    'sslrootcert': None,
+                    'target_session_attrs': 'read-write'
                 },
                 
                 # Engine options for performance
