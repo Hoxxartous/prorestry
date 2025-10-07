@@ -32,13 +32,13 @@ class Config:
         cpu_cores = multiprocessing.cpu_count()
         
         if is_postgresql:
-            # PostgreSQL optimizations for Render FREE PLAN (limited resources)
+            # PostgreSQL optimizations for Render FREE PLAN (512MB RAM total)
             return {
                 'poolclass': QueuePool,
-                'pool_size': 2,                      # Very small pool for free plan
-                'max_overflow': 3,                   # Limited overflow
-                'pool_timeout': 60,                  # Longer timeout for free plan
-                'pool_recycle': 1800,               # Recycle connections every 30 min
+                'pool_size': 1,                      # Minimal pool for 512MB RAM
+                'max_overflow': 1,                   # Very limited overflow
+                'pool_timeout': 90,                  # Longer timeout for slow free plan
+                'pool_recycle': 900,                # Recycle every 15 min (before sleep)
                 'pool_pre_ping': True,              # Validate connections (critical for SSL issues)
                 'pool_reset_on_return': 'commit',   # Reset connections on return
                 
