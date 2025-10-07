@@ -1,6 +1,6 @@
 # CRITICAL: Monkey patch eventlet BEFORE any other imports
 import eventlet
-eventlet.monkey_patch()
+eventlet.monkey_patch(socket=True, dns=True, time=True, select=True, thread=False, os=False)
 
 import os
 import logging
