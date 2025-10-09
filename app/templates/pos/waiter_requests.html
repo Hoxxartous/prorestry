@@ -206,14 +206,14 @@
 </div>
 
 <!-- Order Details Modal -->
-<div class="modal fade" id="orderDetailsModal" tabindex="-1">
+<div class="modal fade waiter-requests-modal" id="orderDetailsModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header waiter-requests-stats-card stats-primary">
                 <h5 class="modal-title">
                     <i class="bi bi-receipt me-2"></i>Order Details
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="orderDetailsContent">
                 <!-- Order details will be loaded here -->
@@ -433,6 +433,24 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Reload orders to reflect transfers
         loadOrders(1, true);
+    });
+    
+    // Listen for waiter order updates (when waiters add items to existing orders)
+    socket.on('waiter_order_updated', function(data) {
+        console.log('ISOLATION: Waiter order updated:', data);
+        
+        {% if current_user.role.name == 'CASHIER' %}
+            // Show notification about order update
+            showNotification(`Order #${data.order_number} updated by ${data.updater_name} - Table ${data.table_number}. New total: QAR ${data.new_total_amount.toFixed(2)}`, 'info');
+            
+            // Update the specific order card with updated icon
+            updateOrderCardForUpdate(data.order_id, data.new_total_amount, data.added_items_count);
+            
+            // Update statistics
+            updateStatistics();
+            
+            console.log(`ISOLATION: Order #${data.order_number} updated notification received`);
+        {% endif %}
     });
     
     // Load initial orders
@@ -710,6 +728,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Function to update order card when items are added
+    function updateOrderCardForUpdate(orderId, newTotalAmount, addedItemsCount) {
+        const orderCard = document.querySelector(`[data-order-id="${orderId}"]`);
+        if (orderCard) {
+            // Update total amount
+            const amountElement = orderCard.querySelector('.order-amount');
+            if (amountElement) {
+                amountElement.textContent = `QAR ${parseFloat(newTotalAmount).toFixed(2)}`;
+            }
+            
+            // Add update indicator icon
+            const orderNumber = orderCard.querySelector('.order-number');
+            if (orderNumber && !orderNumber.querySelector('.update-indicator')) {
+                const updateIcon = document.createElement('i');
+                updateIcon.className = 'bi bi-arrow-clockwise text-info ms-2 update-indicator';
+                updateIcon.title = `${addedItemsCount} items added`;
+                orderNumber.appendChild(updateIcon);
+            }
+            
+            // Add subtle animation to indicate update
+            orderCard.style.animation = 'pulse 1s ease-in-out';
+            setTimeout(() => {
+                orderCard.style.animation = '';
+            }, 1000);
+        }
+    }
+    
     // Function to mark order as paid
     function markOrderAsPaid(orderId) {
         fetch(`/pos/mark_order_paid/${orderId}`, {
@@ -736,7 +781,206 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to view order details
     function viewOrderDetails(orderId) {
-        window.open(`/pos/order_details/${orderId}`, '_blank');
+        // Load order details via AJAX and show in modal
+        fetch(`/pos/get_order_details/${orderId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Populate modal with order details
+                populateOrderDetailsModal(data.order);
+                
+                // Show the modal
+                const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+                modal.show();
+            } else {
+                showNotification('Error loading order details: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading order details:', error);
+            showNotification('Error loading order details', 'error');
+        });
+    }
+    
+    // Function to populate order details modal
+    function populateOrderDetailsModal(order) {
+        const modalContent = document.getElementById('orderDetailsContent');
+        
+        // Format dates
+        const createdAt = new Date(order.created_at).toLocaleString();
+        const paidAt = order.paid_at ? new Date(order.paid_at).toLocaleString() : null;
+        
+        // Build items HTML
+        let itemsHtml = '';
+        if (order.items && order.items.length > 0) {
+            itemsHtml = `
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Item</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-end">Price</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            order.items.forEach(item => {
+                itemsHtml += `
+                    <tr>
+                        <td>
+                            <div class="fw-bold">${item.menu_item_name}</div>
+                            ${item.special_requests ? `<small class="text-muted">${item.special_requests}</small>` : ''}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-primary">${item.quantity}</span>
+                        </td>
+                        <td class="text-end">QAR ${parseFloat(item.price).toFixed(2)}</td>
+                        <td class="text-end fw-bold">QAR ${(item.quantity * item.price).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            
+            itemsHtml += `
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="3" class="text-end">Total:</th>
+                                <th class="text-end text-success">QAR ${parseFloat(order.total_amount).toFixed(2)}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            `;
+        } else {
+            itemsHtml = '<p class="text-muted text-center">No items found in this order.</p>';
+        }
+        
+        // Status badge
+        let statusBadge = '';
+        if (order.status === 'paid') {
+            statusBadge = '<span class="badge bg-success">Paid</span>';
+        } else if (order.status === 'pending') {
+            statusBadge = '<span class="badge bg-warning">Pending</span>';
+        } else {
+            statusBadge = `<span class="badge bg-secondary">${order.status}</span>`;
+        }
+        
+        // Mark paid button (only for pending orders)
+        let markPaidButton = '';
+        if (order.status === 'pending' && order.can_mark_paid) {
+            markPaidButton = `
+                <div class="text-center mt-3">
+                    <button class="btn btn-success" onclick="markOrderAsPaidFromModal(${order.id})">
+                        <i class="bi bi-check-circle me-2"></i>Mark as Paid
+                    </button>
+                </div>
+            `;
+        }
+        
+        modalContent.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary mb-3">
+                        <i class="bi bi-info-circle me-2"></i>Order Information
+                    </h6>
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td><strong>Order Number:</strong></td>
+                            <td>#${order.order_number}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Status:</strong></td>
+                            <td>${statusBadge}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Table:</strong></td>
+                            <td>${order.table_number || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Created:</strong></td>
+                            <td>${createdAt}</td>
+                        </tr>
+                        ${paidAt ? `<tr><td><strong>Paid:</strong></td><td>${paidAt}</td></tr>` : ''}
+                        <tr>
+                            <td><strong>Total:</strong></td>
+                            <td class="text-success fw-bold">QAR ${parseFloat(order.total_amount).toFixed(2)}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-warning mb-3">
+                        <i class="bi bi-people me-2"></i>Staff Information
+                    </h6>
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td><strong>Created By:</strong></td>
+                            <td>
+                                <i class="bi bi-person-badge text-warning me-1"></i>
+                                ${order.creator_name}
+                            </td>
+                        </tr>
+                        ${order.assigned_cashier_name ? `
+                        <tr>
+                            <td><strong>Assigned To:</strong></td>
+                            <td>
+                                <i class="bi bi-person-check text-primary me-1"></i>
+                                ${order.assigned_cashier_name}
+                            </td>
+                        </tr>
+                        ` : ''}
+                        <tr>
+                            <td><strong>Branch:</strong></td>
+                            <td>
+                                <i class="bi bi-building text-info me-1"></i>
+                                ${order.branch_name}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <h6 class="text-success mb-3">
+                <i class="bi bi-basket me-2"></i>Order Items (${order.items ? order.items.length : 0})
+            </h6>
+            ${itemsHtml}
+            
+            ${markPaidButton}
+        `;
+    }
+    
+    // Function to mark order as paid from modal
+    function markOrderAsPaidFromModal(orderId) {
+        fetch(`/pos/mark_order_paid/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('orderDetailsModal'));
+                modal.hide();
+                
+                // Update order card and statistics
+                updateOrderCard(orderId, 'paid');
+                updateStatistics();
+            } else {
+                showNotification('Error marking order as paid: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error marking order as paid:', error);
+            showNotification('Error marking order as paid', 'error');
+        });
     }
     
     // Function to clear paid orders

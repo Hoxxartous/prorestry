@@ -878,7 +878,7 @@ function showInvoiceModal(orderId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                renderInvoice(data);
+                renderInvoice(data.order);  // Pass data.order instead of data
             } else {
                 modalContent.innerHTML = `
                     <div class="alert alert-danger">
@@ -927,7 +927,7 @@ function renderInvoice(orderData) {
     }
     
     // Count regular items (excluding special items)
-    const regularItemsCount = orderData.items.filter(item => !item.name.includes('طلبات خاصة')).length;
+    const regularItemsCount = orderData.items.filter(item => !item.menu_item_name.includes('طلبات خاصة')).length;
     
     // Format service type for prominent display
     let serviceDisplay = 'N/A';
@@ -990,8 +990,8 @@ function renderInvoice(orderData) {
                         ${orderData.items.map(item => `
                             <tr>
                                 <td style="border-bottom: 1px solid #000; padding: 3px 2px;">
-                                    ${item.name}
-                                    ${item.modifiers ? `<br><small>${item.modifiers}</small>` : ''}
+                                    ${item.menu_item_name}
+                                    ${item.special_requests ? `<br><small>${item.special_requests}</small>` : ''}
                                 </td>
                                 <td style="border-bottom: 1px solid #000; padding: 3px 2px;">${item.quantity}</td>
                                 <td style="border-bottom: 1px solid #000; padding: 3px 2px; text-align: right;">${item.unit_price.toFixed(2)} QAR</td>
@@ -1028,16 +1028,16 @@ function viewInvoice(orderId) {
             if (data.success) {
                 // Create invoice HTML
                 let itemsHtml = '';
-                data.items.forEach(item => {
+                data.order.items.forEach(item => {
                     // Build modifiers display
                     let modifiersHtml = '';
-                    if (item.modifiers && item.modifiers.trim()) {
-                        modifiersHtml = `<br><small class="text-muted">+ ${item.modifiers}</small>`;
+                    if (item.special_requests && item.special_requests.trim()) {
+                        modifiersHtml = `<br><small class="text-muted">+ ${item.special_requests}</small>`;
                     }
                     
                     itemsHtml += `
                         <tr>
-                            <td>${item.name}${modifiersHtml}</td>
+                            <td>${item.menu_item_name}${modifiersHtml}</td>
                             <td>${item.quantity}</td>
                             <td>${parseFloat(item.unit_price).toFixed(2)} QAR</td>
                             <td>${parseFloat(item.total_price).toFixed(2)} QAR</td>
@@ -1050,13 +1050,13 @@ function viewInvoice(orderId) {
                         <div class="invoice-header text-center mb-4">
                             <h3>Restaurant POS</h3>
                             <h4>Invoice</h4>
-                            <p>Order #${data.order_number}</p>
-                            <p>${new Date(data.created_at).toLocaleString()}</p>
+                            <p>Order #${data.order.order_number}</p>
+                            <p>${new Date(data.order.created_at).toLocaleString()}</p>
                         </div>
                         
                         <div class="mb-3">
-                            <p><strong>Cashier:</strong> ${data.cashier_name || 'N/A'}</p>
-                            <p><strong>Table:</strong> ${data.table_number || 'N/A'}</p>
+                            <p><strong>Cashier:</strong> ${data.order.cashier_name || 'N/A'}</p>
+                            <p><strong>Table:</strong> ${data.order.table_number || 'N/A'}</p>
                         </div>
                         
                         <div class="table-responsive mb-3">
@@ -1076,7 +1076,7 @@ function viewInvoice(orderId) {
                         </div>
                         
                         <div class="text-end mb-4">
-                            <h4>Total: ${parseFloat(data.total_amount).toFixed(2)} QAR</h4>
+                            <h4>Total: ${parseFloat(data.order.total_amount).toFixed(2)} QAR</h4>
                         </div>
                         
                         <div class="text-center">

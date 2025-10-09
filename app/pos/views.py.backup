@@ -45,12 +45,7 @@ def on_join(data):
             print(f"Cashier {current_user.get_full_name()} auto-joined branch room: {branch_room}")
     
     elif current_user.role == UserRole.WAITER:
-        # Waiters join their specific waiter room for their own order notifications
-        waiter_room = f'waiter_{current_user.id}'
-        join_room(waiter_room)
-        print(f"Waiter {current_user.get_full_name()} auto-joined room: {waiter_room}")
-        
-        # Also join branch room for general notifications (but not for new_order events from other waiters)
+        # Waiters join branch room for general notifications
         branch_room = f'branch_{current_user.branch_id}'
         if room != branch_room:  # Avoid duplicate join
             join_room(branch_room)
@@ -86,39 +81,6 @@ def index():
     # Get URL parameters for table pre-selection and return URL
     selected_table_id = request.args.get('table_id', type=int)
     return_to = request.args.get('return_to')
-    add_items = request.args.get('add_items') == 'true'  # Explicitly adding items to existing order
-    new_order = request.args.get('new_order') == 'true'  # Starting a new order (take order)
-    
-    # Check if this is an "Add Items" request (existing order)
-    existing_order = None
-    existing_order_items = []
-    
-    # Only load existing items if this is explicitly an "Add Items" request
-    if selected_table_id and add_items:
-        # Get the most recent PENDING order for this table
-        existing_order = Order.query.filter_by(
-            table_id=selected_table_id,
-            branch_id=current_user.branch_id,
-            status=OrderStatus.PENDING
-        ).order_by(Order.created_at.desc()).first()
-        
-        if existing_order:
-            # For "Add Items" functionality, we should NOT load existing items in the cart
-            # because this causes duplication. The waiter should start with a clean cart
-            # and only add NEW items to the existing order.
-            
-            notes = existing_order.notes or ''
-            has_added_items = '[ITEMS ADDED]' in notes
-            
-            if has_added_items:
-                print(f"DEBUG: Order has previous additions, starting with clean cart for new items only")
-            else:
-                print(f"DEBUG: First addition to order, starting with clean cart")
-            
-            # Start with empty cart - waiter will add only NEW items
-            existing_order_items = []
-    
-    # For "Take Order" (new_order=true), we start with empty cart even if there are old paid orders
     
     # Get active menu items and categories for current user's branch (automatically filtered)
     categories = filter_by_user_branch(
@@ -256,9 +218,7 @@ def index():
                          ui_prefs=ui_prefs,
                          item_colors=item_colors,
                          selected_table_id=selected_table_id,
-                         return_to=return_to,
-                         existing_order=existing_order,
-                         existing_order_items=existing_order_items)
+                         return_to=return_to)
 
 @pos.route('/save_item_customizations', methods=['POST'])
 def save_item_customizations():
@@ -882,7 +842,7 @@ def daily_report():
     elements.append(Spacer(1, 20))
     
     # Today's Performance
-    elements.append(Paragraph("[INFO] Today's Performance", heading_style))
+    elements.append(Paragraph("📊 Today's Performance", heading_style))
     today_data = [
         ['Metric', 'Value'],
         ['Orders Processed', str(today_orders)],
@@ -959,7 +919,7 @@ def daily_report():
         # Warning if there are pending orders
         if waiter_orders_pending > 0:
             warning_text = f"""
-            <b>[WARNING] WARNING:</b> You have {waiter_orders_pending} unpaid waiter orders!<br/>
+            <b>⚠️ WARNING:</b> You have {waiter_orders_pending} unpaid waiter orders!<br/>
             These orders must be processed or transferred before logout.
             """
             warning_style = ParagraphStyle(
@@ -1689,7 +1649,7 @@ def orders():
             )
         )
     elif current_user.role == UserRole.WAITER:
-        # Waiters can only see orders they created themselves
+        # Waiters can only see their own orders
         query = Order.query.filter_by(cashier_id=current_user.id, branch_id=current_user.branch_id)
     else:
         # Fallback - should not reach here due to earlier check
@@ -2080,38 +2040,9 @@ def create_order():
         items = request.json.get('items', [])
         service_type = request.json.get('service_type', 'on_table')
         delivery_company_id = request.json.get('delivery_company_id')
-        is_adding_items = request.json.get('is_adding_items', False)  # Flag to indicate adding to existing order
-        
-        # Debug logging
-        print(f"DEBUG: is_adding_items = {is_adding_items}")
-        print(f"DEBUG: existing_order_id = {request.json.get('existing_order_id')}")
-        print(f"DEBUG: table_id = {table_id}")
         
         if not items:
             return jsonify({'success': False, 'message': 'No items in order'}), 400
-        
-        # Check if this is adding items to an existing order
-        existing_order = None
-        existing_order_id = request.json.get('existing_order_id')
-        
-        if is_adding_items:
-            if existing_order_id:
-                # Use the specific order ID provided
-                existing_order = Order.query.filter_by(
-                    id=existing_order_id,
-                    branch_id=current_user.branch_id,
-                    status=OrderStatus.PENDING
-                ).first()
-            elif table_id:
-                # Fallback: Find the existing PENDING order for this table
-                existing_order = Order.query.filter_by(
-                    table_id=table_id,
-                    branch_id=current_user.branch_id,
-                    status=OrderStatus.PENDING
-                ).order_by(Order.created_at.desc()).first()
-            
-            if not existing_order:
-                return jsonify({'success': False, 'message': 'No existing order found to update'}), 400
         
         # Calculate totals
         from decimal import Decimal
@@ -2224,63 +2155,28 @@ def create_order():
         
         service_type_enum = ServiceType(service_type) if service_type else ServiceType.ON_TABLE
         
-        # Handle existing order update vs new order creation
-        if existing_order:
-            # UPDATE EXISTING ORDER - Add new items to existing order
-            print(f"DEBUG: UPDATING existing order #{existing_order.order_number}")
-            order = existing_order
-            
-            # Add new total to existing total
-            order.total_amount += total_amount
-            
-            # Add new items to existing order
-            for item in order_items:
-                order.order_items.append(item)
-            
-            # Update notes to indicate items were added
-            add_note = f"\n[ITEMS ADDED] by {current_user.get_full_name()} at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}"
-            order.notes = (order.notes or '') + add_note
-            
-            # Store original item count for future reference
-            if '[ORIGINAL_ITEMS_COUNT]' not in (order.notes or ''):
-                original_count = order.order_items.count() - len(order_items)  # Subtract newly added items
-                order.notes += f"\n[ORIGINAL_ITEMS_COUNT:{original_count}]"
-            
-            # Keep the same order number and assigned cashier
-            order_number = order.order_number
-            assigned_cashier_id = order.assigned_cashier_id
-            
-            # Save updated order
-            db.session.commit()
-            
-            is_new_order = False
-        else:
-            # CREATE NEW ORDER
-            print(f"DEBUG: CREATING new order (is_adding_items={is_adding_items}, existing_order_found={existing_order is not None})")
-            order = Order(
-                order_number=order_number,
-                total_amount=total_amount,
-                cashier_id=current_user.id,  # Track who created the order (cashier or waiter)
-                assigned_cashier_id=assigned_cashier_id,  # Which cashier waiter assigned order to
-                branch_id=current_user.branch_id,  # Add branch_id from current user
-                table_id=table_id,
-                customer_id=customer_id,
-                service_type=service_type_enum,
-                delivery_company_id=delivery_company_id,
-                notes=order_notes,
-                status=order_status  # Set status based on user role
-            )
-            order.paid_at=datetime.utcnow() if order_status == OrderStatus.PAID else None
-            
-            # Add order items
-            for item in order_items:
-                order.order_items.append(item)
-            
-            # Save to database
-            db.session.add(order)
-            db.session.commit()
-            
-            is_new_order = True
+        order = Order(
+            order_number=order_number,
+            total_amount=total_amount,
+            cashier_id=current_user.id,  # Track who created the order (cashier or waiter)
+            assigned_cashier_id=assigned_cashier_id,  # Which cashier waiter assigned order to
+            branch_id=current_user.branch_id,  # Add branch_id from current user
+            table_id=table_id,
+            customer_id=customer_id,
+            service_type=service_type_enum,
+            delivery_company_id=delivery_company_id,
+            notes=order_notes,
+            status=order_status  # Set status based on user role
+        )
+        order.paid_at=datetime.utcnow() if order_status == OrderStatus.PAID else None
+        
+        # Add order items
+        for item in order_items:
+            order.order_items.append(item)
+        
+        # Save to database
+        db.session.add(order)
+        db.session.commit()
         
         # MULTI-CASHIER: Ensure session exists for tracking (but don't fail if it doesn't)
         # Only create sessions for cashiers, not waiters
@@ -2316,84 +2212,19 @@ def create_order():
         return_to = request.json.get('return_to')
         
         # Emit socket event for real-time order updates
-        if is_new_order:
-            # WAITER ISOLATION FIX: Different emission strategy based on user role
-            if current_user.role == UserRole.WAITER:
-                # For waiter orders: Send to waiter who created it (for their own orders page)
-                socketio.emit('new_order', {
-                    'order_id': order.id,
-                    'order_number': order_number,
-                    'table_id': order.table_id,
-                    'table_number': order.table.table_number if order.table else None,
-                    'branch_id': order.branch_id,
-                    'creator_name': current_user.get_full_name(),
-                    'creator_role': current_user.role.value,
-                    'total_amount': float(order.total_amount),
-                    'service_type': order.service_type.value if order.service_type else 'on_table',
-                    'is_waiter_order': True,
-                    'timestamp': datetime.utcnow().isoformat()
-                }, room=f'waiter_{current_user.id}')
-                
-                # ALSO send table status update to entire branch (for table management page)
-                if order.table_id:
-                    socketio.emit('table_status_update', {
-                        'table_id': order.table_id,
-                        'table_number': order.table.table_number if order.table else None,
-                        'status': 'busy',
-                        'order_id': order.id,
-                        'order_number': order_number,
-                        'branch_id': order.branch_id,
-                        'timestamp': datetime.utcnow().isoformat()
-                    }, room=f'branch_{order.branch_id}')
-                
-                print(f"ISOLATION: Waiter order #{order_number} new_order event sent to waiter_{current_user.id}, table status update sent to branch_{order.branch_id}")
-            else:
-                # For cashier orders: Broadcast to entire branch (existing behavior)
-                socketio.emit('new_order', {
-                    'order_id': order.id,
-                    'order_number': order_number,
-                    'table_id': order.table_id,
-                    'table_number': order.table.table_number if order.table else None,
-                    'branch_id': order.branch_id,
-                    'creator_name': current_user.get_full_name(),
-                    'creator_role': current_user.role.value,
-                    'total_amount': float(order.total_amount),
-                    'service_type': order.service_type.value if order.service_type else 'on_table',
-                    'is_waiter_order': False,
-                    'timestamp': datetime.utcnow().isoformat()
-                }, room=f'branch_{order.branch_id}')
-        else:
-            # Order updated event - same isolation logic as new_order
-            if current_user.role == UserRole.WAITER:
-                # For waiter order updates: Only notify the waiter who owns the order
-                socketio.emit('order_updated', {
-                    'order_id': order.id,
-                    'order_number': order_number,
-                    'table_id': order.table_id,
-                    'table_number': order.table.table_number if order.table else None,
-                    'branch_id': order.branch_id,
-                    'updater_name': current_user.get_full_name(),
-                    'updater_role': current_user.role.value,
-                    'new_total_amount': float(order.total_amount),
-                    'added_items_count': len(order_items),
-                    'timestamp': datetime.utcnow().isoformat()
-                }, room=f'waiter_{current_user.id}')
-                
-                print(f"ISOLATION: Waiter order #{order_number} update event sent only to waiter_{current_user.id}")
-            else:
-                # For cashier order updates: Broadcast to entire branch
-                socketio.emit('order_updated', {
-                    'order_id': order.id,
-                    'order_number': order_number,
-                    'table_id': order.table_id,
-                    'table_number': order.table.table_number if order.table else None,
-                    'branch_id': order.branch_id,
-                    'updater_name': current_user.get_full_name(),
-                    'updater_role': current_user.role.value,
-                    'new_total_amount': float(order.total_amount),
-                    'added_items_count': len(order_items),
-                    'timestamp': datetime.utcnow().isoformat()
-                }, room=f'branch_{order.branch_id}')
+        socketio.emit('new_order', {
+            'order_id': order.id,
+            'order_number': order_number,
+            'table_id': order.table_id,
+            'table_number': order.table.table_number if order.table else None,
+            'branch_id': order.branch_id,
+            'creator_name': current_user.get_full_name(),
+            'creator_role': current_user.role.value,
+            'total_amount': float(order.total_amount),
+            'service_type': order.service_type.value if order.service_type else 'on_table',
+            'is_waiter_order': current_user.role == UserRole.WAITER,
+            'timestamp': datetime.utcnow().isoformat()
+        }, room=f'branch_{order.branch_id}')
         
         # If this is a waiter order, emit specific waiter_request event to assigned cashier ONLY
         if current_user.role == UserRole.WAITER and assigned_cashier_id:
@@ -2403,36 +2234,20 @@ def create_order():
             # Validate that assigned cashier exists and is in same branch
             assigned_cashier = User.query.get(assigned_cashier_id)
             if assigned_cashier and assigned_cashier.branch_id == current_user.branch_id and assigned_cashier.role == UserRole.CASHIER:
-                if is_new_order:
-                    # New waiter request
-                    socketio.emit('new_waiter_request', {
-                        'order_id': order.id,
-                        'order_number': order_number,
-                        'table_id': order.table_id,
-                        'table_number': order.table.table_number if order.table else None,
-                        'branch_id': order.branch_id,
-                        'creator_name': current_user.get_full_name(),
-                        'assigned_cashier_name': assigned_cashier.get_full_name(),
-                        'total_amount': float(order.total_amount),
-                        'items_count': len(order_items),
-                        'timestamp': datetime.utcnow().isoformat()
-                    }, room=target_room)
-                else:
-                    # Order updated notification
-                    socketio.emit('waiter_order_updated', {
-                        'order_id': order.id,
-                        'order_number': order_number,
-                        'table_id': order.table_id,
-                        'table_number': order.table.table_number if order.table else None,
-                        'branch_id': order.branch_id,
-                        'updater_name': current_user.get_full_name(),
-                        'assigned_cashier_name': assigned_cashier.get_full_name(),
-                        'new_total_amount': float(order.total_amount),
-                        'added_items_count': len(order_items),
-                        'timestamp': datetime.utcnow().isoformat()
-                    }, room=target_room)
+                socketio.emit('new_waiter_request', {
+                    'order_id': order.id,
+                    'order_number': order_number,
+                    'table_id': order.table_id,
+                    'table_number': order.table.table_number if order.table else None,
+                    'branch_id': order.branch_id,
+                    'creator_name': current_user.get_full_name(),
+                    'assigned_cashier_name': assigned_cashier.get_full_name(),
+                    'total_amount': float(order.total_amount),
+                    'items_count': len(order_items),
+                    'timestamp': datetime.utcnow().isoformat()
+                }, room=target_room)
                 
-                print(f"ISOLATION: Waiter {'request' if is_new_order else 'update'} sent to specific cashier room: {target_room}")
+                print(f"ISOLATION: Waiter request sent to specific cashier room: {target_room}")
             else:
                 print(f"ERROR: Invalid cashier assignment - Order {order_number} not sent to any cashier")
         elif current_user.role == UserRole.WAITER and not assigned_cashier_id:
@@ -2440,11 +2255,10 @@ def create_order():
         
         return jsonify({
             'success': True, 
-            'message': 'Order updated successfully' if not is_new_order else 'Order created successfully',
+            'message': 'Order created successfully',
             'order_id': order.id,
             'order_number': order_number,
-            'return_to': return_to,
-            'is_update': not is_new_order
+            'return_to': return_to
         })
         
     except Exception as e:
@@ -2486,18 +2300,6 @@ def mark_order_paid(order_id):
             'table_number': order.table.table_number if order.table else None,
             'branch_id': order.branch_id
         }, room=f'branch_{order.branch_id}')
-        
-        # ALSO emit table status update (free) for table management page
-        if order.table_id:
-            socketio.emit('table_status_update', {
-                'table_id': order.table_id,
-                'table_number': order.table.table_number if order.table else None,
-                'status': 'free',
-                'order_id': order.id,
-                'order_number': order.order_number,
-                'branch_id': order.branch_id,
-                'timestamp': datetime.utcnow().isoformat()
-            }, room=f'branch_{order.branch_id}')
         
         return jsonify({
             'success': True,
@@ -2545,26 +2347,6 @@ def get_delivery_companies():
 
 # Order status management functions removed - orders are now simply created
 
-@pos.route('/order_details/<int:order_id>')
-@login_required
-@pos_access_required
-def order_details(order_id):
-    """View order details page (for direct access)"""
-    try:
-        order = Order.query.get_or_404(order_id)
-        
-        # Check branch access
-        if not current_user.is_super_user() and order.branch_id != current_user.branch_id:
-            flash('Access denied: Order not in your branch', 'error')
-            return redirect(url_for('pos.waiter_requests'))
-        
-        return render_template('pos/order_details.html', order=order)
-        
-    except Exception as e:
-        current_app.logger.error(f"Error loading order details page: {e}")
-        flash(f'Error loading order details: {str(e)}', 'error')
-        return redirect(url_for('pos.waiter_requests'))
-
 @pos.route('/get_order_details/<int:order_id>')
 @login_required
 def get_order_details(order_id):
@@ -2585,12 +2367,11 @@ def get_order_details(order_id):
         for item in order.order_items:
             items.append({
                 'id': item.id,
-                'menu_item_name': item.menu_item.name,  # Frontend expects menu_item_name
+                'name': item.menu_item.name,
                 'quantity': item.quantity,
-                'price': float(item.unit_price),  # Frontend expects price
                 'unit_price': float(item.unit_price),
                 'total_price': float(item.total_price),
-                'special_requests': item.notes  # Frontend expects special_requests
+                'modifiers': item.notes  # Include modifiers from notes field
             })
         
         # Get delivery company name safely
@@ -2600,22 +2381,15 @@ def get_order_details(order_id):
         
         return jsonify({
             'success': True,
-            'order': {
-                'id': order.id,
-                'order_number': order.order_number,
-                'total_amount': float(order.total_amount),
-                'created_at': order.created_at.isoformat(),
-                'paid_at': order.paid_at.isoformat() if order.paid_at else None,
-                'table_number': order.table.table_number if order.table else None,
-                'cashier_name': order.cashier.get_full_name() if order.cashier else None,
-                'creator_name': order.cashier.get_full_name() if order.cashier else 'Unknown',  # Frontend expects creator_name
-                'branch_name': order.branch.name if order.branch else 'Unknown',  # Frontend expects branch_name
-                'service_type': order.service_type.value if order.service_type else 'on_table',
-                'delivery_company': delivery_company_name,
-                'status': order.status.value,
-                'notes': order.notes,
-                'items': items
-            }
+            'id': order.id,
+            'order_number': order.order_number,
+            'total_amount': float(order.total_amount),
+            'created_at': order.created_at.isoformat(),
+            'table_number': order.table.table_number if order.table else None,
+            'cashier_name': order.cashier.get_full_name() if order.cashier else None,
+            'service_type': order.service_type.value if order.service_type else 'on_table',
+            'delivery_company': delivery_company_name,
+            'items': items
         })
         
     except Exception as e:

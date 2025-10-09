@@ -25,7 +25,7 @@ def init_multibranch_db(app):
             # Fix menu_items schema if needed (PostgreSQL column size issue)
             try:
                 from sqlalchemy import text
-                app.logger.info("[CONFIG] Checking menu_items schema for PostgreSQL compatibility...")
+                app.logger.info("🔧 Checking menu_items schema for PostgreSQL compatibility...")
                 
                 # Check all problematic columns
                 result = db.session.execute(text("""
@@ -42,7 +42,7 @@ def init_multibranch_db(app):
                 needs_fix = any(r[1] and r[1] < 10 for r in result if r[1] is not None)
                 
                 if needs_fix or not result:
-                    app.logger.info("[CONFIG] Fixing menu_items column sizes for PostgreSQL compatibility...")
+                    app.logger.info("🔧 Fixing menu_items column sizes for PostgreSQL compatibility...")
                     migrations = [
                         "ALTER TABLE menu_items ALTER COLUMN card_color TYPE VARCHAR(20);",
                         "ALTER TABLE menu_items ALTER COLUMN size_flag TYPE VARCHAR(10);", 
@@ -53,12 +53,12 @@ def init_multibranch_db(app):
                     for migration in migrations:
                         try:
                             db.session.execute(text(migration))
-                            app.logger.info(f"[OK] Applied: {migration}")
+                            app.logger.info(f"✅ Applied: {migration}")
                         except Exception as e:
-                            app.logger.warning(f"[WARNING] Migration warning: {migration} - {str(e)}")
+                            app.logger.warning(f"⚠️ Migration warning: {migration} - {str(e)}")
                     
                     db.session.commit()
-                    app.logger.info("[OK] Menu items schema fixed successfully")
+                    app.logger.info("✅ Menu items schema fixed successfully")
                     
                     # Verify the fix
                     result_after = db.session.execute(text("""
@@ -70,10 +70,10 @@ def init_multibranch_db(app):
                     """)).fetchall()
                     app.logger.info(f"Updated column sizes: {[(r[0], r[1]) for r in result_after]}")
                 else:
-                    app.logger.info("[OK] Menu items schema is already correct")
+                    app.logger.info("✅ Menu items schema is already correct")
                     
             except Exception as e:
-                app.logger.error(f"[ERROR] Schema fix failed: {str(e)}")
+                app.logger.error(f"❌ Schema fix failed: {str(e)}")
                 db.session.rollback()
                 # Don't continue if schema fix fails - this is critical
                 raise e

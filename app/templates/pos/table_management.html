@@ -107,12 +107,12 @@
                                         data-order-id="{{ table_info.order_info.id }}">
                                     <i class="bi bi-eye"></i> View Order
                                 </button>
-                                <a href="{{ url_for('pos.index') }}?table_id={{ table_info.table.id }}&return_to=table_management" 
+                                <a href="{{ url_for('pos.index') }}?table_id={{ table_info.table.id }}&return_to=table_management&add_items=true" 
                                    class="btn btn-sm btn-outline-success">
                                     <i class="bi bi-plus-circle"></i> Add Items
                                 </a>
                             {% else %}
-                                <a href="{{ url_for('pos.index') }}?table_id={{ table_info.table.id }}&return_to=table_management" 
+                                <a href="{{ url_for('pos.index') }}?table_id={{ table_info.table.id }}&return_to=table_management&new_order=true" 
                                    class="btn btn-primary">
                                     <i class="bi bi-plus-circle"></i> Take Order
                                 </a>
@@ -256,6 +256,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize Socket.IO for real-time updates
     const socket = io();
     
+    // Store branch ID for JavaScript comparisons
+    const currentBranchId = {{ current_user.branch_id }};
+    
     // Join branch room for real-time updates
     socket.emit('join', {room: 'branch_{{ current_user.branch_id }}'});
     
@@ -264,49 +267,93 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Order paid event received:', data);
         
         // Check if this affects our branch
-        if (data.branch_id === {{ current_user.branch_id }}) {
-            updateTableStatus(data.table_id, data.table_number);
+        if (data.branch_id === currentBranchId) {
+            updateTableStatus(data.table_id, data.table_number, 'free');
         }
     });
     
-    // Function to update table status when order is paid
-    function updateTableStatus(tableId, tableNumber) {
+    // Listen for table status updates (new orders making tables busy)
+    socket.on('table_status_update', function(data) {
+        console.log('Table status update event received:', data);
+        
+        // Check if this affects our branch
+        if (data.branch_id === currentBranchId) {
+            updateTableStatus(data.table_id, data.table_number, data.status);
+        }
+    });
+    
+    // Function to update table status (free or busy)
+    function updateTableStatus(tableId, tableNumber, status) {
         if (!tableId) return;
         
         // Find the table card
         const tableCard = document.querySelector(`[data-table-id="${tableId}"]`);
         if (tableCard) {
-            // Change from busy to free
-            if (tableCard.classList.contains('busy')) {
-                tableCard.classList.remove('busy');
-                tableCard.classList.add('free');
-                
-                // Update the card content to show as free
-                const cardBody = tableCard.querySelector('.card-body');
-                if (cardBody) {
-                    cardBody.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-table me-2"></i>Table ${tableNumber}
-                            </h5>
-                            <span class="badge bg-success">Free</span>
-                        </div>
-                        <p class="card-text text-muted">Available for new orders</p>
-                        <div class="table-actions mt-3">
-                            <a href="/pos/?table_id=${tableId}&return_to=table_management" 
-                               class="btn btn-primary">
-                                <i class="bi bi-plus-circle"></i> Take Order
-                            </a>
-                        </div>
-                    `;
+            if (status === 'free') {
+                // Change from busy to free
+                if (tableCard.classList.contains('busy')) {
+                    tableCard.classList.remove('busy');
+                    tableCard.classList.add('free');
+                    
+                    // Update the card content to show as free
+                    const cardBody = tableCard.querySelector('.card-body');
+                    if (cardBody) {
+                        cardBody.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-table me-2"></i>Table ${tableNumber}
+                                </h5>
+                                <span class="badge bg-success">Free</span>
+                            </div>
+                            <p class="card-text text-muted">Available for new orders</p>
+                            <div class="table-actions mt-3">
+                                <a href="/pos/?table_id=${tableId}&return_to=table_management" 
+                                   class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Take Order
+                                </a>
+                            </div>
+                        `;
+                    }
+                    
+                    // Show notification
+                    showNotification(`Table ${tableNumber} is now available for new orders!`, 'success');
                 }
-                
-                // Update table counts
-                updateTableCounts();
-                
-                // Show notification
-                showNotification(`Table ${tableNumber} is now available for new orders!`, 'success');
+            } else if (status === 'busy') {
+                // Change from free to busy
+                if (tableCard.classList.contains('free')) {
+                    tableCard.classList.remove('free');
+                    tableCard.classList.add('busy');
+                    
+                    // Update the card content to show as busy
+                    const cardBody = tableCard.querySelector('.card-body');
+                    if (cardBody) {
+                        cardBody.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-table me-2"></i>Table ${tableNumber}
+                                </h5>
+                                <span class="badge bg-warning">Busy</span>
+                            </div>
+                            <p class="card-text text-muted">Order in progress</p>
+                            <div class="table-actions mt-3">
+                                <a href="/pos/?table_id=${tableId}&add_items=true&return_to=table_management" 
+                                   class="btn btn-outline-primary me-2">
+                                    <i class="bi bi-plus"></i> Add Items
+                                </a>
+                                <button class="btn btn-outline-success" onclick="markTablePaid(${tableId})">
+                                    <i class="bi bi-check-circle"></i> Mark Paid
+                                </button>
+                            </div>
+                        `;
+                    }
+                    
+                    // Show notification
+                    showNotification(`Table ${tableNumber} now has an active order`, 'info');
+                }
             }
+            
+            // Update table counts
+            updateTableCounts();
         }
     }
     
@@ -388,8 +435,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Function to display order details in the modal
-    function displayOrderDetails(orderData) {
+    function displayOrderDetails(data) {
         const content = document.getElementById('orderDetailsContent');
+        const orderData = data.order; // Use the nested order object
         
         // Format the creation date
         const createdDate = new Date(orderData.created_at).toLocaleString();
@@ -400,8 +448,8 @@ document.addEventListener('DOMContentLoaded', function() {
             itemsHtml += `
                 <div class="row align-items-center py-2 border-bottom">
                     <div class="col-6">
-                        <div class="fw-bold">${item.name}</div>
-                        ${item.modifiers ? `<small class="text-muted">${item.modifiers}</small>` : ''}
+                        <div class="fw-bold">${item.menu_item_name}</div>
+                        ${item.special_requests ? `<small class="text-muted">${item.special_requests}</small>` : ''}
                     </div>
                     <div class="col-2 text-center">
                         <span class="badge bg-secondary">${item.quantity}</span>

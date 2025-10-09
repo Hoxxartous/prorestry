@@ -8,6 +8,11 @@ import pytz
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
+    # Clear any stale session data on login page access
+    if not current_user.is_authenticated and request.method == 'GET':
+        from flask import session
+        session.clear()
+    
     if current_user.is_authenticated:
         current_app.logger.info(f"Already authenticated user {current_user.username} attempted to access login page")
         return redirect(url_for('main.index'))
@@ -45,6 +50,11 @@ def login():
                 current_app.logger.info(f"Total users in database: {user_count}")
             
             if user and user.check_password(password) and user.is_active:
+                # Clear any existing session data before login
+                from flask import session
+                session.clear()
+                
+                # Login user with proper session management
                 login_user(user, remember=remember_me)
                 
                 # Update last login time

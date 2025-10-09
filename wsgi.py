@@ -37,9 +37,9 @@ def init_db():
 with app.app_context():
     init_db()
 
-# Expose the Flask app for Gunicorn (socketio wraps it automatically)
+# Expose the socketio app for Gunicorn
 # Gunicorn will use this when running with eventlet worker
-application = app
+application = socketio
 
 if __name__ == "__main__":
     # Development mode - use socketio.run() for WebSocket support

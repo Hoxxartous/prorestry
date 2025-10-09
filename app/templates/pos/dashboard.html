@@ -409,140 +409,270 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function viewOrder(orderId) {
+function showInvoiceModal(orderId) {
+    const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
+    const modalContent = document.getElementById('invoiceContent');
+    
+    // Show loading
+    modalContent.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading invoice...</p>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Fetch order details
     fetch(`/pos/get_order_details/${orderId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Create invoice HTML
-                let itemsHtml = '';
-                data.items.forEach(item => {
-                    itemsHtml += `
-                        <tr>
-                            <td>${item.name}</td>
-                            <td>${item.quantity}</td>
-                            <td>${parseFloat(item.unit_price).toFixed(2)} QAR</td>
-                            <td>${parseFloat(item.total_price).toFixed(2)} QAR</td>
-                        </tr>
-                    `;
-                });
-                
-                const invoiceHtml = `
-                    <div class="container invoice-container">
-                        <div class="invoice-header text-center mb-4">
-                            <h3>Restaurant POS</h3>
-                            <h4>Invoice</h4>
-                            <p>Order #${data.order_number}</p>
-                            <p>${new Date(data.created_at).toLocaleString()}</p>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <p><strong>Cashier:</strong> ${data.cashier_name || 'N/A'}</p>
-                            <p><strong>Table:</strong> ${data.table_number || 'N/A'}</p>
-                        </div>
-                        
-                        <div class="table-responsive mb-3">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Item</th>
-                                        <th>Qty</th>
-                                        <th>Price</th>
-                                        <th>Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${itemsHtml}
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <div class="text-end mb-4">
-                            <h4>Total: ${parseFloat(data.total_amount).toFixed(2)} QAR</h4>
-                        </div>
-                        
-                        <div class="text-center">
-                            <p class="small">Thank you for your business!</p>
-                        </div>
+                renderInvoice(data.order);
+            } else {
+                modalContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error loading invoice: ${data.message}
                     </div>
                 `;
-                
-                // Open invoice in new window for printing
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>Invoice - ${data.order_number}</title>
-                        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-                        <style>
-                            @media print {
-                                body {
-                                    font-size: 12px;
-                                    padding: 0;
-                                    margin: 0;
-                                }
-                                
-                                .invoice-container {
-                                    max-width: 80mm;
-                                    margin: 0 auto;
-                                }
-                                
-                                .btn, .no-print {
-                                    display: none !important;
-                                }
-                            }
-                            
-                            body {
-                                font-family: Arial, sans-serif;
-                            }
-                            
-                            .invoice-header {
-                                text-align: center;
-                                border-bottom: 2px solid #000;
-                                padding-bottom: 10px;
-                                margin-bottom: 15px;
-                            }
-                            
-                            .text-right {
-                                text-align: right;
-                            }
-                            
-                            .text-center {
-                                text-align: center;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="container invoice-container">
-                            ${invoiceHtml}
-                            <div class="text-center no-print mt-3">
-                                <button class="btn btn-primary" onclick="window.print()">
-                                    <i class="bi bi-printer"></i> Print Invoice
-                                </button>
-                                <button class="btn btn-secondary" onclick="window.close()">
-                                    <i class="bi bi-x-circle"></i> Close
-                                </button>
-                            </div>
-                        </div>
-                        <script>
-                            // Auto-print when page loads (for POS systems)
-                            window.onload = function() {
-                                window.print();
-                            }
-                        <\/script>
-                    </body>
-                    </html>
-                `);
-                printWindow.document.close();
-            } else {
-                alert('Error: ' + data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while loading order details');
+            modalContent.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Error loading invoice. Please try again.
+                </div>
+            `;
         });
 }
+
+function renderInvoice(orderData) {
+    // Format service type
+    let serviceInfo = '';
+    if (orderData.service_type) {
+        switch(orderData.service_type) {
+            case 'on_table':
+                serviceInfo = '<span class="badge bg-primary">On Table</span>';
+                break;
+            case 'take_away':
+                serviceInfo = '<span class="badge bg-warning">Take Away</span>';
+                break;
+            case 'delivery':
+                serviceInfo = '<span class="badge bg-info">Delivery</span>';
+                if (orderData.delivery_company) {
+                    serviceInfo += `<br><small class="text-muted">${orderData.delivery_company}</small>`;
+                }
+                break;
+            case 'card':
+                serviceInfo = '<span class="badge bg-success">Card Payment</span>';
+                break;
+            default:
+                serviceInfo = `<span class="badge bg-secondary">${orderData.service_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>`;
+        }
+    } else {
+        serviceInfo = '<span class="badge bg-secondary">N/A</span>';
+    }
+    
+    // Count regular items (excluding special items)
+    const regularItemsCount = orderData.items.filter(item => !item.menu_item_name.includes('طلبات خاصة')).length;
+    
+    // Format service type for prominent display
+    let serviceDisplay = 'N/A';
+    if (orderData.service_type) {
+        switch(orderData.service_type) {
+            case 'on_table':
+                serviceDisplay = '🍽️ ON TABLE';
+                break;
+            case 'take_away':
+                serviceDisplay = '📦 TAKE AWAY';
+                break;
+            case 'delivery':
+                serviceDisplay = '🚚 DELIVERY';
+                break;
+            case 'card':
+                serviceDisplay = '💳 CARD PAYMENT';
+                break;
+            default:
+                serviceDisplay = orderData.service_type.replace('_', ' ').toUpperCase();
+        }
+    }
+    
+    const invoiceContent = `
+        <div class="invoice-container" style="font-family: 'Courier New', monospace; max-width: 80mm;">
+            <div class="invoice-header" style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 10px;">
+                <h3>🍽️ Restaurant POS</h3>
+                <p><strong>Order #${orderData.order_number}</strong></p>
+                <p>${new Date(orderData.created_at).toLocaleString()}</p>
+                ${orderData.table_number ? `<p><strong>Table: ${orderData.table_number}</strong></p>` : ''}
+                ${orderData.cashier_name ? `<p><strong>Cashier:</strong> ${orderData.cashier_name}</p>` : ''}
+            </div>
+            
+            <!-- Prominent Service Type Display -->
+            <div style="background: #000; color: #fff; padding: 8px; margin: 10px 0; text-align: center; font-weight: bold; font-size: 16px; border: 2px solid #000;">
+                ${serviceDisplay}
+            </div>
+            
+            <!-- Delivery Company Info -->
+            ${orderData.service_type === 'delivery' && orderData.delivery_company ? 
+                `<div style="background: #f0f0f0; padding: 5px; margin: 5px 0; text-align: center; font-weight: bold; border: 1px solid #000;">
+                    📱 ${orderData.delivery_company}
+                </div>` : ''}
+            
+            <!-- Item Count -->
+            <div style="background: #e0e0e0; padding: 5px; margin: 5px 0; text-align: center; font-weight: bold; border: 1px solid #000;">
+                📋 ${regularItemsCount} REGULAR ITEMS
+            </div>
+            
+            <div class="invoice-items mt-3">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                    <thead>
+                        <tr>
+                            <th style="border-bottom: 1px solid #000; padding: 3px 2px; background: #f0f0f0; font-weight: bold;">Item</th>
+                            <th style="border-bottom: 1px solid #000; padding: 3px 2px; background: #f0f0f0; font-weight: bold;">Qty</th>
+                            <th style="border-bottom: 1px solid #000; padding: 3px 2px; background: #f0f0f0; font-weight: bold; text-align: right;">Price</th>
+                            <th style="border-bottom: 1px solid #000; padding: 3px 2px; background: #f0f0f0; font-weight: bold; text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${orderData.items.map(item => `
+                            <tr>
+                                <td style="border-bottom: 1px solid #000; padding: 3px 2px;">
+                                    ${item.menu_item_name}
+                                    ${item.special_requests ? `<br><small>${item.special_requests}</small>` : ''}
+                                </td>
+                                <td style="border-bottom: 1px solid #000; padding: 3px 2px;">${item.quantity}</td>
+                                <td style="border-bottom: 1px solid #000; padding: 3px 2px; text-align: right;">${item.unit_price.toFixed(2)} QAR</td>
+                                <td style="border-bottom: 1px solid #000; padding: 3px 2px; text-align: right;">${item.total_price.toFixed(2)} QAR</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-3" style="margin-top: 10px;">
+                <table style="width: 100%; margin-top: 10px;">
+                    <tr>
+                        <td style="font-weight: bold;">Total:</td>
+                        <td style="text-align: right; font-weight: bold;">${orderData.total_amount.toFixed(2)} QAR</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div style="text-align: center; margin-top: 15px;">
+                <p><strong>Thank you for your business!</strong></p>
+                <p>Visit us again soon.</p>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('invoiceContent').innerHTML = invoiceContent;
+}
+
+// Keep backward compatibility - redirect old function calls to new modal
+function viewOrder(orderId) {
+    showInvoiceModal(orderId);
+}
+
+// Print invoice functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const printInvoiceBtn = document.getElementById('printInvoiceBtn');
+    if (printInvoiceBtn) {
+        printInvoiceBtn.addEventListener('click', function() {
+            const invoiceContent = document.getElementById('invoiceContent').innerHTML;
+            
+            // Create a new window for printing
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Invoice</title>
+                    <style>
+                        body {
+                            font-family: 'Courier New', monospace;
+                            margin: 0;
+                            padding: 20px;
+                            background: white;
+                        }
+                        
+                        @media print {
+                            body {
+                                margin: 0;
+                                padding: 0;
+                            }
+                            
+                            .invoice-container {
+                                max-width: 80mm;
+                                margin: 0 auto;
+                            }
+                            
+                            .no-print {
+                                display: none;
+                            }
+                        }
+                        
+                        .invoice-container {
+                            max-width: 80mm;
+                            margin: 0 auto;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${invoiceContent}
+                    <div class="text-center no-print mt-3" style="margin-top: 20px;">
+                        <button onclick="window.print()" style="padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            🖨️ Print Invoice
+                        </button>
+                        <button onclick="window.close()" style="padding: 10px 20px; margin: 5px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            ❌ Close
+                        </button>
+                    </div>
+                    <script>
+                        // Auto-focus for better UX
+                        window.focus();
+                    </script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        });
+    }
+});
 </script>
+
+<!-- Invoice Modal (Same as Orders Page) -->
+<div class="modal fade" id="invoiceModal" tabindex="-1" aria-labelledby="invoiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="invoiceModalLabel">
+                    <i class="bi bi-receipt-cutoff me-2"></i>Order Invoice
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="invoiceContent">
+                <!-- Invoice content will be loaded here -->
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading invoice...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>Close
+                </button>
+                <button type="button" class="btn btn-primary" id="printInvoiceBtn">
+                    <i class="bi bi-printer me-2"></i>Print Invoice
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

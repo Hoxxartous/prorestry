@@ -36,9 +36,30 @@ def create_app(config_class=Config):
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Please log in to access this page.'
+    login_manager.login_message = 'Your session has expired. Please log in again.'
     login_manager.login_message_category = 'info'
+    login_manager.session_protection = 'strong'  # Strong session protection
     socketio.init_app(app, cors_allowed_origins="*")
+    
+    # Initialize session manager for better session handling
+    from app.session_manager import init_session_manager
+    init_session_manager(app)
+    
+    # Handle 401 Unauthorized errors globally
+    @app.errorhandler(401)
+    def handle_unauthorized(error):
+        """Handle 401 Unauthorized errors with session cleanup"""
+        from flask import session, redirect, url_for, flash, request
+        
+        # Clear stale session data
+        session.clear()
+        
+        # Log the unauthorized access
+        app.logger.info(f"401 Unauthorized error handled for {request.url}")
+        
+        # Redirect to login with helpful message
+        flash('Your session has expired. Please log in again.', 'info')
+        return redirect(url_for('auth.login'))
     
     # Register blueprints
     from app.main import main as main_blueprint
@@ -60,27 +81,68 @@ def create_app(config_class=Config):
     from app.debug_routes import debug_bp
     app.register_blueprint(debug_bp)
     
-    # User loader for Flask-Login
+    # User loader for Flask-Login with comprehensive error handling
     @login_manager.user_loader
     def load_user(user_id):
-        # Import User model inside the function to avoid circular imports
-        from app.models import User
+        """Load user with robust error handling and session cleanup"""
+        if not user_id:
+            return None
+            
+        try:
+            user_id = int(user_id)
+        except (ValueError, TypeError):
+            app.logger.warning(f"Invalid user_id format in session: {user_id}")
+            return None
         
         # Add retry logic for SSL connection issues
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                return User.query.get(int(user_id))
+                # Import User model within the function to avoid circular imports
+                from app.models import User
+                from sqlalchemy import text
+                
+                # Check if database is accessible
+                db.session.execute(text("SELECT 1")).scalar()
+                
+                # Load user from database
+                user = User.query.get(user_id)
+                if user and user.is_active:
+                    return user
+                elif user and not user.is_active:
+                    app.logger.warning(f"Inactive user attempted to load session: {user.username}")
+                    return None
+                else:
+                    app.logger.warning(f"User not found in database: {user_id}")
+                    return None
+                    
             except Exception as e:
-                if attempt < max_retries - 1 and 'SSL error' in str(e):
-                    app.logger.warning(f"SSL error in user loader, retrying... ({attempt + 1}/{max_retries})")
+                error_msg = str(e).lower()
+                if attempt < max_retries - 1 and any(keyword in error_msg for keyword in ['ssl error', 'connection', 'timeout']):
+                    app.logger.warning(f"Database connection error in user loader, retrying... ({attempt + 1}/{max_retries}): {e}")
                     import time
-                    time.sleep(0.5)  # Brief delay before retry
+                    time.sleep(0.5 * (attempt + 1))  # Exponential backoff
                     continue
                 else:
                     app.logger.error(f"User loader failed after {max_retries} attempts: {e}")
                     return None
         return None
+    
+    # Handle unauthorized access gracefully
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        """Handle unauthorized access with proper session cleanup"""
+        from flask import request, session, redirect, url_for, flash
+        
+        # Clear any stale session data
+        session.clear()
+        
+        # Log the unauthorized access attempt
+        app.logger.info(f"Unauthorized access attempt from {request.remote_addr} to {request.url}")
+        
+        # Redirect to login with helpful message
+        flash('Your session has expired. Please log in again.', 'info')
+        return redirect(url_for('auth.login'))
     
     # Context processors for templates
     @app.context_processor
@@ -108,7 +170,7 @@ def create_app(config_class=Config):
                 # Test basic database connection first
                 from sqlalchemy import text
                 db.session.execute(text("SELECT 1")).scalar()
-                app.logger.info("✅ Database connection successful")
+                app.logger.info("Database connection successful")
                 
                 from sqlalchemy import inspect
                 inspector = inspect(db.engine)
@@ -185,16 +247,23 @@ def configure_logging(app):
     # Set log level based on configuration
     log_level = getattr(logging, app.config.get('LOG_LEVEL', 'INFO').upper())
     
-    # Configure file handler for all logs
-    file_handler = RotatingFileHandler('logs/restaurant_pos.log', maxBytes=10240000, backupCount=10)
+    # Configure file handler for all logs with UTF-8 encoding
+    file_handler = RotatingFileHandler('logs/restaurant_pos.log', maxBytes=10240000, backupCount=10, encoding='utf-8')
     file_handler.setFormatter(logging.Formatter(
         '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
     ))
     file_handler.setLevel(log_level)
     app.logger.addHandler(file_handler)
     
-    # Configure console handler if LOG_TO_STDOUT is enabled
+    # Configure console handler if LOG_TO_STDOUT is enabled with UTF-8 encoding
     if app.config.get('LOG_TO_STDOUT'):
+        import sys
+        # Use UTF-8 encoding for console output on Windows
+        if sys.platform.startswith('win'):
+            import io
+            # Wrap stdout with UTF-8 encoding
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(logging.Formatter(
             '%(asctime)s %(levelname)s: %(message)s'

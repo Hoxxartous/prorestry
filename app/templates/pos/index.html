@@ -2636,6 +2636,14 @@ let draggedElement = null;
 let touchTimeout = null;
 let lastTapTime = 0;
 
+// Handle existing order items for "Add Items" functionality
+let isAddingToExistingOrder = false;
+let originalOrderItemsLoaded = false;
+{% if existing_order and request.args.get('add_items') == 'true' %}
+isAddingToExistingOrder = true;
+console.log('Loading existing order items for order #{{ existing_order.order_number }}');
+{% endif %}
+
 // Color palette for item customization
 const colorPalette = [
     '#e8f4f8', '#e8f5e8', '#fff3cd', '#f8d7da', '#e2e3f0', 
@@ -3535,6 +3543,18 @@ document.addEventListener('DOMContentLoaded', function() {
         window.orderItems = [];
     }
     
+    // For "Add Items" functionality, start with clean cart
+    {% if existing_order and request.args.get('add_items') == 'true' %}
+    if (isAddingToExistingOrder && !originalOrderItemsLoaded) {
+        // Start with clean cart - waiter will add only NEW items
+        window.orderItems = [];
+        console.log('Starting with clean cart for adding items to existing order #{{ existing_order.order_number }}');
+        updateOrderDisplay();
+        // Mark as loaded to prevent re-initialization
+        originalOrderItemsLoaded = true;
+    }
+    {% endif %}
+    
     // Track selected order item for modifier attachment
     window.selectedOrderItemIndex = null;
     
@@ -4170,16 +4190,16 @@ function printInvoice(orderId) {
             if (data.success) {
                 // Create invoice HTML
                 let itemsHtml = '';
-                data.items.forEach(item => {
+                data.order.items.forEach(item => {
                     // Build modifiers display
                     let modifiersHtml = '';
-                    if (item.modifiers && item.modifiers.trim()) {
-                        modifiersHtml = `<br><small class="text-muted">+ ${item.modifiers}</small>`;
+                    if (item.special_requests && item.special_requests.trim()) {
+                        modifiersHtml = `<br><small class="text-muted">+ ${item.special_requests}</small>`;
                     }
                     
                     itemsHtml += `
                         <tr>
-                            <td>${item.name}${modifiersHtml}</td>
+                            <td>${item.menu_item_name}${modifiersHtml}</td>
                             <td>${item.quantity}</td>
                             <td>${parseFloat(item.unit_price).toFixed(2)} QAR</td>
                             <td>${parseFloat(item.total_price).toFixed(2)} QAR</td>
@@ -4192,13 +4212,13 @@ function printInvoice(orderId) {
                         <div class="invoice-header text-center mb-4">
                             <h3>Restaurant POS</h3>
                             <h4>Invoice</h4>
-                            <p>Order #${data.order_number}</p>
-                            <p>${new Date(data.created_at).toLocaleString()}</p>
+                            <p>Order #${data.order.order_number}</p>
+                            <p>${new Date(data.order.created_at).toLocaleString()}</p>
                         </div>
                         
                         <div class="mb-3">
-                            <p><strong>Cashier:</strong> ${data.cashier_name || 'N/A'}</p>
-                            <p><strong>Table:</strong> ${data.table_number || 'N/A'}</p>
+                            <p><strong>Cashier:</strong> ${data.order.cashier_name || 'N/A'}</p>
+                            <p><strong>Table:</strong> ${data.order.table_number || 'N/A'}</p>
                         </div>
                         
                         <div class="table-responsive mb-3">
@@ -4218,7 +4238,7 @@ function printInvoice(orderId) {
                         </div>
                         
                         <div class="text-end mb-4">
-                            <h4>Total: ${parseFloat(data.total_amount).toFixed(2)} QAR</h4>
+                            <h4>Total: ${parseFloat(data.order.total_amount).toFixed(2)} QAR</h4>
                         </div>
                         
                         <div class="text-center">
@@ -4639,12 +4659,12 @@ function printOrderDirectly(orderId) {
                 document.body.appendChild(iframe);
                 
                 // Count regular items (excluding special items)
-                const regularItemsCount = data.items.filter(item => !item.name.includes('طلبات خاصة')).length;
+                const regularItemsCount = data.order.items.filter(item => !item.menu_item_name.includes('طلبات خاصة')).length;
                 
                 // Format service type for prominent display
                 let serviceDisplay = 'N/A';
-                if (data.service_type) {
-                    switch(data.service_type) {
+                if (data.order.service_type) {
+                    switch(data.order.service_type) {
                         case 'on_table':
                             serviceDisplay = '🍽️ ON TABLE';
                             break;
@@ -4658,7 +4678,7 @@ function printOrderDirectly(orderId) {
                             serviceDisplay = '💳 CARD PAYMENT';
                             break;
                         default:
-                            serviceDisplay = data.service_type.replace('_', ' ').toUpperCase();
+                            serviceDisplay = data.order.service_type.replace('_', ' ').toUpperCase();
                     }
                 }
                 
@@ -4777,19 +4797,19 @@ function printOrderDirectly(orderId) {
                         </div>
                         
                         <div class="order-info">
-                            <div><strong>Order #:</strong> ${data.order_number}</div>
-                            <div><strong>Date:</strong> ${new Date(data.created_at).toLocaleString()}</div>
-                            <div><strong>Cashier:</strong> ${data.cashier_name || 'N/A'}</div>
-                            <div><strong>Table:</strong> ${data.table_number || 'N/A'}</div>
+                            <div><strong>Order #:</strong> ${data.order.order_number}</div>
+                            <div><strong>Date:</strong> ${new Date(data.order.created_at).toLocaleString()}</div>
+                            <div><strong>Cashier:</strong> ${data.order.cashier_name || 'N/A'}</div>
+                            <div><strong>Table:</strong> ${data.order.table_number || 'N/A'}</div>
                         </div>
                         
                         <div class="service-highlight">
                             ${serviceDisplay}
                         </div>
                         
-                        ${data.service_type === 'delivery' && data.delivery_company ? 
+                        ${data.order.service_type === 'delivery' && data.order.delivery_company ? 
                             `<div class="delivery-info">
-                                📱 ${data.delivery_company}
+                                📱 ${data.order.delivery_company}
                             </div>` : ''}
                         
                         <div class="item-count">
@@ -4806,9 +4826,9 @@ function printOrderDirectly(orderId) {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${data.items.map(item => `
+                                ${data.order.items.map(item => `
                                     <tr>
-                                        <td class="item-name">${item.name}${item.modifiers ? '<div class="item-modifiers">+ ' + item.modifiers + '</div>' : ''}</td>
+                                        <td class="item-name">${item.menu_item_name}${item.special_requests ? '<div class="item-modifiers">+ ' + item.special_requests + '</div>' : ''}</td>
                                         <td>${item.quantity}</td>
                                         <td>${parseFloat(item.unit_price).toFixed(2)}</td>
                                         <td>${parseFloat(item.total_price).toFixed(2)}</td>
@@ -4816,7 +4836,7 @@ function printOrderDirectly(orderId) {
                                 `).join('')}
                                 <tr class="total-row">
                                     <td colspan="3"><strong>TOTAL</strong></td>
-                                    <td><strong>${parseFloat(data.total_amount).toFixed(2)} QAR</strong></td>
+                                    <td><strong>${parseFloat(data.order.total_amount).toFixed(2)} QAR</strong></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -4865,8 +4885,19 @@ document.getElementById('confirmOrderBtn').addEventListener('click', function() 
         service_type: selectedServiceType,
         delivery_company_id: selectedDeliveryCompanyId,
         assigned_cashier_id: selectedCashierId,
-        return_to: window.returnTo
+        return_to: window.returnTo,
+        is_adding_items: isAddingToExistingOrder
+        {% if existing_order and request.args.get('add_items') == 'true' %}
+        , existing_order_id: {{ existing_order.id }}
+        {% endif %}
     };
+    
+    // Debug logging
+    console.log('Order confirmation data:', {
+        is_adding_items: orderData.is_adding_items,
+        existing_order_id: orderData.existing_order_id || 'none',
+        items_count: orderData.items.length
+    });
     
     fetch('/pos/create_order', {
         method: 'POST',
