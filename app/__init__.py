@@ -1,13 +1,14 @@
-# NOTE: eventlet monkey patching is now handled in wsgi.py for production
-# This prevents conflicts with Flask application context during initialization
+# Ensure eventlet monkey patching happens first (for production)
+try:
+    import eventlet
+    eventlet.monkey_patch()
+except ImportError:
+    pass
 
 import os
 import sys
 import logging
 from logging.handlers import RotatingFileHandler
-
-# Skip complex initialization during deployment mode (database checks)
-DEPLOYMENT_MODE = os.environ.get('DEPLOYMENT_MODE') == 'true'
 
 # PostgreSQL driver compatibility - prefer psycopg2-binary if available
 try:

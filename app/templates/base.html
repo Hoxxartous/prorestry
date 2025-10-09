@@ -164,13 +164,13 @@
                         </li>
                     {% elif current_user.role.name == 'WAITER' %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('pos.index') }}">
-                                <i class="bi bi-calculator"></i> POS
+                            <a class="nav-link" href="{{ url_for('pos.table_management') }}">
+                                <i class="bi bi-table"></i> Table Management
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('pos.table_management') }}">
-                                <i class="bi bi-table"></i> Table Management
+                            <a class="nav-link" href="{{ url_for('pos.index') }}">
+                                <i class="bi bi-calculator"></i> POS
                             </a>
                         </li>
                         <li class="nav-item">

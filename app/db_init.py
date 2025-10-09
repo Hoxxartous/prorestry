@@ -25,93 +25,58 @@ def init_multibranch_db(app):
             # Fix menu_items schema if needed (PostgreSQL column size issue)
             try:
                 from sqlalchemy import text
-                from urllib.parse import urlparse
+                app.logger.info("[CONFIG] Checking menu_items schema for PostgreSQL compatibility...")
                 
-                # Check if we're using PostgreSQL
-                database_url = app.config.get('SQLALCHEMY_DATABASE_URI', '')
-                parsed = urlparse(database_url)
-                is_postgresql = parsed.scheme in ['postgres', 'postgresql']
+                # Check all problematic columns
+                result = db.session.execute(text("""
+                    SELECT column_name, character_maximum_length 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'menu_items' 
+                    AND column_name IN ('card_color', 'size_flag', 'portion_type', 'visual_priority')
+                    ORDER BY column_name;
+                """)).fetchall()
                 
-                if is_postgresql:
-                    app.logger.info("[CONFIG] Checking menu_items schema for PostgreSQL compatibility...")
+                app.logger.info(f"Current column sizes: {[(r[0], r[1]) for r in result]}")
+                
+                # Check if any column needs fixing
+                needs_fix = any(r[1] and r[1] < 10 for r in result if r[1] is not None)
+                
+                if needs_fix or not result:
+                    app.logger.info("[CONFIG] Fixing menu_items column sizes for PostgreSQL compatibility...")
+                    migrations = [
+                        "ALTER TABLE menu_items ALTER COLUMN card_color TYPE VARCHAR(20);",
+                        "ALTER TABLE menu_items ALTER COLUMN size_flag TYPE VARCHAR(10);", 
+                        "ALTER TABLE menu_items ALTER COLUMN portion_type TYPE VARCHAR(20);",
+                        "ALTER TABLE menu_items ALTER COLUMN visual_priority TYPE VARCHAR(10);"
+                    ]
                     
-                    # Check all problematic columns (PostgreSQL only)
-                    result = db.session.execute(text("""
+                    for migration in migrations:
+                        try:
+                            db.session.execute(text(migration))
+                            app.logger.info(f"[OK] Applied: {migration}")
+                        except Exception as e:
+                            app.logger.warning(f"[WARNING] Migration warning: {migration} - {str(e)}")
+                    
+                    db.session.commit()
+                    app.logger.info("[OK] Menu items schema fixed successfully")
+                    
+                    # Verify the fix
+                    result_after = db.session.execute(text("""
                         SELECT column_name, character_maximum_length 
                         FROM information_schema.columns 
                         WHERE table_name = 'menu_items' 
                         AND column_name IN ('card_color', 'size_flag', 'portion_type', 'visual_priority')
                         ORDER BY column_name;
                     """)).fetchall()
-                    
-                    app.logger.info(f"Current column sizes: {[(r[0], r[1]) for r in result]}")
-                    
-                    # Check if any column needs fixing
-                    needs_fix = any(r[1] and r[1] < 10 for r in result if r[1] is not None)
-                    
-                    if needs_fix or not result:
-                        app.logger.info("[CONFIG] Fixing menu_items column sizes for PostgreSQL compatibility...")
-                        migrations = [
-                            "ALTER TABLE menu_items ALTER COLUMN card_color TYPE VARCHAR(20);",
-                            "ALTER TABLE menu_items ALTER COLUMN size_flag TYPE VARCHAR(10);", 
-                            "ALTER TABLE menu_items ALTER COLUMN portion_type TYPE VARCHAR(20);",
-                            "ALTER TABLE menu_items ALTER COLUMN visual_priority TYPE VARCHAR(10);"
-                        ]
-                        
-                        for migration in migrations:
-                            try:
-                                db.session.execute(text(migration))
-                                app.logger.info(f"[OK] Applied: {migration}")
-                            except Exception as e:
-                                app.logger.warning(f"[WARNING] Migration warning: {migration} - {str(e)}")
-                        
-                        db.session.commit()
-                        app.logger.info("[OK] Menu items schema fixed successfully")
-                        
-                        # Verify the fix
-                        result_after = db.session.execute(text("""
-                            SELECT column_name, character_maximum_length 
-                            FROM information_schema.columns 
-                            WHERE table_name = 'menu_items' 
-                            AND column_name IN ('card_color', 'size_flag', 'portion_type', 'visual_priority')
-                            ORDER BY column_name;
-                        """)).fetchall()
-                        app.logger.info(f"Updated column sizes: {[(r[0], r[1]) for r in result_after]}")
-                    else:
-                        app.logger.info("[OK] Menu items schema is already correct")
+                    app.logger.info(f"Updated column sizes: {[(r[0], r[1]) for r in result_after]}")
                 else:
-                    app.logger.info("[CONFIG] SQLite detected - skipping PostgreSQL-specific schema fixes")
-                    
-                    # PRODUCTION DEBUG: Monitor for SQLite file creation
-                    if os.environ.get('FLASK_ENV') == 'production':
-                        import glob
-                        db_files_before = set(glob.glob("*.db") + glob.glob("**/*.db", recursive=True))
-                        app.logger.warning("🚨 PRODUCTION WARNING: SQLite detected in production environment!")
-                        app.logger.info(f"📁 Existing .db files before operation: {list(db_files_before)}")
-                        
-                        # Check after database operations
-                        def check_db_files_after():
-                            db_files_after = set(glob.glob("*.db") + glob.glob("**/*.db", recursive=True))
-                            new_files = db_files_after - db_files_before
-                            if new_files:
-                                app.logger.error(f"🚨 NEW SQLite FILES CREATED: {list(new_files)}")
-                            else:
-                                app.logger.info("✅ No new SQLite files created")
-                        
-                        # Schedule check after initialization
-                        import atexit
-                        atexit.register(check_db_files_after)
+                    app.logger.info("[OK] Menu items schema is already correct")
                     
             except Exception as e:
-                if is_postgresql:
-                    app.logger.error(f"[ERROR] PostgreSQL schema fix failed: {str(e)}")
-                    db.session.rollback()
-                    # Don't continue if PostgreSQL schema fix fails - this is critical
-                    raise e
-                else:
-                    # For SQLite, schema fixes are not critical
-                    app.logger.info(f"[INFO] SQLite schema check skipped: {str(e)}")
-                    db.session.rollback()
+                app.logger.error(f"[ERROR] Schema fix failed: {str(e)}")
+                db.session.rollback()
+                # Don't continue if schema fix fails - this is critical
+                raise e
             
             # Check if data already exists - comprehensive check to prevent duplicates
             existing_branches = Branch.query.count()
