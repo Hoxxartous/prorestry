@@ -40,62 +40,15 @@ mkdir -p logs
 mkdir -p instance
 mkdir -p migrations
 
-# Check if database needs initialization
+# Skip database initialization during build for app updates
+# Database initialization will be handled automatically on application startup
 if [ -n "$DATABASE_URL" ]; then
-    echo "🗄️  Database URL detected, checking if database needs setup..."
-    
-    # Create a simple database check script to avoid eventlet conflicts
-    python -c "
-import os
-import sys
-os.environ['DEPLOYMENT_MODE'] = 'true'  # Skip eventlet monkey patching
-
-try:
-    from config import ProductionConfig
-    from flask import Flask
-    from flask_sqlalchemy import SQLAlchemy
-    from sqlalchemy import inspect, text
-    
-    # Create minimal app for database check only
-    app = Flask(__name__)
-    app.config.from_object(ProductionConfig)
-    db = SQLAlchemy()
-    db.init_app(app)
-    
-    with app.app_context():
-        # Check if database has tables
-        inspector = inspect(db.engine)
-        existing_tables = inspector.get_table_names()
-        
-        if len(existing_tables) > 0:
-            print(f'✅ Database found with {len(existing_tables)} tables')
-            print('   Will verify and update schema if needed')
-            sys.exit(2)  # Database exists, run setup but skip full initialization
-        else:
-            print('🔧 Database is empty, full initialization needed')
-            sys.exit(1)  # Database needs full initialization
-            
-except Exception as e:
-    print(f'⚠️  Could not check database status: {e}')
-    print('   Will attempt initialization on first run')
-    sys.exit(0)  # Skip initialization, let app handle it
-"
-    
-    # Check the exit code from the database check
-    DB_CHECK_RESULT=$?
-    
-    if [ $DB_CHECK_RESULT -eq 1 ]; then
-        echo "🚀 Running full database initialization (first-time setup)..."
-        python deploy_to_render.py
-    elif [ $DB_CHECK_RESULT -eq 2 ]; then
-        echo "🔧 Running database schema verification (existing database)..."
-        python deploy_to_render.py --existing-database
-    else
-        echo "✅ Database setup skipped - will be handled on startup"
-    fi
+    echo "🗄️  Database URL detected"
+    echo "✅ Database setup will be handled automatically on application startup"
+    echo "   This prevents build failures during app updates"
 else
-    echo "⚠️  DATABASE_URL not set, skipping database setup"
-    echo "   Database will be set up on first run"
+    echo "⚠️  DATABASE_URL not set"
+    echo "   Database will be set up on first application run"
 fi
 
 # Collect static files (if needed)
