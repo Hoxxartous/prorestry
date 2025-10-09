@@ -13,7 +13,7 @@ python-engineio==4.9.0
 
 # Production server with async support
 gunicorn==22.0.0
-eventlet==0.35.2
+eventlet
 # Using eventlet 0.35.2 for Python 3.11 compatibility
 # eventlet 0.36.1 has issues with Python 3.13 threading API
 
