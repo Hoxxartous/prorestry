@@ -2,6 +2,7 @@
 """
 Deployment script for Restaurant POS on Render with PostgreSQL
 Handles database setup, migrations, and performance optimization
+Supports both first-time setup and existing database verification
 """
 
 import os
@@ -9,6 +10,7 @@ import sys
 import subprocess
 import logging
 import time
+import argparse
 
 # PostgreSQL driver compatibility - prefer psycopg2-binary if available
 try:
@@ -48,22 +50,35 @@ def setup_environment():
 
 def create_app():
     """Create Flask application for deployment"""
-    from app import create_app as app_factory
+    # Import here to avoid eventlet conflicts during build
+    import os
+    os.environ['DEPLOYMENT_MODE'] = 'true'  # Signal that we're in deployment mode
     
-    # Use default config (will use FLASK_ENV environment variable)
-    app = app_factory()
+    from config import ProductionConfig
+    from flask import Flask
+    from flask_sqlalchemy import SQLAlchemy
     
-    return app
+    # Create minimal app for database operations only
+    app = Flask(__name__)
+    app.config.from_object(ProductionConfig)
+    
+    # Initialize database
+    db = SQLAlchemy()
+    db.init_app(app)
+    
+    return app, db
 
-def setup_database():
+def setup_database(existing_database=False):
     """Initialize and migrate database"""
-    logger.info("🗄️  Setting up PostgreSQL database...")
+    if existing_database:
+        logger.info("🔧 Verifying existing PostgreSQL database...")
+    else:
+        logger.info("🗄️  Setting up PostgreSQL database (first-time)...")
     
-    app = create_app()
+    app, db = create_app()
     
     with app.app_context():
         from flask_migrate import Migrate
-        from app import db
         
         # Initialize Flask-Migrate if not already done
         migrate = Migrate(app, db)
@@ -80,11 +95,21 @@ def setup_database():
             existing_tables = inspector.get_table_names()
             
             if existing_tables:
-                logger.info("📊 Database tables already exist, skipping migration creation")
+                logger.info("📊 Database tables already exist")
                 logger.info(f"   Found {len(existing_tables)} existing tables")
+                
+                if existing_database:
+                    logger.info("🔧 Verifying existing database schema...")
+                    # For existing databases, just verify schema and ensure app compatibility
+                    verify_existing_database_schema(app, db)
+                else:
+                    logger.info("⚠️  Tables exist but this appears to be first-time setup")
+                    logger.info("   Will verify and update data if needed")
+                    # Still run data initialization (it has duplicate prevention)
+                    create_comprehensive_initial_data(app)
             else:
+                logger.info("📝 Database is empty, creating tables and initial data...")
                 # Create migration if needed
-                logger.info("📝 Creating database migration...")
                 try:
                     flask_migrate(message='Deploy to PostgreSQL')
                 except Exception as e:
@@ -93,9 +118,9 @@ def setup_database():
                 # Apply migrations
                 logger.info("🚀 Applying database migrations...")
                 upgrade()
-            
-            # Create initial data using comprehensive multi-branch initialization
-            create_comprehensive_initial_data(app)
+                
+                # Create initial data using comprehensive multi-branch initialization
+                create_comprehensive_initial_data(app)
             
             # Ensure all data is committed
             db.session.commit()
@@ -108,6 +133,36 @@ def setup_database():
         except Exception as e:
             logger.error(f"❌ Database setup failed: {e}")
             sys.exit(1)
+
+def verify_existing_database_schema(app, db):
+    """Verify existing database schema and ensure compatibility"""
+    logger.info("🔍 Verifying database schema compatibility...")
+    
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        existing_tables = inspector.get_table_names()
+        
+        # Check for critical tables
+        required_tables = ['users', 'branches', 'categories', 'menu_items', 'orders']
+        missing_tables = [table for table in required_tables if table not in existing_tables]
+        
+        if missing_tables:
+            logger.warning(f"⚠️  Missing critical tables: {missing_tables}")
+            logger.info("   Database may need migration or initialization")
+        else:
+            logger.info("✅ All critical tables found")
+        
+        # Check if we need to run any schema fixes (PostgreSQL-specific)
+        from app.db_init import init_multibranch_db
+        logger.info("🔧 Running schema verification and fixes...")
+        init_multibranch_db(app)
+        
+        logger.info("✅ Database schema verification completed")
+        
+    except Exception as e:
+        logger.warning(f"⚠️  Schema verification warning: {e}")
+        logger.info("   Application will handle any missing setup on startup")
 
 def create_comprehensive_initial_data(app):
     """Create comprehensive initial data using the multi-branch initialization"""
@@ -237,24 +292,38 @@ def verify_deployment():
 
 def main():
     """Main deployment function"""
-    logger.info("🚀 Starting Restaurant POS deployment to Render...")
-    logger.info("🐘 PostgreSQL + 🔥 Maximum Performance Configuration")
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Deploy Restaurant POS to Render')
+    parser.add_argument('--existing-database', action='store_true', 
+                       help='Indicate that database already exists and contains data')
+    args = parser.parse_args()
+    
+    if args.existing_database:
+        logger.info("🔧 Starting Restaurant POS database verification...")
+        logger.info("🐘 PostgreSQL + Existing Database Mode")
+    else:
+        logger.info("🚀 Starting Restaurant POS deployment to Render...")
+        logger.info("🐘 PostgreSQL + 🔥 Maximum Performance Configuration")
     
     try:
         # Setup environment
         setup_environment()
         
-        # Setup database
-        setup_database()
+        # Setup database (with existing database flag)
+        setup_database(existing_database=args.existing_database)
         
         # Apply optimizations
         optimize_for_production()
         
         # Deployment completed successfully (verification done within setup context)
-        logger.info("🎉 Deployment completed successfully!")
-        logger.info("🌐 Your Restaurant POS is now live on Render!")
-        logger.info("🔐 Default login: superadmin / SuperAdmin123!")
-        logger.warning("⚠️  Please change default passwords after first login!")
+        if args.existing_database:
+            logger.info("✅ Database verification completed successfully!")
+            logger.info("🔧 Your existing Restaurant POS database is ready!")
+        else:
+            logger.info("🎉 Deployment completed successfully!")
+            logger.info("🌐 Your Restaurant POS is now live on Render!")
+            logger.info("🔐 Default login: superadmin / SuperAdmin123!")
+            logger.warning("⚠️  Please change default passwords after first login!")
             
     except Exception as e:
         logger.error(f"❌ Deployment failed: {e}")

@@ -6,6 +6,9 @@ import sys
 import logging
 from logging.handlers import RotatingFileHandler
 
+# Skip complex initialization during deployment mode (database checks)
+DEPLOYMENT_MODE = os.environ.get('DEPLOYMENT_MODE') == 'true'
+
 # PostgreSQL driver compatibility - prefer psycopg2-binary if available
 try:
     import psycopg2
