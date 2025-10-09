@@ -10,7 +10,13 @@ cpu_cores = multiprocessing.cpu_count()
 workers = 1  # Single worker for free plan stability (eventlet handles concurrency)
 
 # Worker class - eventlet for async performance and WebSocket support
-worker_class = "eventlet"
+# Fallback to sync if eventlet has compatibility issues
+try:
+    import eventlet
+    worker_class = "eventlet"
+except ImportError:
+    worker_class = "sync"
+    workers = min(2, multiprocessing.cpu_count())  # Use more workers if sync
 
 # Worker connections - optimized for free plan
 # With eventlet, we can handle many concurrent connections efficiently
