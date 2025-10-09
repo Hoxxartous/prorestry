@@ -5,7 +5,6 @@ from datetime import timedelta
 from sqlalchemy import event, create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.pool import QueuePool
-import sqlite3
 import re
 from urllib.parse import urlparse
 
@@ -25,28 +24,31 @@ class Config:
     REMEMBER_COOKIE_SECURE = False  # Set to True in production with HTTPS
     REMEMBER_COOKIE_HTTPONLY = True
     
-    # Database configuration with SQLite optimizations
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///restaurant_pos.db'
+    # Database configuration - will be overridden by specific config classes
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     
     # High-performance database configuration
     @staticmethod
     def get_database_config():
-        """Get optimized database configuration based on database type"""
-        database_url = os.environ.get('DATABASE_URL', 'sqlite:///restaurant_pos.db')
+        """Get optimized database configuration - PostgreSQL by default"""
+        database_url = os.environ.get('DATABASE_URL')
+        
+        if not database_url:
+            # Return minimal config if no database URL (will be handled by specific configs)
+            return {
+                'echo': False,
+                'future': True,
+            }
         
         # Parse database URL to determine type
         parsed = urlparse(database_url)
         is_postgresql = parsed.scheme in ['postgres', 'postgresql']
         
-        # Calculate optimal connection pool size based on CPU cores
-        cpu_cores = multiprocessing.cpu_count()
-        
         if is_postgresql:
-            # PostgreSQL optimizations for Render FREE PLAN (limited resources)
+            # PostgreSQL optimizations for production
             return {
                 'poolclass': QueuePool,
-                'pool_size': 2,                      # Very small pool for free plan
+                'pool_size': 2,                      # Small pool for free plan
                 'max_overflow': 3,                   # Limited overflow
                 'pool_timeout': 60,                  # Longer timeout for free plan
                 'pool_recycle': 1800,               # Recycle connections every 30 min
@@ -74,19 +76,8 @@ class Config:
                 }
             }
         else:
-            # SQLite optimizations (fallback)
+            # For non-PostgreSQL databases, return basic config
             return {
-                'pool_size': 20,
-                'max_overflow': 30,
-                'pool_timeout': 30,
-                'pool_recycle': 3600,
-                'pool_pre_ping': True,
-                
-                'connect_args': {
-                    'timeout': 30,
-                    'check_same_thread': False,
-                },
-                
                 'echo': False,
                 'future': True,
             }
@@ -115,52 +106,13 @@ class Config:
         # Set engine options dynamically based on database type
         app.config['SQLALCHEMY_ENGINE_OPTIONS'] = cls.get_database_config()
         
-        # Configure database-specific optimizations
-        parsed = urlparse(app.config['SQLALCHEMY_DATABASE_URI'])
-        if parsed.scheme in ['postgres', 'postgresql']:
-            cls._configure_postgresql_optimizations(app)
-        else:
-            cls._configure_sqlite_optimizations(app)
+        # Configure database-specific optimizations (PostgreSQL only in production)
+        database_uri = app.config.get('SQLALCHEMY_DATABASE_URI')
+        if database_uri:
+            parsed = urlparse(database_uri)
+            if parsed.scheme in ['postgres', 'postgresql']:
+                cls._configure_postgresql_optimizations(app)
     
-    @staticmethod
-    def _configure_sqlite_optimizations(app):
-        """Configure SQLite for optimal performance with WAL mode and concurrent access"""
-        
-        @event.listens_for(Engine, "connect")
-        def set_sqlite_pragma(dbapi_connection, connection_record):
-            """Set SQLite pragmas for optimal performance and concurrency"""
-            if 'sqlite' in str(dbapi_connection):
-                cursor = dbapi_connection.cursor()
-                
-                # Enable WAL mode for concurrent reads/writes
-                cursor.execute("PRAGMA journal_mode=WAL")
-                
-                # Optimize SQLite settings for performance
-                cursor.execute("PRAGMA synchronous=NORMAL")      # Balance safety/performance
-                cursor.execute("PRAGMA cache_size=10000")        # 10MB cache
-                cursor.execute("PRAGMA temp_store=MEMORY")       # Store temp tables in memory
-                cursor.execute("PRAGMA mmap_size=268435456")     # 256MB memory-mapped I/O
-                cursor.execute("PRAGMA page_size=4096")          # Optimal page size
-                
-                # Optimize for concurrent access
-                cursor.execute("PRAGMA busy_timeout=30000")      # 30 second timeout
-                cursor.execute("PRAGMA wal_autocheckpoint=1000") # Checkpoint every 1000 pages
-                
-                # Foreign key constraints
-                cursor.execute("PRAGMA foreign_keys=ON")
-                
-                # Optimize query planner
-                cursor.execute("PRAGMA optimize")
-                
-                cursor.close()
-                
-                app.logger.info("SQLite optimizations applied: WAL mode enabled, performance settings configured")
-        
-        @event.listens_for(Engine, "first_connect")
-        def receive_first_connect(dbapi_connection, connection_record):
-            """Initialize database on first connection"""
-            if 'sqlite' in str(dbapi_connection):
-                app.logger.info("First SQLite connection established with WAL mode and optimizations")
     
     @staticmethod
     def _configure_postgresql_optimizations(app):
@@ -249,69 +201,42 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     
-    # Production database configuration - prioritize PostgreSQL for Render
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'postgresql://user:pass@localhost/restaurant_pos'
-    
-    # Production-specific optimizations for maximum performance
-    @classmethod
-    def get_database_config(cls):
-        """Get production-optimized database configuration"""
-        base_config = super().get_database_config()
-        
-        # Parse database URL to determine type
-        database_url = os.environ.get('DATABASE_URL', cls.SQLALCHEMY_DATABASE_URI)
-        parsed = urlparse(database_url)
-        is_postgresql = parsed.scheme in ['postgres', 'postgresql']
-        
-        if is_postgresql:
-            # Maximum performance PostgreSQL configuration
-            cpu_cores = multiprocessing.cpu_count()
-            return {
-                **base_config,
-                'pool_size': cpu_cores * 6,           # 6 connections per CPU core
-                'max_overflow': cpu_cores * 12,       # 12 overflow connections per core
-                'pool_timeout': 60,                   # Longer timeout for production
-                'pool_recycle': 7200,                # Recycle connections every 2 hours
-                'pool_pre_ping': True,
-                'pool_reset_on_return': 'commit',
-                
-                # Production PostgreSQL optimizations
-                'connect_args': {
-                    'connect_timeout': 10,
-                    'application_name': 'restaurant_pos_prod',
-                    'options': '-c default_transaction_isolation=read_committed -c timezone=UTC -c statement_timeout=60s'
-                },
-                
-                'echo': False,  # Disable SQL logging in production
-                'future': True,
-                'execution_options': {
-                    'isolation_level': 'READ_COMMITTED',
-                    'autocommit': False,
-                    'compiled_cache': {}  # Enable query compilation cache
-                }
-            }
-        else:
-            # Fallback SQLite configuration with production optimizations
-            return {
-                **base_config,
-                'pool_size': 30,
-                'max_overflow': 50,
-                'pool_timeout': 60,
-                'echo': False,
-            }
-    
-    # Additional production settings
-    WTF_CSRF_TIME_LIMIT = None  # No CSRF timeout for long sessions
-    PERMANENT_SESSION_LIFETIME = timedelta(hours=8)  # 8-hour sessions
-    
-    # Performance monitoring
-    SQLALCHEMY_RECORD_QUERIES = True
-    SLOW_DB_QUERY_TIME = 0.5  # Log queries slower than 500ms
+    # Production database configuration - PostgreSQL ONLY for Render
+    # No SQLite fallback in production
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     
     @classmethod
     def init_app(cls, app):
         super().init_app(app)
+        
+        # Ensure PostgreSQL is configured
+        if not app.config['SQLALCHEMY_DATABASE_URI']:
+            raise ValueError("DATABASE_URL environment variable is required for production")
+        
+        database_url = app.config['SQLALCHEMY_DATABASE_URI']
+        if 'postgres' not in database_url:
+            raise ValueError("Production requires PostgreSQL database (DATABASE_URL must contain 'postgres')")
+        
+        # PRODUCTION DEBUG: Verify no SQLite configuration
+        app.logger.info("🔍 PRODUCTION DEBUG: Database Configuration Check")
+        app.logger.info(f"✅ DATABASE_URL: {database_url[:50]}...")
+        app.logger.info(f"✅ Database Type: PostgreSQL")
+        app.logger.info(f"🚫 SQLite Status: DISABLED (PostgreSQL-only mode)")
+        
+        # Check engine options for SQLite references
+        engine_options = app.config.get('SQLALCHEMY_ENGINE_OPTIONS', {})
+        sqlite_references = [key for key in str(engine_options).lower() if 'sqlite' in key]
+        if sqlite_references:
+            app.logger.warning(f"⚠️  Found SQLite references in engine options: {sqlite_references}")
+        else:
+            app.logger.info("✅ Engine Options: No SQLite references found")
+        
+        # Verify no .db files will be created
+        import glob
+        existing_db_files = glob.glob("*.db") + glob.glob("**/*.db", recursive=True)
+        if existing_db_files:
+            app.logger.info(f"ℹ️  Existing .db files (will be ignored): {existing_db_files}")
+        app.logger.info("🚫 SQLite File Creation: DISABLED in production")
         
         # Production-specific logging
         import logging
@@ -330,7 +255,47 @@ class ProductionConfig(Config):
             app.logger.addHandler(file_handler)
             
             app.logger.setLevel(logging.INFO)
-            app.logger.info('Restaurant POS startup - Production Mode')
+            app.logger.info('🚀 Restaurant POS startup - Production Mode with PostgreSQL ONLY')
+    
+    # Production-specific optimizations for PostgreSQL ONLY
+    @classmethod
+    def get_database_config(cls):
+        """Get production-optimized PostgreSQL configuration for Render free plan"""
+        # Force PostgreSQL configuration - no fallbacks
+        return {
+            'poolclass': QueuePool,
+            'pool_size': 2,                      # Very small pool for free plan
+            'max_overflow': 3,                   # Limited overflow
+            'pool_timeout': 60,                  # Longer timeout for free plan
+            'pool_recycle': 1800,               # Recycle connections every 30 min
+            'pool_pre_ping': True,              # Validate connections (critical for SSL issues)
+            'pool_reset_on_return': 'commit',   # Reset connections on return
+            
+            # PostgreSQL-specific optimizations with SSL stability
+            'connect_args': {
+                'connect_timeout': 30,
+                'application_name': 'restaurant_pos_prod',
+                'options': '-c default_transaction_isolation=read_committed -c timezone=UTC -c statement_timeout=60s',
+                'sslmode': 'prefer',
+                'target_session_attrs': 'read-write'
+            },
+            
+            'echo': False,  # Disable SQL logging in production
+            'future': True,
+            'execution_options': {
+                'isolation_level': 'READ_COMMITTED',
+                'autocommit': False,
+                'compiled_cache': {}  # Enable query compilation cache
+            }
+        }
+    
+    # Additional production settings
+    WTF_CSRF_TIME_LIMIT = None  # No CSRF timeout for long sessions
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=8)  # 8-hour sessions
+    
+    # Performance monitoring
+    SQLALCHEMY_RECORD_QUERIES = True
+    SLOW_DB_QUERY_TIME = 0.5  # Log queries slower than 500ms
 
 class TestingConfig(Config):
     TESTING = True

@@ -1,9 +1,5 @@
-# Ensure eventlet monkey patching happens first (for production)
-try:
-    import eventlet
-    eventlet.monkey_patch()
-except ImportError:
-    pass
+# NOTE: eventlet monkey patching is now handled in wsgi.py for production
+# This prevents conflicts with Flask application context during initialization
 
 import os
 import sys
