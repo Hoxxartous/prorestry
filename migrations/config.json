@@ -1,1 +1,0 @@
-{"script_location": "migrations", "version_locations": [], "file_template": "%%(rev)s_%%(slug)s", "timezone": null, "max_length": 40, "truncate_slug_length": 40, "version_path_separator": "os", "output_encoding": "utf-8", "prepend_sys_path": ".", "sourceless": false, "version_num_format": "%04d", "recursive_version_locations": false, "migration_environment_arguments": {}}
