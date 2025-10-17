@@ -45,8 +45,8 @@ if [ -n "$DATABASE_URL" ]; then
     echo "🗄️  Database URL detected, running deployment setup..."
     python deploy_production.py
     
-    echo "🔧 Running database column fixes..."
-    python fix_missing_columns.py
+    echo "🔧 Running comprehensive database schema analysis and fix..."
+    python complete_schema_fixer.py
 else
     echo "⚠️  DATABASE_URL not set, skipping database setup"
     echo "   Database will be set up on first run"

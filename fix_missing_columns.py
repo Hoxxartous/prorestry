@@ -77,6 +77,24 @@ def fix_missing_columns():
                     'column': 'cleared_from_waiter_requests',
                     'type': 'BOOLEAN',
                     'sql': 'ALTER TABLE orders ADD COLUMN cleared_from_waiter_requests BOOLEAN DEFAULT FALSE'
+                },
+                {
+                    'table': 'order_items',
+                    'column': 'special_requests',
+                    'type': 'TEXT',
+                    'sql': 'ALTER TABLE order_items ADD COLUMN special_requests TEXT'
+                },
+                {
+                    'table': 'order_items',
+                    'column': 'is_new',
+                    'type': 'BOOLEAN',
+                    'sql': 'ALTER TABLE order_items ADD COLUMN is_new BOOLEAN DEFAULT TRUE'
+                },
+                {
+                    'table': 'order_items',
+                    'column': 'is_deleted',
+                    'type': 'BOOLEAN',
+                    'sql': 'ALTER TABLE order_items ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE'
                 }
             ]
             

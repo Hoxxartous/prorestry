@@ -53,29 +53,66 @@ def initialize_database():
             init_multibranch_db(app)
             logger.info("Database initialized with default data")
             
-            # Fix any missing columns
-            logger.info("Checking for missing database columns...")
+            # Run comprehensive schema fix
+            logger.info("Running comprehensive database schema analysis and fix...")
             try:
-                from sqlalchemy import text
+                import subprocess
+                import sys
                 
-                # Check if order_counter column exists
-                result = db.session.execute(text("""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'orders' AND column_name = 'order_counter'
-                """)).fetchone()
+                # Run the complete schema fixer
+                result = subprocess.run([
+                    sys.executable, 'complete_schema_fixer.py'
+                ], capture_output=True, text=True, cwd=os.path.dirname(os.path.abspath(__file__)))
                 
-                if not result:
-                    logger.info("Adding missing order_counter column...")
-                    db.session.execute(text("ALTER TABLE orders ADD COLUMN order_counter INTEGER"))
-                    db.session.commit()
-                    logger.info("✅ Added order_counter column")
+                if result.returncode == 0:
+                    logger.info("✅ Complete schema fix successful")
+                    logger.info("Schema fixer output:")
+                    for line in result.stdout.split('\n'):
+                        if line.strip():
+                            logger.info(f"  {line}")
                 else:
-                    logger.info("✅ order_counter column exists")
+                    logger.warning("Schema fixer had issues:")
+                    logger.warning(result.stderr)
                     
             except Exception as e:
-                logger.warning(f"Could not check/add order_counter column: {e}")
-                db.session.rollback()
+                logger.warning(f"Could not run complete schema fixer: {e}")
+                # Fallback to basic column checks
+                logger.info("Running fallback column checks...")
+                try:
+                    from sqlalchemy import text
+                    
+                    basic_fixes = [
+                        ("orders", "order_counter", "INTEGER"),
+                        ("order_items", "special_requests", "TEXT"),
+                        ("order_items", "is_new", "BOOLEAN DEFAULT TRUE"),
+                        ("order_items", "is_deleted", "BOOLEAN DEFAULT FALSE"),
+                        ("orders", "last_edited_at", "TIMESTAMP"),
+                        ("orders", "last_edited_by", "INTEGER"),
+                        ("orders", "edit_count", "INTEGER DEFAULT 0"),
+                        ("orders", "cleared_from_waiter_requests", "BOOLEAN DEFAULT FALSE")
+                    ]
+                    
+                    for table, column, col_type in basic_fixes:
+                        try:
+                            result = db.session.execute(text(f"""
+                                SELECT column_name 
+                                FROM information_schema.columns 
+                                WHERE table_name = '{table}' AND column_name = '{column}'
+                            """)).fetchone()
+                            
+                            if not result:
+                                logger.info(f"Adding missing {table}.{column}...")
+                                db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
+                                db.session.commit()
+                                logger.info(f"✅ Added {table}.{column}")
+                                
+                        except Exception as col_e:
+                            logger.warning(f"Could not add {table}.{column}: {col_e}")
+                            db.session.rollback()
+                            
+                except Exception as fallback_e:
+                    logger.warning(f"Fallback column checks failed: {fallback_e}")
+                    db.session.rollback()
             
             return True
             
