@@ -13,31 +13,16 @@ python-engineio==4.9.0
 
 # Production server with async support
 gunicorn==22.0.0
-eventlet
-# Using eventlet 0.35.2 for Python 3.11 compatibility
-# eventlet 0.36.1 has issues with Python 3.13 threading API
+eventlet==0.36.1
 
-# PostgreSQL database support - psycopg2-binary now works with Python 3.13
+# PostgreSQL database support
 psycopg2-binary==2.9.10
 SQLAlchemy==2.0.36
-
-# Connection pooling handled by SQLAlchemy
-
-# Performance monitoring and optimization
-redis==5.0.1
-celery==5.3.4
 
 # Utilities
 pytz==2023.3
 python-dotenv==1.0.0
 reportlab==4.0.4
 
-# Additional performance libraries
+# Performance optimization for production
 ujson==5.8.0
-orjson==3.9.9
-
-# Memory optimization
-pympler==0.9
-
-# Alternative WSGI server (backup)
-waitress==2.1.2

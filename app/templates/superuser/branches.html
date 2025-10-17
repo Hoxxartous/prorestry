@@ -61,7 +61,7 @@
                     
                     <div class="mb-2">
                         <i class="fas fa-calendar text-muted"></i>
-                        <small>Created: {{ branch.created_at.strftime('%Y-%m-%d') }}</small>
+                        <small>Created: {{ branch.created_at | local_datetime_short }}</small>
                     </div>
                     
                     <!-- Branch Statistics -->

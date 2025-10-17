@@ -7,20 +7,14 @@ backlog = 2048
 
 # Optimized for Render FREE PLAN - very limited resources
 cpu_cores = multiprocessing.cpu_count()
-workers = 1  # Single worker for free plan stability (eventlet handles concurrency)
+workers = 1  # Single worker for free plan to minimize memory usage
 
 # Worker class - eventlet for async performance and WebSocket support
-# Fallback to sync if eventlet has compatibility issues
-try:
-    import eventlet
-    worker_class = "eventlet"
-except ImportError:
-    worker_class = "sync"
-    workers = min(2, multiprocessing.cpu_count())  # Use more workers if sync
+worker_class = "eventlet"
 
 # Worker connections - optimized for free plan
 # With eventlet, we can handle many concurrent connections efficiently
-worker_connections = 1000  # Eventlet can handle this efficiently with 1 worker
+worker_connections = 1000  # Eventlet can handle more connections with less memory
 
 # Timeout settings optimized for restaurant POS
 timeout = 120  # Longer timeout for complex operations

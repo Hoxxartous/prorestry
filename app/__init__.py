@@ -39,7 +39,14 @@ def create_app(config_class=Config):
     login_manager.login_message = 'Your session has expired. Please log in again.'
     login_manager.login_message_category = 'info'
     login_manager.session_protection = 'strong'  # Strong session protection
-    socketio.init_app(app, cors_allowed_origins="*")
+    # Initialize SocketIO with production optimizations
+    socketio.init_app(app, 
+                     cors_allowed_origins="*",
+                     async_mode='eventlet',  # Use eventlet for better concurrency
+                     logger=False,           # Disable SocketIO logging in production
+                     engineio_logger=False,  # Disable EngineIO logging
+                     ping_timeout=60,        # Longer ping timeout for free plan
+                     ping_interval=25)       # Ping interval for connection health
     
     # Initialize session manager for better session handling
     from app.session_manager import init_session_manager
@@ -76,6 +83,9 @@ def create_app(config_class=Config):
     
     from app.superuser import superuser as superuser_blueprint
     app.register_blueprint(superuser_blueprint, url_prefix='/superuser')
+    
+    from app.cashier import cashier as cashier_blueprint
+    app.register_blueprint(cashier_blueprint, url_prefix='/cashier')
     
     # Register debug blueprint (for troubleshooting)
     from app.debug_routes import debug_bp
@@ -156,6 +166,68 @@ def create_app(config_class=Config):
                 'is_branch_admin': current_user.is_branch_admin()
             }
         return {}
+    
+    # Template filters for timezone handling
+    @app.template_filter('local_datetime')
+    def local_datetime_filter(utc_datetime, format_str='%Y-%m-%d %H:%M:%S'):
+        """Convert UTC datetime to local timezone and format it"""
+        if not utc_datetime:
+            return ''
+        try:
+            from app.models import TimezoneManager
+            return TimezoneManager.format_local_time(utc_datetime, format_str)
+        except Exception as e:
+            app.logger.error(f"Error formatting datetime: {e}")
+            return utc_datetime.strftime(format_str) if utc_datetime else ''
+    
+    @app.template_filter('local_date')
+    def local_date_filter(utc_datetime):
+        """Convert UTC datetime to local date"""
+        if not utc_datetime:
+            return ''
+        try:
+            from app.models import TimezoneManager
+            return TimezoneManager.format_local_time(utc_datetime, '%Y-%m-%d')
+        except Exception as e:
+            app.logger.error(f"Error formatting date: {e}")
+            return utc_datetime.strftime('%Y-%m-%d') if utc_datetime else ''
+    
+    @app.template_filter('local_time')
+    def local_time_filter(utc_datetime):
+        """Convert UTC datetime to local time"""
+        if not utc_datetime:
+            return ''
+        try:
+            from app.models import TimezoneManager
+            return TimezoneManager.format_local_time(utc_datetime, '%H:%M:%S')
+        except Exception as e:
+            app.logger.error(f"Error formatting time: {e}")
+            return utc_datetime.strftime('%H:%M:%S') if utc_datetime else ''
+    
+    # Additional specific format filters
+    @app.template_filter('local_datetime_short')
+    def local_datetime_short_filter(utc_datetime):
+        """Convert UTC datetime to local timezone with short format"""
+        if not utc_datetime:
+            return ''
+        try:
+            from app.models import TimezoneManager
+            return TimezoneManager.format_local_time(utc_datetime, '%Y-%m-%d %H:%M')
+        except Exception as e:
+            app.logger.error(f"Error formatting datetime: {e}")
+            return utc_datetime.strftime('%Y-%m-%d %H:%M') if utc_datetime else ''
+    
+    @app.template_filter('local_time_short')
+    def local_time_short_filter(utc_datetime):
+        """Convert UTC datetime to local time with short format"""
+        if not utc_datetime:
+            return ''
+        try:
+            from app.models import TimezoneManager
+            return TimezoneManager.format_local_time(utc_datetime, '%H:%M')
+        except Exception as e:
+            app.logger.error(f"Error formatting time: {e}")
+            return utc_datetime.strftime('%H:%M') if utc_datetime else ''
     
     # Initialize database automatically on app startup
     def init_db():

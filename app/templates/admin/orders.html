@@ -108,6 +108,7 @@
                         <thead>
                             <tr>
                                 <th>Order #</th>
+                                <th>Count #</th>
                                 <th>Table</th>
                                 <th>Items</th>
                                 <th>Total (QAR)</th>
@@ -126,6 +127,13 @@
                             {% for order in orders.items %}
                             <tr data-order-id="{{ order.id }}">
                                 <td>{{ order.order_number }}</td>
+                                <td>
+                                    {% if order.order_counter %}
+                                        <span class="badge bg-dark">{{ order.order_counter }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ order.table.table_number if order.table else 'N/A' }}</td>
                                 <td>
                                     {% set regular_items = [] %}
@@ -199,7 +207,17 @@
                                     {% endif %}
                                 </td>
                                 {% endif %}
-                                <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    {{ order.created_at | local_datetime_short }}
+                                    {% if order.edit_count and order.edit_count > 0 %}
+                                        <br><span class="badge bg-warning text-dark">
+                                            <i class="bi bi-pencil-square me-1"></i>Edited {{ order.edit_count }}x
+                                        </span>
+                                        {% if order.last_edited_at %}
+                                            <br><small class="text-muted">Last: {{ order.last_edited_at | local_datetime_short }}</small>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <div class="btn-group" role="group">
                                         <button class="btn btn-sm btn-outline-primary view-order" data-order-id="{{ order.id }}">
@@ -429,8 +447,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                 }
                 
+                // Format counter display
+                let counterDisplay = '<span class="text-muted">-</span>';
+                if (order.order_counter) {
+                    counterDisplay = `<span class="badge bg-dark">${order.order_counter}</span>`;
+                }
+                
                 row.innerHTML = `
                     <td>${order.order_number}</td>
+                    <td>${counterDisplay}</td>
                     <td>${order.table_number}</td>
                     <td><span class="badge bg-info">${order.items_count || 0}</span></td>
                     <td>${order.total_amount.toFixed(2)}</td>
@@ -492,18 +517,42 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Create modal content
+                    // Create items HTML with edit tracking
                     let itemsHtml = '';
                     data.items.forEach(item => {
                         // Build modifiers display
                         let modifiersHtml = '';
-                        if (item.modifiers && item.modifiers.trim()) {
-                            modifiersHtml = `<br><small class="text-muted">+ ${item.modifiers}</small>`;
+                        if (item.modifiers && Array.isArray(item.modifiers) && item.modifiers.length > 0) {
+                            modifiersHtml = '<br><small class="text-muted">Modifiers: ' + 
+                                item.modifiers.map(mod => mod.name).join(', ') + '</small>';
+                        } else if (item.modifiers && typeof item.modifiers === 'string' && item.modifiers.trim()) {
+                            // Handle case where modifiers is stored as a string
+                            modifiersHtml = '<br><small class="text-muted">Modifiers: ' + item.modifiers + '</small>';
+                        }
+                        
+                        // Add special requests display
+                        let specialRequestsHtml = '';
+                        if (item.special_requests) {
+                            specialRequestsHtml = `<br><small class="text-primary"><i class="bi bi-stars"></i> ${item.special_requests}</small>`;
+                        }
+                        
+                        // Style for deleted/new items
+                        const isDeleted = item.is_deleted || false;
+                        const isNew = item.is_new || false;
+                        let rowStyle = '';
+                        let itemPrefix = '';
+                        
+                        if (isDeleted) {
+                            rowStyle = 'style="text-decoration: line-through; background-color: #ffebee; color: #666;"';
+                            itemPrefix = '🚫 ';
+                        } else if (isNew) {
+                            rowStyle = 'style="background-color: #e8f5e8; font-weight: bold;"';
+                            itemPrefix = '🆕 ';
                         }
                         
                         itemsHtml += `
-                            <tr>
-                                <td>${item.name}${modifiersHtml}</td>
+                            <tr ${rowStyle}>
+                                <td>${itemPrefix}${item.menu_item_name}${modifiersHtml}${specialRequestsHtml}</td>
                                 <td>${item.quantity}</td>
                                 <td>${parseFloat(item.unit_price).toFixed(2)} QAR</td>
                                 <td>${parseFloat(item.total_price).toFixed(2)} QAR</td>
@@ -511,12 +560,25 @@ document.addEventListener('DOMContentLoaded', function() {
                         `;
                     });
                     
+                    // Edit history section
+                    let editHistoryHtml = '';
+                    if (data.edit_count && data.edit_count > 0) {
+                        editHistoryHtml = `
+                            <div class="alert alert-warning mt-3">
+                                <h6><i class="bi bi-pencil-square"></i> Edit History</h6>
+                                <p><strong>Edited ${data.edit_count} time(s)</strong></p>
+                                ${data.last_edited_at ? `<p><small>Last edited: ${new Date(data.last_edited_at).toLocaleString()}</small></p>` : ''}
+                                ${data.last_edited_by ? `<p><small>Last edited by: ${data.last_edited_by}</small></p>` : ''}
+                            </div>
+                        `;
+                    }
+                    
                     const modalHtml = `
                         <div class="modal fade" id="orderDetailsModal" tabindex="-1">
                             <div class="modal-dialog modal-lg">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title">Order Details - ${data.order_number}</h5>
+                                        <h5 class="modal-title">Order Details - ${data.order_number}${data.order_counter ? ` (Count #${data.order_counter})` : ''}</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body">
@@ -527,6 +589,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             </div>
                                             <div class="col-md-6 text-end">
                                                 <p><strong>Order #:</strong> ${data.order_number}</p>
+                                                ${data.order_counter ? `<p><strong>Count #:</strong> <span class="badge bg-dark">${data.order_counter}</span></p>` : ''}
                                                 <p><strong>Date:</strong> ${new Date(data.created_at).toLocaleString()}</p>
                                                 <p><strong>Service:</strong> ${data.service_type ? data.service_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'N/A'}</p>
                                                 ${data.delivery_company ? `<p><strong>Delivery:</strong> ${data.delivery_company}</p>` : ''}
@@ -549,6 +612,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 </tbody>
                                             </table>
                                         </div>
+                                        
+                                        ${editHistoryHtml}
                                         
                                         <div class="text-end">
                                             <h4>Total: ${parseFloat(data.total_amount).toFixed(2)} QAR</h4>
@@ -742,18 +807,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <body>
                             <div class="header">
                                 <h3>🍽️ RESTAURANT POS</h3>
-                                <p><strong>Order #${data.order_number}</strong></p>
+                                <p><strong>Order #${data.order_number}</strong>${data.order_counter ? ` | Count #${data.order_counter}` : ''}</p>
                                 <p>${new Date(data.created_at).toLocaleString()}</p>
                                 ${data.table_number ? `<p><strong>Table: ${data.table_number}</strong></p>` : ''}
                                 ${data.cashier_name ? `<p><strong>Cashier:</strong> ${data.cashier_name}</p>` : ''}
                             </div>
-                                <div class="invoice-header">
-                                    <h3>🍽️ Restaurant POS</h3>
-                                    <p><strong>Order #${data.order_number}</strong></p>
-                                    <p>${new Date(data.created_at).toLocaleString()}</p>
-                                    ${data.table_number ? `<p><strong>Table: ${data.table_number}</strong></p>` : ''}
-                                    ${data.cashier_name ? `<p><strong>Cashier:</strong> ${data.cashier_name}</p>` : ''}
-                                </div>
                                 
                                 <!-- Prominent Service Type Display -->
                                 <div class="service-highlight">

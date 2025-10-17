@@ -40,15 +40,13 @@ mkdir -p logs
 mkdir -p instance
 mkdir -p migrations
 
-# Skip database initialization during build for app updates
-# Database initialization will be handled automatically on application startup
+# Run deployment script if DATABASE_URL is available
 if [ -n "$DATABASE_URL" ]; then
-    echo "🗄️  Database URL detected"
-    echo "✅ Database setup will be handled automatically on application startup"
-    echo "   This prevents build failures during app updates"
+    echo "🗄️  Database URL detected, running deployment setup..."
+    python deploy_production.py
 else
-    echo "⚠️  DATABASE_URL not set"
-    echo "   Database will be set up on first application run"
+    echo "⚠️  DATABASE_URL not set, skipping database setup"
+    echo "   Database will be set up on first run"
 fi
 
 # Collect static files (if needed)

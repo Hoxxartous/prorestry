@@ -117,7 +117,7 @@
                             <label class="form-label fw-bold">Status Filter</label>
                             <select class="form-select" id="statusFilterSelect">
                                 <option value="all">All Orders</option>
-                                <option value="pending">Pending Only</option>
+                                <option value="pending" selected>Pending Only</option>
                                 <option value="paid">Paid Only</option>
                             </select>
                         </div>
@@ -221,6 +221,53 @@
         </div>
     </div>
 </div>
+
+<!-- Table Transfer Modal -->
+<div class="modal fade" id="tableTransferModal" tabindex="-1" aria-labelledby="tableTransferModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="tableTransferModalLabel">
+                    <i class="bi bi-arrow-left-right me-2"></i>Transfer Order to Different Table
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="transferOrderInfo" class="alert alert-info mb-4">
+                    <!-- Order info will be populated here -->
+                </div>
+                
+                <h6 class="mb-3">
+                    <i class="bi bi-table me-2"></i>Select New Table:
+                </h6>
+                
+                <div id="transferLoadingIndicator" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading tables...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading available tables...</p>
+                </div>
+                
+                <div id="transferTablesGrid" class="transfer-tables-grid" style="display: none;">
+                    <!-- Available tables will be loaded here -->
+                </div>
+                
+                <div id="transferErrorMessage" class="alert alert-danger" style="display: none;">
+                    <!-- Error messages will be shown here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-info" id="confirmTransferBtn" disabled>
+                    <i class="bi bi-arrow-left-right me-1"></i>Transfer Order
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block styles %}
@@ -320,6 +367,161 @@
     animation: pulse 2s infinite;
 }
 
+/* Edit marker styles */
+.edit-marker {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 15px;
+    animation: editPulse 3s infinite;
+}
+
+@keyframes editPulse {
+    0% { box-shadow: 0 0 0 0 rgba(13, 202, 240, 0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(13, 202, 240, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(13, 202, 240, 0); }
+}
+
+/* Table Transfer Styles - Dark Theme */
+.transfer-table-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 3px solid transparent;
+    background: #2d3748;
+    color: #e2e8f0;
+    border-radius: 12px;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.transfer-table-card:hover:not(.occupied):not(.current) {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    border-color: #4299e1;
+}
+
+.transfer-table-card.available {
+    border-color: #48bb78;
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+}
+
+.transfer-table-card.available:hover {
+    border-color: #68d391;
+    background: linear-gradient(135deg, #38a169 0%, #48bb78 100%);
+    color: white;
+}
+
+.transfer-table-card.current {
+    border-color: #ed8936;
+    background: linear-gradient(135deg, #744210 0%, #975a16 100%);
+    opacity: 0.7;
+    cursor: not-allowed;
+    color: #fbb6ce;
+}
+
+.transfer-table-card.occupied {
+    border-color: #f56565;
+    background: linear-gradient(135deg, #742a2a 0%, #9c4221 100%);
+    opacity: 0.6;
+    cursor: not-allowed;
+    color: #fbb6ce;
+}
+
+.transfer-table-card.selected {
+    border-color: #4299e1;
+    background: linear-gradient(135deg, #2b6cb0 0%, #3182ce 100%);
+    transform: scale(1.08);
+    box-shadow: 0 0 20px rgba(66, 153, 225, 0.5);
+    color: white;
+}
+
+.transfer-table-number {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.transfer-table-status {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.transfer-tables-grid {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 1rem;
+    background: #1a202c;
+    border-radius: 8px;
+    border: 1px solid #4a5568;
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    grid-auto-rows: minmax(120px, auto);
+}
+
+/* Responsive grid - 3 columns on medium screens */
+@media (max-width: 991px) {
+    .transfer-tables-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Responsive grid - 2 columns on small screens */
+@media (max-width: 575px) {
+    .transfer-tables-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+}
+
+.transfer-table-item {
+    display: flex;
+    align-items: stretch;
+}
+
+.transfer-table-item .transfer-table-card {
+    width: 100%;
+    height: 100%;
+}
+
+/* Transfer animation */
+@keyframes transferSuccess {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.order-card.transfer-success {
+    animation: transferSuccess 0.6s ease-in-out;
+    border-left: 4px solid #17a2b8 !important;
+}
+
+/* Transfer notification styles */
+.transfer-notification {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+    border-radius: 8px;
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    animation: slideInFromRight 0.5s ease-out;
+}
+
+@keyframes slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .order-card {
@@ -333,6 +535,14 @@
     .stats-card .card-body {
         padding: 1rem;
     }
+    
+    .transfer-table-card {
+        margin-bottom: 1rem;
+    }
+    
+    .transfer-table-number {
+        font-size: 1.2rem;
+    }
 }
 </style>
 {% endblock %}
@@ -340,6 +550,66 @@
 {% block scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script>
+// Sound generation functions
+function playNewRequestSound() {
+    // Create audio context
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Create oscillator for a pleasant notification sound
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    // Connect nodes
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Configure sound - pleasant bell-like tone
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // High note
+    oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1); // Lower note
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2); // High note again
+    
+    // Configure volume envelope
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
+    gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.15);
+    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.25);
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.4);
+    
+    // Play sound
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.4);
+}
+
+function playOrderEditedSound() {
+    // Create audio context
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Create oscillator for edit notification sound
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    // Connect nodes
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Configure sound - gentle notification tone
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(500, audioContext.currentTime);
+    oscillator.frequency.setValueAtTime(700, audioContext.currentTime + 0.15);
+    
+    // Configure volume envelope
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.05);
+    gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.1);
+    gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.2);
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+    
+    // Play sound
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize Socket.IO for real-time updates
     const socket = io();
@@ -372,6 +642,14 @@ document.addEventListener('DOMContentLoaded', function() {
         {% if current_user.role.name == 'CASHIER' %}
             // ISOLATION GUARANTEE: This event only reaches cashiers who are assigned the order
             // No need to check branch_id or cashier assignment - the room isolation handles it
+            
+            // Play notification sound for cashier
+            try {
+                playNewRequestSound();
+            } catch (error) {
+                console.log('Could not play sound:', error);
+            }
+            
             showNotification(`New order #${data.order_number} from ${data.creator_name} - Table ${data.table_number}`, 'info');
             
             // Add the new order to the top of the grid with animation
@@ -392,13 +670,13 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Order paid event received:', data);
         
         if (data.branch_id === {{ current_user.branch_id }}) {
-            // Update the specific order card
-            updateOrderCard(data.order_id, 'paid');
+            // Remove the order card from the page since it's now paid
+            removeOrderCard(data.order_id);
             
-            // Update statistics
+            // Update statistics with AJAX call
             updateStatistics();
             
-            showNotification(`Order for Table ${data.table_number} has been paid`, 'success');
+            showNotification(`Order for Table ${data.table_number} has been paid and removed from waiter requests`, 'success');
         }
     });
     
@@ -451,6 +729,22 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log(`ISOLATION: Order #${data.order_number} updated notification received`);
         {% endif %}
+    });
+    
+    // Listen for table transfer notifications
+    socket.on('order_table_transferred', function(data) {
+        console.log('Order table transferred event received:', data);
+        
+        if (data.branch_id === {{ current_user.branch_id }}) {
+            // Update the order card with new table information
+            updateOrderCardAfterTransfer(data.order_id, data.new_table_number);
+            
+            // Show notification
+            showNotification(
+                `Order #${data.order_number} transferred from Table ${data.old_table_number} to Table ${data.new_table_number} by ${data.transferred_by}`, 
+                'info'
+            );
+        }
     });
     
     // Load initial orders
@@ -604,9 +898,24 @@ document.addEventListener('DOMContentLoaded', function() {
             '<span class="badge bg-success status-badge">Paid</span>' :
             '<span class="badge bg-warning status-badge">Pending</span>';
         
+        // Add edit marker for edited orders
+        const editMarker = order.is_edited ? 
+            '<span class="badge bg-info edit-marker" title="Order has been edited"><i class="bi bi-pencil-square"></i> Edited</span>' : '';
+        
+        const editButton = order.can_edit ? 
+            `<button class="btn btn-warning btn-sm edit-order-btn" data-order-id="${order.id}" title="Edit Order (Admin PIN Required)">
+                <i class="bi bi-pencil-square"></i> Edit
+            </button>` : '';
+        
         const markPaidButton = order.can_mark_paid ? 
             `<button class="btn btn-success btn-sm mark-paid-btn" data-order-id="${order.id}">
                 <i class="bi bi-check-circle"></i> Mark Paid
+            </button>` : '';
+        
+        // Transfer button - only for pending orders
+        const transferButton = order.status === 'pending' ? 
+            `<button class="btn btn-info btn-sm transfer-order-btn" data-order-id="${order.id}" title="Transfer to Different Table">
+                <i class="bi bi-arrow-left-right"></i> Transfer
             </button>` : '';
         
         col.innerHTML = `
@@ -614,7 +923,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="order-number text-primary">#${order.order_number}</div>
-                        ${statusBadge}
+                        <div class="d-flex flex-column gap-1">
+                            ${statusBadge}
+                            ${editMarker}
+                        </div>
                     </div>
                     
                     <div class="waiter-info mb-3">
@@ -628,7 +940,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="col-6">
                             <div class="table-info">
                                 <i class="bi bi-table text-primary me-1"></i>
-                                <small class="fw-bold">Table ${order.table_number}</small>
+                                <small class="fw-bold table-number">Table ${order.table_number}</small>
                             </div>
                         </div>
                         <div class="col-6 text-end">
@@ -645,10 +957,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         </small>
                     </div>
                     
-                    <div class="action-buttons d-flex gap-2">
+                    <div class="action-buttons d-flex gap-1 flex-wrap">
                         <button class="btn btn-outline-primary btn-sm view-order-btn" data-order-id="${order.id}">
                             <i class="bi bi-eye"></i> View
                         </button>
+                        ${transferButton}
+                        ${editButton}
                         ${markPaidButton}
                     </div>
                 </div>
@@ -661,10 +975,24 @@ document.addEventListener('DOMContentLoaded', function() {
             viewOrderDetails(order.id);
         });
         
+        const editBtn = col.querySelector('.edit-order-btn');
+        if (editBtn) {
+            editBtn.addEventListener('click', function() {
+                showAdminPinEditModal(order.id);
+            });
+        }
+        
         const markPaidBtn = col.querySelector('.mark-paid-btn');
         if (markPaidBtn) {
             markPaidBtn.addEventListener('click', function() {
                 markOrderAsPaid(order.id);
+            });
+        }
+        
+        const transferBtn = col.querySelector('.transfer-order-btn');
+        if (transferBtn) {
+            transferBtn.addEventListener('click', function() {
+                showTableTransferModal(order.id, order.order_number, order.table_number);
             });
         }
         
@@ -674,6 +1002,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to update statistics
     function updateStatistics(stats = null) {
         if (stats) {
+            // Update UI with provided stats
             document.getElementById('totalOrdersCount').textContent = stats.total;
             document.getElementById('paidOrdersCount').textContent = stats.paid;
             document.getElementById('pendingOrdersCount').textContent = stats.pending;
@@ -695,6 +1024,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     clearBtn.innerHTML = '<i class="bi bi-trash"></i> No Orders';
                 }
             }
+        } else {
+            // Fetch fresh stats via AJAX
+            const params = new URLSearchParams({
+                page: 1,
+                per_page: 1, // We only need stats, not orders
+                status_filter: 'all' // Get all stats
+            });
+            
+            fetch(`/pos/waiter_requests?${params.toString()}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.stats) {
+                    updateStatistics(data.stats); // Recursive call with stats
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching statistics:', error);
+            });
         }
     }
     
@@ -725,6 +1076,49 @@ document.addEventListener('DOMContentLoaded', function() {
                     markPaidBtn.remove();
                 }
             }
+        }
+    }
+
+    // Function to remove order card from the page (when paid)
+    function removeOrderCard(orderId) {
+        const orderCard = document.querySelector(`[data-order-id="${orderId}"]`);
+        if (orderCard) {
+            // Add fade out animation
+            orderCard.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
+            orderCard.style.opacity = '0';
+            orderCard.style.transform = 'translateX(100%)';
+            
+            // Remove from DOM after animation
+            setTimeout(() => {
+                const cardColumn = orderCard.closest('.col-md-6, .col-lg-4, .col-xl-3');
+                if (cardColumn) {
+                    cardColumn.remove();
+                } else {
+                    orderCard.remove();
+                }
+                
+                // Update currentOrders array
+                currentOrders = currentOrders.filter(order => order.id !== parseInt(orderId));
+                
+                // Check if no orders left and show empty state
+                checkEmptyState();
+            }, 500);
+        }
+    }
+
+    // Function to check and show empty state if no orders
+    function checkEmptyState() {
+        const ordersContainer = document.getElementById('ordersContainer');
+        if (currentOrders.length === 0) {
+            ordersContainer.innerHTML = `
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox display-1 text-muted"></i>
+                        <h4 class="text-muted mt-3">No Waiter Requests</h4>
+                        <p class="text-muted">All orders have been processed or there are no pending waiter requests.</p>
+                    </div>
+                </div>
+            `;
         }
     }
     
@@ -766,8 +1160,8 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showNotification(data.message, 'success');
-                updateOrderCard(orderId, 'paid');
+                showNotification(data.message + ' - Order removed from waiter requests', 'success');
+                removeOrderCard(orderId);
                 updateStatistics();
             } else {
                 showNotification('Error marking order as paid: ' + data.message, 'error');
@@ -810,7 +1204,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const createdAt = new Date(order.created_at).toLocaleString();
         const paidAt = order.paid_at ? new Date(order.paid_at).toLocaleString() : null;
         
-        // Build items HTML
+        // Build items HTML with edit tracking
         let itemsHtml = '';
         if (order.items && order.items.length > 0) {
             itemsHtml = `
@@ -828,10 +1222,24 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             
             order.items.forEach(item => {
+                // Style for deleted/new items
+                const isDeleted = item.is_deleted || false;
+                const isNew = item.is_new || false;
+                let rowStyle = '';
+                let itemPrefix = '';
+                
+                if (isDeleted) {
+                    rowStyle = 'style="text-decoration: line-through; background-color: #ffebee; color: #666;"';
+                    itemPrefix = '🚫 ';
+                } else if (isNew) {
+                    rowStyle = 'style="background-color: #e8f5e8; font-weight: bold;"';
+                    itemPrefix = '🆕 ';
+                }
+                
                 itemsHtml += `
-                    <tr>
+                    <tr ${rowStyle}>
                         <td>
-                            <div class="fw-bold">${item.menu_item_name}</div>
+                            <div class="fw-bold">${itemPrefix}${item.menu_item_name}</div>
                             ${item.special_requests ? `<small class="text-muted">${item.special_requests}</small>` : ''}
                         </td>
                         <td class="text-center">
@@ -880,6 +1288,25 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }
         
+        // Edit history section
+        let editHistoryHtml = '';
+        if (order.edit_count && order.edit_count > 0) {
+            editHistoryHtml = `
+                <div class="alert alert-warning mt-3">
+                    <h6><i class="bi bi-pencil-square"></i> Edit History</h6>
+                    <p><strong>Edited ${order.edit_count} time(s)</strong></p>
+                    ${order.last_edited_at ? `<p><small>Last edited: ${new Date(order.last_edited_at).toLocaleString()}</small></p>` : ''}
+                    ${order.last_edited_by ? `<p><small>Last edited by: ${order.last_edited_by}</small></p>` : ''}
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <strong>Legend:</strong> 
+                            🆕 = New items added | 🚫 = Items removed
+                        </small>
+                    </div>
+                </div>
+            `;
+        }
+
         modalContent.innerHTML = `
             <div class="row">
                 <div class="col-md-6">
@@ -891,6 +1318,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             <td><strong>Order Number:</strong></td>
                             <td>#${order.order_number}</td>
                         </tr>
+                        ${order.order_counter ? `
+                        <tr>
+                            <td><strong>Count #:</strong></td>
+                            <td><span class="badge bg-dark">${order.order_counter}</span></td>
+                        </tr>
+                        ` : ''}
                         <tr>
                             <td><strong>Status:</strong></td>
                             <td>${statusBadge}</td>
@@ -942,6 +1375,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
             
+            ${editHistoryHtml}
+            
             <hr>
             
             <h6 class="text-success mb-3">
@@ -964,14 +1399,14 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showNotification(data.message, 'success');
+                showNotification(data.message + ' - Order removed from waiter requests', 'success');
                 
                 // Close modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('orderDetailsModal'));
                 modal.hide();
                 
-                // Update order card and statistics
-                updateOrderCard(orderId, 'paid');
+                // Remove order card and update statistics
+                removeOrderCard(orderId);
                 updateStatistics();
             } else {
                 showNotification('Error marking order as paid: ' + data.message, 'error');
@@ -1028,7 +1463,12 @@ document.addEventListener('DOMContentLoaded', function() {
             paid_at: null,
             creator_name: orderData.creator_name,
             items_count: orderData.items_count || 0,
-            can_mark_paid: true
+            can_mark_paid: true,
+            can_edit: true, // Enable edit button for new pending orders
+            edit_count: 0,
+            last_edited_at: null,
+            last_edited_by: null,
+            is_edited: false
         };
         
         // Create the order card
@@ -1069,6 +1509,250 @@ document.addEventListener('DOMContentLoaded', function() {
                 notification.remove();
             }
         }, 5000);
+    }
+    
+    // Simple redirect to orders page for editing
+    function showAdminPinEditModal(orderId) {
+        // Redirect to orders page with edit parameter and referrer
+        window.location.href = `/pos/orders?edit=${orderId}&from=waiter_requests`;
+    }
+    
+    // Table Transfer Functions
+    let currentTransferOrderId = null;
+    let selectedTableId = null;
+    
+    // Function to show table transfer modal
+    function showTableTransferModal(orderId, orderNumber, currentTableNumber) {
+        currentTransferOrderId = orderId;
+        selectedTableId = null;
+        
+        // Update modal title and order info
+        document.getElementById('tableTransferModalLabel').innerHTML = 
+            `<i class="bi bi-arrow-left-right me-2"></i>Transfer Order #${orderNumber}`;
+        
+        document.getElementById('transferOrderInfo').innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle me-2"></i>
+                <div>
+                    <strong>Order #${orderNumber}</strong> is currently on <strong>Table ${currentTableNumber}</strong>
+                    <br><small class="text-muted">Select a new table to transfer this order to</small>
+                </div>
+            </div>
+        `;
+        
+        // Reset UI state
+        document.getElementById('transferLoadingIndicator').style.display = 'block';
+        document.getElementById('transferTablesGrid').style.display = 'none';
+        document.getElementById('transferErrorMessage').style.display = 'none';
+        document.getElementById('confirmTransferBtn').disabled = true;
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('tableTransferModal'));
+        modal.show();
+        
+        // Load available tables
+        loadAvailableTables(orderId);
+    }
+    
+    // Function to load available tables
+    function loadAvailableTables(orderId) {
+        fetch(`/pos/get_available_tables/${orderId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderAvailableTables(data.tables, data.current_table_id);
+                } else {
+                    showTransferError(data.message || 'Failed to load available tables');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading available tables:', error);
+                showTransferError('Network error occurred while loading tables');
+            })
+            .finally(() => {
+                document.getElementById('transferLoadingIndicator').style.display = 'none';
+            });
+    }
+    
+    // Function to render available tables
+    function renderAvailableTables(tables, currentTableId) {
+        const grid = document.getElementById('transferTablesGrid');
+        grid.innerHTML = '';
+        
+        tables.forEach(table => {
+            const col = document.createElement('div');
+            col.className = 'transfer-table-item';
+            
+            let cardClass = 'transfer-table-card';
+            let statusBadge = '';
+            let clickable = true;
+            
+            if (table.is_current) {
+                cardClass += ' current';
+                statusBadge = '<span class="badge bg-warning transfer-table-status">Current</span>';
+                clickable = false;
+            } else if (!table.is_available) {
+                cardClass += ' occupied';
+                statusBadge = '<span class="badge bg-danger transfer-table-status">Occupied</span>';
+                clickable = false;
+            } else {
+                cardClass += ' available';
+                statusBadge = '<span class="badge bg-success transfer-table-status">Available</span>';
+            }
+            
+            col.innerHTML = `
+                <div class="${cardClass}" data-table-id="${table.id}">
+                    <div class="text-center">
+                        <div class="transfer-table-number">T${table.table_number}</div>
+                        <div class="mb-2">${statusBadge}</div>
+                        <small class="d-block">
+                            <i class="bi bi-people me-1"></i>${table.capacity} seats
+                        </small>
+                        ${table.description ? `<small class="d-block mt-1 text-muted">${table.description}</small>` : ''}
+                    </div>
+                </div>
+            `;
+            
+            // Add click event for available tables only
+            if (clickable) {
+                const card = col.querySelector('.transfer-table-card');
+                card.addEventListener('click', function() {
+                    selectTable(table.id, table.table_number);
+                });
+            }
+            
+            grid.appendChild(col);
+        });
+        
+        document.getElementById('transferTablesGrid').style.display = 'block';
+    }
+    
+    // Function to select a table
+    function selectTable(tableId, tableNumber) {
+        // Remove previous selection
+        document.querySelectorAll('.transfer-table-card.selected').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        // Add selection to clicked table
+        const selectedCard = document.querySelector(`[data-table-id="${tableId}"]`);
+        if (selectedCard) {
+            selectedCard.classList.add('selected');
+        }
+        
+        selectedTableId = tableId;
+        
+        // Enable confirm button
+        const confirmBtn = document.getElementById('confirmTransferBtn');
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = `<i class="bi bi-arrow-left-right me-1"></i>Transfer to Table ${tableNumber}`;
+    }
+    
+    // Function to show transfer error
+    function showTransferError(message) {
+        const errorDiv = document.getElementById('transferErrorMessage');
+        errorDiv.innerHTML = `
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>Error:</strong> ${message}
+        `;
+        errorDiv.style.display = 'block';
+    }
+    
+    // Function to confirm transfer
+    document.getElementById('confirmTransferBtn').addEventListener('click', function() {
+        if (!currentTransferOrderId || !selectedTableId) {
+            showTransferError('Please select a table to transfer to');
+            return;
+        }
+        
+        const confirmBtn = this;
+        const originalText = confirmBtn.innerHTML;
+        
+        // Show loading state
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Transferring...';
+        
+        // Perform transfer
+        fetch('/pos/transfer_order_table', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                order_id: currentTransferOrderId,
+                new_table_id: selectedTableId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('tableTransferModal'));
+                modal.hide();
+                
+                // Update the order card
+                updateOrderCardAfterTransfer(currentTransferOrderId, data.new_table_number);
+                
+                // Reset state
+                currentTransferOrderId = null;
+                selectedTableId = null;
+            } else {
+                showTransferError(data.message || 'Transfer failed');
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error transferring order:', error);
+            showTransferError('Network error occurred during transfer');
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = originalText;
+        });
+    });
+    
+    // Function to update order card after transfer
+    function updateOrderCardAfterTransfer(orderId, newTableNumber) {
+        const orderCard = document.querySelector(`[data-order-id="${orderId}"]`);
+        if (orderCard) {
+            // Update table number in the card
+            const tableNumberElement = orderCard.querySelector('.table-number');
+            if (tableNumberElement) {
+                tableNumberElement.textContent = `Table ${newTableNumber}`;
+            }
+            
+            // Add transfer success animation
+            orderCard.classList.add('transfer-success');
+            setTimeout(() => {
+                orderCard.classList.remove('transfer-success');
+            }, 600);
+            
+            // Add transfer notification to the card
+            const cardBody = orderCard.querySelector('.card-body');
+            if (cardBody) {
+                const existingNotification = cardBody.querySelector('.transfer-notification');
+                if (existingNotification) {
+                    existingNotification.remove();
+                }
+                
+                const notification = document.createElement('div');
+                notification.className = 'transfer-notification';
+                notification.innerHTML = `
+                    <i class="bi bi-arrow-left-right me-1"></i>
+                    <small>Transferred to Table ${newTableNumber}</small>
+                `;
+                
+                cardBody.insertBefore(notification, cardBody.firstChild);
+                
+                // Remove notification after 5 seconds
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 5000);
+            }
+        }
     }
 });
 </script>

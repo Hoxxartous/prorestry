@@ -114,8 +114,8 @@
     <div class="container invoice-container">
         <div class="invoice-header">
             <h3>🍽️ {{ restaurant_name or 'Restaurant POS' }}</h3>
-            <p><strong>Order #{{ order.order_number }}</strong></p>
-            <p>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            <p><strong>Order #{{ order.order_number }}</strong>{% if order.order_counter %} | Count #{{ order.order_counter }}{% endif %}</p>
+            <p>{{ order.created_at | local_datetime_short }}</p>
             {% if order.table %}
             <p><strong>Table: {{ order.table.table_number }}</strong></p>
             {% endif %}

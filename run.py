@@ -1,20 +1,11 @@
 from app import create_app
-from config import DevelopmentConfig, ProductionConfig
 import os
 
 def main():
     """Create and return the Flask app with automatic initialization"""
-    # Choose config based on environment or DATABASE_URL
-    if os.environ.get('DATABASE_URL'):
-        # If DATABASE_URL is set, use ProductionConfig (PostgreSQL)
-        config_class = ProductionConfig
-        print("🐘 Using PostgreSQL configuration")
-    else:
-        # Fallback to DevelopmentConfig (SQLite) for local development only
-        config_class = DevelopmentConfig
-        print("💾 Using SQLite for local development")
-    
-    app = create_app(config_class)
+    # Create app with default configuration
+    # The app will automatically initialize the database on startup
+    app = create_app()
     return app
 
 if __name__ == '__main__':

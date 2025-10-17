@@ -84,7 +84,7 @@
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                 Revenue Today</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ "%.2f"|format(today_revenue) }} QAR</div>
-                            <div class="text-xs text-muted">From paid orders only</div>
+                            <div class="text-xs text-muted">Orders + Manual Card Payments</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
@@ -129,6 +129,141 @@
         </div>
     </div>
 
+    <!-- Payment Breakdown Row -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Revenue (All Time)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ "%.2f"|format(total_revenue_all_time) }} QAR</div>
+                            <div class="text-xs text-muted">Orders + Manual Cards</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Card Payments (All Time)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ "%.2f"|format(manual_card_total_all_time) }} QAR</div>
+                            <div class="text-xs text-muted">Manual card entries</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-credit-card fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Cash Payments (All Time)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ "%.2f"|format(cash_total_all_time) }} QAR</div>
+                            <div class="text-xs text-muted">Total - Card payments</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Card/Cash Ratio
+                                <i class="fas fa-info-circle ms-1" 
+                                   data-bs-toggle="tooltip" 
+                                   data-bs-placement="top" 
+                                   data-bs-html="true"
+                                   title="<strong>Card/Cash Ratio Explained:</strong><br/>
+                                          • <strong>100%</strong> = All revenue from card payments<br/>
+                                          • <strong>50%</strong> = Equal split between cards and cash<br/>
+                                          • <strong>0%</strong> = All revenue from cash orders<br/><br/>
+                                          <strong>Business Benefits:</strong><br/>
+                                          • Plan cash deposits & withdrawals<br/>
+                                          • Reduce theft risk with less cash<br/>
+                                          • Understand customer payment preferences<br/>
+                                          • Optimize staff training for payment methods"
+                                   style="cursor: help; color: #ffc107;"></i>
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% if total_revenue_all_time > 0 %}
+                                    {{ "%.1f"|format((manual_card_total_all_time / total_revenue_all_time) * 100) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </div>
+                            <div class="text-xs text-muted">Card % of total revenue</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edited Orders Statistics Row -->
+    <div class="row mb-4">
+        <div class="col-xl-6 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Orders Edited Today</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ edited_orders_today }}</div>
+                            <div class="text-xs text-muted">Across all branches</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-edit fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6 col-md-6 mb-4">
+            <div class="card border-left-secondary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+                                Total Edited Orders</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_edited_orders }}</div>
+                            <div class="text-xs text-muted">All-time system-wide</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-history fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Branch Performance -->
     <div class="row mb-4">
         <div class="col-12">
@@ -150,6 +285,8 @@
                                     <th>Paid Orders</th>
                                     <th>Unpaid Orders</th>
                                     <th>Revenue Today</th>
+                                    <th>Cash Today</th>
+                                    <th>Card Today</th>
                                     <th>Active Users</th>
                                     <th>Performance</th>
                                 </tr>
@@ -173,14 +310,22 @@
                                         <span class="badge bg-warning">{{ branch.unpaid_orders_count or 0 }}</span>
                                     </td>
                                     <td>
-                                        <strong>{{ "%.2f"|format(branch.revenue or 0) }} QAR</strong>
-                                        <small class="text-muted d-block">From paid orders</small>
+                                        <strong>{{ "%.2f"|format((branch.revenue or 0) + (branch.manual_card_amount or 0)) }} QAR</strong>
+                                        <small class="text-muted d-block">Total revenue</small>
+                                    </td>
+                                    <td>
+                                        <strong class="text-primary">{{ "%.2f"|format(branch.revenue or 0) }} QAR</strong>
+                                        <small class="text-muted d-block">Order payments</small>
+                                    </td>
+                                    <td>
+                                        <strong class="text-success">{{ "%.2f"|format(branch.manual_card_amount or 0) }} QAR</strong>
+                                        <small class="text-muted d-block">Manual entries</small>
                                     </td>
                                     <td>
                                         <span class="badge bg-success">{{ branch.users_count or 0 }}</span>
                                     </td>
                                     <td>
-                                        {% set performance = (branch.revenue or 0) / (branch.users_count or 1) %}
+                                        {% set performance = ((branch.revenue or 0) + (branch.manual_card_amount or 0)) / (branch.users_count or 1) %}
                                         {% if performance > 500 %}
                                             <span class="badge bg-success">Excellent</span>
                                         {% elif performance > 200 %}
@@ -194,6 +339,78 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Cashiers List -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Top Cashiers - Order Edits (This Week)</h6>
+                    <a href="{{ url_for('superuser.cashier_performance') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-user-tie"></i> View Performance
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if top_editing_cashiers %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Cashier Name</th>
+                                        <th scope="col">Role</th>
+                                        <th scope="col">Branch</th>
+                                        <th scope="col">Order Edits</th>
+                                        <th scope="col">Performance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for cashier in top_editing_cashiers %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-primary">{{ loop.index }}</span>
+                                        </td>
+                                        <td>
+                                            <strong>{{ cashier.full_name }}</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ cashier.role_name }}</span>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ cashier.branch_name }}</strong>
+                                                <br>
+                                                <small class="text-muted">Code: {{ cashier.branch_code }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-warning text-dark fs-6">{{ cashier.edit_count }} edits</span>
+                                        </td>
+                                        <td>
+                                            {% if cashier.edit_count >= 10 %}
+                                                <span class="badge bg-success">High Activity</span>
+                                            {% elif cashier.edit_count >= 5 %}
+                                                <span class="badge bg-info">Moderate Activity</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Low Activity</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Order Edits This Week</h5>
+                            <p class="text-muted">No cashiers have edited orders in the past 7 days across all branches.</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -252,7 +469,7 @@
                             </div>
                             <div class="text-right">
                                 <strong>{{ "%.2f"|format(order.total_amount) }} QAR</strong><br>
-                                <small class="text-muted">{{ order.created_at.strftime('%H:%M') }}</small>
+                                <small class="text-muted">{{ order.created_at | local_datetime_short }}</small>
                             </div>
                         </div>
                         {% endfor %}
@@ -276,5 +493,25 @@
 .border-left-warning {
     border-left: 0.25rem solid #f6c23e !important;
 }
+.border-left-secondary {
+    border-left: 0.25rem solid #6c757d !important;
+}
+.border-left-danger {
+    border-left: 0.25rem solid #e74a3b !important;
+}
 </style>
+
+<script>
+// Initialize Bootstrap tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            html: true,
+            trigger: 'hover focus'
+        });
+    });
+});
+</script>
 {% endblock %}

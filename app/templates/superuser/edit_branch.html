@@ -113,7 +113,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Created Date</label>
                                 <div class="form-control-plaintext">
-                                    {{ branch.created_at.strftime('%Y-%m-%d %H:%M') if branch.created_at else 'N/A' }}
+                                    {{ branch.created_at | local_datetime_short if branch.created_at else 'N/A' }}
                                 </div>
                             </div>
                         </div>

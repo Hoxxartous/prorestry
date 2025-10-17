@@ -3,9 +3,7 @@ from flask_login import login_required, current_user
 from flask_socketio import join_room, leave_room
 from app.pos import pos
 from app.models import (
-    User, MenuItem, Category, Order, AuditLog, Table, Customer,
-    UserRole, OrderItem, ServiceType, OrderStatus, CashierSession, DeliveryCompany,
-    CashierUiPreference, CashierUiSetting
+    User, MenuItem, Category, Order, AuditLog, Table, Customer, UserRole, OrderItem, DeliveryCompany, ServiceType, OrderStatus, PaymentMethod, TimezoneManager, AdminPinCode, WaiterCashierAssignment, OrderEditHistory, CashierUiPreference, CashierUiSetting, OrderCounter, CashierPin, CashierSession, ManualCardPayment
 )
 from app import db, socketio
 from app.auth.decorators import cashier_or_above_required, pos_access_required, filter_by_user_branch
@@ -56,14 +54,14 @@ def on_join(data):
             join_room(branch_room)
             print(f"Waiter {current_user.get_full_name()} auto-joined branch room: {branch_room}")
     
-    elif current_user.role == UserRole.ADMIN:
+    elif current_user.role == UserRole.BRANCH_ADMIN:
         # Admins join branch room for their branch only
         branch_room = f'branch_{current_user.branch_id}'
         if room != branch_room:  # Avoid duplicate join
             join_room(branch_room)
             print(f"Admin {current_user.get_full_name()} auto-joined branch room: {branch_room}")
     
-    elif current_user.role == UserRole.SUPER_ADMIN:
+    elif current_user.role == UserRole.SUPER_USER:
         # Super admins can join a special room to see all branch activity if needed
         super_admin_room = 'super_admin'
         if room != super_admin_room:  # Avoid duplicate join
@@ -746,14 +744,50 @@ def dashboard():
             'pending_orders': pending_waiter_orders
         }
     
+    # Get manual card payment for today (for cashiers only)
+    manual_card_payment_today = None
+    if current_user.role == UserRole.CASHIER:
+        manual_card_payment_today = ManualCardPayment.get_cashier_entry_for_date(
+            current_user.id, today
+        )
+    
+    # Include manual card payments in revenue calculations
+    manual_card_total_today = 0
+    manual_card_total_all_time = 0
+    
+    if current_user.role == UserRole.CASHIER:
+        # For cashiers, only their own manual card payments
+        manual_card_total_today = ManualCardPayment.get_total_for_date_and_branch(today, current_user.branch_id)
+        manual_card_total_all_time = ManualCardPayment.get_total_for_date_range_and_branch(
+            datetime(2020, 1, 1).date(), today, current_user.branch_id
+        )
+    elif current_user.role in [UserRole.BRANCH_ADMIN, UserRole.SUPER_USER]:
+        # For admins, all manual card payments in their scope
+        if current_user.role == UserRole.BRANCH_ADMIN:
+            manual_card_total_today = ManualCardPayment.get_total_for_date_and_branch(today, current_user.branch_id)
+            manual_card_total_all_time = ManualCardPayment.get_total_for_date_range_and_branch(
+                datetime(2020, 1, 1).date(), today, current_user.branch_id
+            )
+        else:  # SUPER_USER
+            manual_card_total_today = db.session.query(func.sum(ManualCardPayment.amount)).filter(
+                ManualCardPayment.date == today
+            ).scalar() or 0
+            manual_card_total_all_time = db.session.query(func.sum(ManualCardPayment.amount)).scalar() or 0
+    
+    # Update totals to include manual card payments
+    today_sales_with_cards = today_sales + manual_card_total_today
+    total_revenue_with_cards = total_revenue + manual_card_total_all_time
+    
     return render_template('pos/dashboard.html',
                           total_orders=total_orders,
-                          today_sales=today_sales,
+                          today_sales=today_sales_with_cards,
                           today_orders=today_orders,
-                          total_revenue=total_revenue,
+                          total_revenue=total_revenue_with_cards,
                           recent_orders=recent_orders,
                           daily_sales=daily_sales_serializable,
-                          waiter_stats=waiter_stats)
+                          waiter_stats=waiter_stats,
+                          manual_card_payment_today=manual_card_payment_today,
+                          manual_card_total_today=manual_card_total_today)
 
 @pos.route('/daily_report')
 @login_required
@@ -795,23 +829,6 @@ def daily_report():
         func.date(Order.created_at) == today
     ).scalar() or 0
     
-    # Get today's most popular items - Include both created and assigned orders
-    popular_items = db.session.query(
-        MenuItem.name,
-        func.sum(OrderItem.quantity).label('total_quantity'),
-        func.sum(OrderItem.total_price).label('total_revenue')
-    ).join(OrderItem, MenuItem.id == OrderItem.menu_item_id)\
-     .join(Order, OrderItem.order_id == Order.id)\
-     .filter(
-         db.or_(
-             Order.cashier_id == current_user.id,
-             Order.assigned_cashier_id == current_user.id
-         ),
-         func.date(Order.created_at) == today
-     )\
-     .group_by(MenuItem.id, MenuItem.name)\
-     .order_by(func.sum(OrderItem.quantity).desc())\
-     .limit(5).all()
     
     # Get waiter order statistics for today
     waiter_orders_today = Order.query.filter(
@@ -905,31 +922,6 @@ def daily_report():
     elements.append(today_table)
     elements.append(Spacer(1, 20))
     
-    # Today's Popular Items
-    if popular_items:
-        elements.append(Paragraph("🏆 Today's Top Selling Items", heading_style))
-        items_data = [['Item Name', 'Quantity Sold', 'Revenue (QAR)']]
-        
-        for item in popular_items:
-            items_data.append([
-                item.name,
-                str(item.total_quantity or 0),
-                f'{float(item.total_revenue or 0):.2f}'
-            ])
-        
-        items_table = ReportTable(items_data, colWidths=[2.5*inch, 1.5*inch, 1.5*inch])
-        items_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), HexColor('#27ae60')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 12),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), HexColor('#d5f4e6')),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black)
-        ]))
-        elements.append(items_table)
-        elements.append(Spacer(1, 20))
     
     # Waiter Orders Section
     if waiter_orders_today > 0:
@@ -1271,7 +1263,7 @@ def check_logout_permission():
                 'orders_today': total_orders_today,
                 'orders_after_report': orders_after_report,
                 'unpaid_waiter_orders': unpaid_waiter_orders,
-                'last_report_time': last_report_time.isoformat() if last_report_time else None,
+                'last_report_time': TimezoneManager.format_local_time(last_report_time, '%Y-%m-%d %H:%M:%S') if last_report_time else None,
                 'action_required': 'both'  # Both report and waiter orders
             })
         elif needs_report and not has_unpaid_waiter_orders:
@@ -1282,7 +1274,7 @@ def check_logout_permission():
                 'orders_today': total_orders_today,
                 'orders_after_report': orders_after_report,
                 'unpaid_waiter_orders': unpaid_waiter_orders,
-                'last_report_time': last_report_time.isoformat() if last_report_time else None,
+                'last_report_time': TimezoneManager.format_local_time(last_report_time, '%Y-%m-%d %H:%M:%S') if last_report_time else None,
                 'action_required': 'report'  # Only report needed
             })
         elif not needs_report and has_unpaid_waiter_orders:
@@ -1293,7 +1285,7 @@ def check_logout_permission():
                 'orders_today': total_orders_today,
                 'orders_after_report': orders_after_report,
                 'unpaid_waiter_orders': unpaid_waiter_orders,
-                'last_report_time': last_report_time.isoformat() if last_report_time else None,
+                'last_report_time': TimezoneManager.format_local_time(last_report_time, '%Y-%m-%d %H:%M:%S') if last_report_time else None,
                 'action_required': 'waiter_orders_then_report'  # Process waiter orders, then report will be required
             })
         else:
@@ -1353,7 +1345,7 @@ def debug_logout_status():
                 'initial_count': s.initial_order_count,
                 'current_count': s.current_order_count,
                 'daily_report_printed': s.daily_report_printed,
-                'report_printed_at': s.report_printed_at.isoformat() if s.report_printed_at else None,
+                'report_printed_at': TimezoneManager.format_local_time(s.report_printed_at, '%Y-%m-%d %H:%M:%S') if s.report_printed_at else None,
                 'is_active': s.is_active
             } for s in sessions],
             'orders_today': len(orders_today),
@@ -1700,7 +1692,6 @@ def orders():
         query = query.filter(Order.table_id == table_id)
     if service_type:
         # Convert string to enum for filtering
-        from app.models import ServiceType
         try:
             service_enum = ServiceType(service_type)
             query = query.filter(Order.service_type == service_enum)
@@ -1761,7 +1752,17 @@ def orders():
                 'status': order.status.value if order.status else 'pending',
                 'paid_at': order.paid_at.strftime('%Y-%m-%d %H:%M') if order.paid_at else None,
                 'can_mark_paid': (current_user.role in [UserRole.CASHIER, UserRole.BRANCH_ADMIN, UserRole.SUPER_USER] 
-                                 and order.status == OrderStatus.PENDING)
+                                 and order.status == OrderStatus.PENDING),
+                'can_edit': (current_user.role == UserRole.CASHIER and 
+                           (order.cashier_id == current_user.id or order.assigned_cashier_id == current_user.id) and
+                           (order.status == OrderStatus.PENDING or 
+                            (order.status == OrderStatus.PAID and 
+                             (order.service_type in [ServiceType.DELIVERY, ServiceType.TAKE_AWAY] or 
+                              order.payment_method == PaymentMethod.CARD)))),
+                'is_edited': order.edit_count > 0 if order.edit_count else False,
+                'edit_count': order.edit_count or 0,
+                'last_edited_at': order.last_edited_at.strftime('%Y-%m-%d %H:%M') if order.last_edited_at else None,
+                'last_edited_by': User.query.get(order.last_edited_by).get_full_name() if order.last_edited_by else None
             })
         
         return jsonify({
@@ -1787,6 +1788,352 @@ def orders():
         'date_to': date_to
     })
 
+@pos.route('/get_order_for_editing/<int:order_id>')
+@login_required
+def get_order_for_editing(order_id):
+    """Get order details for editing (cashiers only)"""
+    if current_user.role != UserRole.CASHIER:
+        return jsonify({'success': False, 'message': 'Access denied. Cashier privileges required.'})
+    
+    try:
+        # Get the order and verify cashier can edit it
+        order = Order.query.filter_by(id=order_id).first()
+        if not order:
+            return jsonify({'success': False, 'message': 'Order not found'})
+        
+        # Check if cashier can edit this order (must be assigned to them or created by them)
+        if order.cashier_id != current_user.id and order.assigned_cashier_id != current_user.id:
+            return jsonify({'success': False, 'message': 'You can only edit orders assigned to you'})
+        
+        # Check if order can be edited based on status and service type
+        can_edit_paid = (order.service_type in [ServiceType.DELIVERY, ServiceType.TAKE_AWAY] or 
+                        order.payment_method == PaymentMethod.CARD)
+        
+        if order.status == OrderStatus.PENDING:
+            # Pending orders can always be edited (existing logic)
+            pass
+        elif order.status == OrderStatus.PAID and can_edit_paid:
+            # Paid orders can be edited only for delivery, takeaway, or card payment
+            # PIN verification will be handled on the frontend
+            pass
+        else:
+            # For on-table orders that are paid, or other statuses
+            if order.service_type == ServiceType.ON_TABLE and order.status == OrderStatus.PAID:
+                return jsonify({'success': False, 'message': 'Paid on-table orders cannot be edited'})
+            else:
+                return jsonify({'success': False, 'message': 'Only pending orders and paid delivery/takeaway/card payment orders can be edited'})
+        
+        # Get order items
+        order_items = []
+        for item in order.order_items:
+            # Parse special items/modifiers from notes field
+            special_items = []
+            notes_text = item.notes or ''
+            
+            # Parse modifiers from notes (format: "modifier1, modifier2, 2x modifier3")
+            if notes_text and not notes_text.startswith('Custom Price:'):
+                # Split by comma and parse each modifier
+                modifiers = [mod.strip() for mod in notes_text.split(',') if mod.strip()]
+                for modifier in modifiers:
+                    # Check if modifier has quantity (e.g., "2x modifier_name")
+                    if 'x ' in modifier:
+                        parts = modifier.split('x ', 1)
+                        if len(parts) == 2 and parts[0].strip().isdigit():
+                            qty = int(parts[0].strip())
+                            name = parts[1].strip()
+                        else:
+                            qty = 1
+                            name = modifier
+                    else:
+                        qty = 1
+                        name = modifier
+                    
+                    special_items.append({
+                        'name': name,
+                        'quantity': qty
+                    })
+            
+            # If we have special items from notes, clear special_requests to avoid duplication
+            # Only use special_requests if no special items were parsed from notes
+            special_requests_text = item.special_requests or '' if not special_items else ''
+            
+            order_items.append({
+                'id': item.id,
+                'menu_item_id': item.menu_item_id,
+                'menu_item_name': item.menu_item.name,
+                'quantity': item.quantity,
+                'unit_price': float(item.unit_price),
+                'total_price': float(item.total_price),
+                'special_requests': special_requests_text,
+                'notes': notes_text,
+                'special_items': special_items,  # Include parsed special items
+                'is_new': item.is_new or False,
+                'is_deleted': item.is_deleted or False
+            })
+        
+        return jsonify({
+            'success': True,
+            'order': {
+                'id': order.id,
+                'order_number': order.order_number,
+                'total_amount': float(order.total_amount),
+                'items': order_items,
+                'table_number': order.table.table_number if order.table else None,
+                'service_type': order.service_type.value if order.service_type else None
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@pos.route('/get_menu_items_for_editing')
+@login_required
+def get_menu_items_for_editing():
+    """Get menu items for order editing"""
+    if current_user.role != UserRole.CASHIER:
+        return jsonify({'success': False, 'message': 'Access denied. Cashier privileges required.'})
+    
+    try:
+        # Get special requests category
+        special_category = Category.query.filter_by(
+            branch_id=current_user.branch_id,
+            name='طلبات خاصة',
+            is_active=True
+        ).first()
+        
+        # Get regular categories (exclude special category)
+        categories = Category.query.filter_by(
+            branch_id=current_user.branch_id, 
+            is_active=True
+        ).filter(
+            Category.name != 'طلبات خاصة'
+        ).all()
+        
+        # Get regular menu items (exclude special category items)
+        menu_items_query = MenuItem.query.filter_by(
+            branch_id=current_user.branch_id, 
+            is_active=True
+        )
+        if special_category:
+            menu_items_query = menu_items_query.filter(MenuItem.category_id != special_category.id)
+        menu_items = menu_items_query.all()
+        
+        # Get special items from special category
+        special_items = []
+        if special_category:
+            special_items = MenuItem.query.filter_by(
+                branch_id=current_user.branch_id,
+                category_id=special_category.id,
+                is_active=True
+            ).all()
+        
+        # Format categories
+        categories_data = []
+        for category in categories:
+            categories_data.append({
+                'id': category.id,
+                'name': category.name
+            })
+        
+        # Format menu items
+        items_data = []
+        for item in menu_items:
+            items_data.append({
+                'id': item.id,
+                'name': item.name,
+                'price': float(item.price),
+                'category_id': item.category_id
+            })
+        
+        # Format special items
+        special_items_data = []
+        for item in special_items:
+            special_items_data.append({
+                'id': item.id,
+                'name': item.name,
+                'price': float(item.price)
+            })
+        
+        return jsonify({
+            'success': True,
+            'categories': categories_data,
+            'items': items_data,
+            'special_items': special_items_data
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@pos.route('/save_order_changes', methods=['POST'])
+@login_required
+def save_order_changes():
+    """Save changes to an order (cashiers only)"""
+    if current_user.role != UserRole.CASHIER:
+        return jsonify({'success': False, 'message': 'Access denied. Cashier privileges required.'})
+    
+    try:
+        data = request.get_json()
+        order_id = data.get('order_id')
+        items = data.get('items', [])
+        original_total = data.get('original_total', 0)
+        
+        # Get the order
+        order = Order.query.filter_by(id=order_id).first()
+        if not order:
+            return jsonify({'success': False, 'message': 'Order not found'})
+        
+        # Verify cashier can edit this order
+        if order.cashier_id != current_user.id and order.assigned_cashier_id != current_user.id:
+            return jsonify({'success': False, 'message': 'You can only edit orders assigned to you'})
+        
+        # Check if order can be edited based on status and service type
+        can_edit_paid = (order.service_type in [ServiceType.DELIVERY, ServiceType.TAKE_AWAY] or 
+                        order.payment_method == PaymentMethod.CARD)
+        
+        if order.status == OrderStatus.PENDING:
+            # Pending orders can always be edited (existing logic)
+            pass
+        elif order.status == OrderStatus.PAID and can_edit_paid:
+            # Paid orders can be edited only for delivery, takeaway, or card payment
+            # PIN verification should have been done on the frontend
+            pass
+        else:
+            # For on-table orders that are paid, or other statuses
+            if order.service_type == ServiceType.ON_TABLE and order.status == OrderStatus.PAID:
+                return jsonify({'success': False, 'message': 'Paid on-table orders cannot be edited'})
+            else:
+                return jsonify({'success': False, 'message': 'Only pending orders and paid delivery/takeaway/card payment orders can be edited'})
+        
+        # Process items with proper edit tracking
+        new_total = 0
+        existing_items = {item.id: item for item in order.order_items}
+        processed_item_ids = set()
+        
+        for item_data in items:
+            item_id = item_data.get('id')
+            is_new = item_data.get('is_new', False)
+            is_deleted = item_data.get('is_deleted', False)
+            
+            if item_id and item_id in existing_items:
+                # Update existing item
+                existing_item = existing_items[item_id]
+                existing_item.quantity = item_data['quantity']
+                existing_item.unit_price = item_data['unit_price']
+                existing_item.total_price = item_data['total_price']
+                existing_item.special_requests = item_data.get('special_requests', '')
+                
+                # Handle notes field (preserve existing special items from notes)
+                # If there are special_items in the frontend data, convert them back to notes format
+                if 'special_items' in item_data and item_data['special_items']:
+                    # Convert special_items array back to notes format
+                    special_items_notes = []
+                    for special_item in item_data['special_items']:
+                        if special_item['quantity'] > 1:
+                            special_items_notes.append(f"{special_item['quantity']}x {special_item['name']}")
+                        else:
+                            special_items_notes.append(special_item['name'])
+                    existing_item.notes = ', '.join(special_items_notes)
+                elif item_data.get('notes'):
+                    # Preserve existing notes if no special_items array
+                    existing_item.notes = item_data.get('notes', '')
+                
+                existing_item.is_deleted = is_deleted
+                processed_item_ids.add(item_id)
+                
+                # Only add to total if not deleted
+                if not is_deleted:
+                    new_total += item_data['total_price']
+                    
+            elif is_new and not is_deleted:
+                # Create new item (marked as new)
+                # Handle notes field for new items
+                notes_text = ''
+                if 'special_items' in item_data and item_data['special_items']:
+                    # Convert special_items array to notes format
+                    special_items_notes = []
+                    for special_item in item_data['special_items']:
+                        if special_item['quantity'] > 1:
+                            special_items_notes.append(f"{special_item['quantity']}x {special_item['name']}")
+                        else:
+                            special_items_notes.append(special_item['name'])
+                    notes_text = ', '.join(special_items_notes)
+                elif item_data.get('notes'):
+                    notes_text = item_data.get('notes', '')
+                
+                order_item = OrderItem(
+                    order_id=order_id,
+                    menu_item_id=item_data['menu_item_id'],
+                    quantity=item_data['quantity'],
+                    unit_price=item_data['unit_price'],
+                    total_price=item_data['total_price'],
+                    special_requests=item_data.get('special_requests', ''),
+                    notes=notes_text,
+                    is_new=True,
+                    is_deleted=False
+                )
+                db.session.add(order_item)
+                new_total += item_data['total_price']
+        
+        # Mark any items not in the update as deleted (but don't actually delete them)
+        for item_id, existing_item in existing_items.items():
+            if item_id not in processed_item_ids:
+                existing_item.is_deleted = True
+        
+        # Update order total and mark as edited
+        order.total_amount = new_total
+        order.last_edited_at = datetime.utcnow()
+        order.last_edited_by = current_user.id
+        order.edit_count = (order.edit_count or 0) + 1
+        
+        # Add edit history record
+        edit_history = OrderEditHistory(
+            order_id=order_id,
+            edited_by=current_user.id,
+            edited_at=datetime.utcnow(),
+            original_total=original_total,
+            new_total=new_total,
+            changes_summary=f"Order edited by {current_user.get_full_name()}"
+        )
+        db.session.add(edit_history)
+        
+        # Create audit log entry for order edit
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action='ORDER_EDITED',
+            description=f'Order #{order.order_number} edited by {current_user.get_full_name()}. Total changed from QAR {original_total:.2f} to QAR {new_total:.2f}. Table: {order.table.table_number if order.table else "N/A"}',
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent')
+        )
+        db.session.add(audit_log)
+        
+        db.session.commit()
+        
+        # Emit socket event to notify waiters about order edit
+        if order.table_id and current_user.role == UserRole.CASHIER:
+            socketio.emit('order_edited_by_cashier', {
+                'order_id': order.id,
+                'order_number': order.order_number,
+                'table_id': order.table_id,
+                'table_number': order.table.table_number if order.table else None,
+                'branch_id': order.branch_id,
+                'editor_name': current_user.get_full_name(),
+                'edit_summary': f"Order total changed from QAR {original_total:.2f} to QAR {new_total:.2f}",
+                'new_total': new_total,
+                'edit_count': order.edit_count,
+                'timestamp': datetime.utcnow().isoformat()
+            }, room=f'branch_{order.branch_id}')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Order updated successfully',
+            'new_total': new_total,
+            'edit_timestamp': datetime.utcnow().isoformat()
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+
 @pos.route('/waiter_requests')
 @login_required
 def waiter_requests():
@@ -1802,7 +2149,7 @@ def waiter_requests():
         per_page = request.args.get('per_page', 25, type=int)
         sort_by = request.args.get('sort_by', 'created_at')
         sort_order = request.args.get('sort_order', 'desc')
-        status_filter = request.args.get('status_filter', 'all')
+        status_filter = request.args.get('status_filter', 'pending')
         
         # Build query for waiter orders only (exclude cleared orders)
         if current_user.role == UserRole.SUPER_USER:
@@ -1825,10 +2172,14 @@ def waiter_requests():
                 Order.cleared_from_waiter_requests == False
             )
         
-        # Apply status filter
+        # Apply status filter - default to pending only for waiter requests
         if status_filter == 'paid':
             query = query.filter(Order.status == OrderStatus.PAID)
-        elif status_filter == 'pending':
+        elif status_filter == 'all':
+            # Only show all if explicitly requested
+            pass
+        else:
+            # Default: only show pending orders (paid orders should not appear)
             query = query.filter(Order.status == OrderStatus.PENDING)
         
         # Apply sorting
@@ -1873,7 +2224,14 @@ def waiter_requests():
                 'paid_at': order.paid_at.strftime('%Y-%m-%d %H:%M') if order.paid_at else None,
                 'creator_name': creator_name,
                 'items_count': items_count,
-                'can_mark_paid': order.status == OrderStatus.PENDING
+                'can_mark_paid': order.status == OrderStatus.PENDING,
+                'can_edit': (current_user.role == UserRole.CASHIER and 
+                           (order.cashier_id == current_user.id or order.assigned_cashier_id == current_user.id) and
+                           order.status == OrderStatus.PENDING),  # Only allow editing pending on-table orders
+                'edit_count': order.edit_count or 0,
+                'last_edited_at': order.last_edited_at.strftime('%Y-%m-%d %H:%M') if order.last_edited_at else None,
+                'last_edited_by': User.query.get(order.last_edited_by).get_full_name() if order.last_edited_by else None,
+                'is_edited': (order.edit_count and order.edit_count > 0)
             })
         
         # Get statistics (exclude cleared orders)
@@ -2210,11 +2568,23 @@ def create_order():
         assigned_cashier_id = request.json.get('assigned_cashier_id')
         
         if current_user.role == UserRole.WAITER:
-            waiter_note = f"[WAITER ORDER] Created by: {current_user.get_full_name()}"
-            if assigned_cashier_id:
-                assigned_cashier = User.query.get(assigned_cashier_id)
-                if assigned_cashier and assigned_cashier.branch_id == current_user.branch_id:
-                    waiter_note += f" | Assigned to: {assigned_cashier.get_full_name()}"
+            # For waiters, check if they have an assigned cashier from database
+            assignment = WaiterCashierAssignment.get_assignment_for_waiter(
+                current_user.id, current_user.branch_id
+            )
+            
+            if assignment and assignment.assigned_cashier:
+                # Use the assigned cashier from database
+                assigned_cashier_id = assignment.assigned_cashier_id
+                waiter_note = f"[WAITER ORDER] Created by: {current_user.get_full_name()} | Assigned to: {assignment.assigned_cashier.get_full_name()} (Admin Assigned)"
+            else:
+                # No admin assignment - prevent order creation
+                return jsonify({
+                    'success': False,
+                    'message': 'Cannot create order. Please ask an admin to assign you to a cashier using their PIN code.',
+                    'error_type': 'no_cashier_assignment'
+                })
+                        
             order_notes = f"{waiter_note}\n{order_notes}" if order_notes else waiter_note
             # Waiter orders start as PENDING (need cashier to mark as paid)
             order_status = OrderStatus.PENDING
@@ -2238,7 +2608,8 @@ def create_order():
                 order.order_items.append(item)
             
             # Update notes to indicate items were added
-            add_note = f"\n[ITEMS ADDED] by {current_user.get_full_name()} at {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}"
+            local_time = TimezoneManager.get_current_time()
+            add_note = f"\n[ITEMS ADDED] by {current_user.get_full_name()} at {local_time.strftime('%Y-%m-%d %H:%M:%S')}"
             order.notes = (order.notes or '') + add_note
             
             # Store original item count for future reference
@@ -2257,8 +2628,13 @@ def create_order():
         else:
             # CREATE NEW ORDER
             print(f"DEBUG: CREATING new order (is_adding_items={is_adding_items}, existing_order_found={existing_order is not None})")
+            
+            # Get next counter number for this branch
+            order_counter = OrderCounter.get_next_counter(current_user.branch_id)
+            
             order = Order(
                 order_number=order_number,
+                order_counter=order_counter,  # Add sequential counter
                 total_amount=total_amount,
                 cashier_id=current_user.id,  # Track who created the order (cashier or waiter)
                 assigned_cashier_id=assigned_cashier_id,  # Which cashier waiter assigned order to
@@ -2270,7 +2646,8 @@ def create_order():
                 notes=order_notes,
                 status=order_status  # Set status based on user role
             )
-            order.paid_at=datetime.utcnow() if order_status == OrderStatus.PAID else None
+            # Set paid_at timestamp in UTC for database storage, but use local time for user display
+            order.paid_at = datetime.utcnow() if order_status == OrderStatus.PAID else None
             
             # Add order items
             for item in order_items:
@@ -2473,7 +2850,7 @@ def mark_order_paid(order_id):
         
         # Mark as paid
         order.status = OrderStatus.PAID
-        order.paid_at = datetime.utcnow()
+        order.paid_at = datetime.utcnow()  # Store in UTC for database
         db.session.commit()
         
         # Log the action
@@ -2590,7 +2967,9 @@ def get_order_details(order_id):
                 'price': float(item.unit_price),  # Frontend expects price
                 'unit_price': float(item.unit_price),
                 'total_price': float(item.total_price),
-                'special_requests': item.notes  # Frontend expects special_requests
+                'special_requests': item.special_requests or item.notes,  # Use special_requests field first, fallback to notes
+                'is_new': item.is_new or False,  # Get from database
+                'is_deleted': item.is_deleted or False  # Get from database
             })
         
         # Get delivery company name safely
@@ -2603,9 +2982,10 @@ def get_order_details(order_id):
             'order': {
                 'id': order.id,
                 'order_number': order.order_number,
+                'order_counter': order.order_counter if order.order_counter else None,
                 'total_amount': float(order.total_amount),
-                'created_at': order.created_at.isoformat(),
-                'paid_at': order.paid_at.isoformat() if order.paid_at else None,
+                'created_at': TimezoneManager.format_local_time(order.created_at, '%Y-%m-%d %H:%M:%S'),
+                'paid_at': TimezoneManager.format_local_time(order.paid_at, '%Y-%m-%d %H:%M:%S') if order.paid_at else None,
                 'table_number': order.table.table_number if order.table else None,
                 'cashier_name': order.cashier.get_full_name() if order.cashier else None,
                 'creator_name': order.cashier.get_full_name() if order.cashier else 'Unknown',  # Frontend expects creator_name
@@ -2614,6 +2994,9 @@ def get_order_details(order_id):
                 'delivery_company': delivery_company_name,
                 'status': order.status.value,
                 'notes': order.notes,
+                'edit_count': order.edit_count or 0,
+                'last_edited_at': TimezoneManager.format_local_time(order.last_edited_at, '%Y-%m-%d %H:%M:%S') if order.last_edited_at else None,
+                'last_edited_by': User.query.get(order.last_edited_by).get_full_name() if order.last_edited_by else None,
                 'items': items
             }
         })
@@ -2782,8 +3165,459 @@ def save_special_ui_prefs():
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@pos.route('/get_cashiers_for_assignment')
+@login_required
+def get_cashiers_for_assignment():
+    """Get all cashiers in branch for waiter to select from"""
+    try:
+        # Only allow waiters to use this endpoint
+        if current_user.role != UserRole.WAITER:
+            return jsonify({
+                'success': False,
+                'message': 'Access denied. This feature is only for waiters.'
+            })
+        
+        # Get all cashiers in the branch
+        cashiers = User.query.filter_by(
+            branch_id=current_user.branch_id,
+            role=UserRole.CASHIER,
+            is_active=True
+        ).order_by(User.first_name, User.last_name).all()
+        
+        cashiers_data = [{
+            'id': cashier.id,
+            'name': cashier.get_full_name(),
+            'username': cashier.username
+        } for cashier in cashiers]
+        
+        return jsonify({
+            'success': True,
+            'cashiers': cashiers_data
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error getting cashiers: {str(e)}'
+        })
+
+@pos.route('/assign_cashier_to_waiter', methods=['POST'])
+@login_required
+def assign_cashier_to_waiter():
+    """Assign cashier to waiter after cashier PIN verification"""
+    try:
+        # Only allow waiters to use this endpoint
+        if current_user.role != UserRole.WAITER:
+            return jsonify({
+                'success': False,
+                'message': 'Access denied. This feature is only for waiters.'
+            })
+        
+        data = request.get_json()
+        cashier_id = data.get('cashier_id')
+        cashier_pin = data.get('cashier_pin', '').strip()
+        
+        if not cashier_id:
+            return jsonify({
+                'success': False,
+                'message': 'Please select a cashier'
+            })
+        
+        if not cashier_pin or len(cashier_pin) != 4 or not cashier_pin.isdigit():
+            return jsonify({
+                'success': False,
+                'message': 'Invalid cashier PIN'
+            })
+        
+        # Verify cashier exists and is in the same branch
+        cashier = User.query.filter_by(
+            id=cashier_id,
+            branch_id=current_user.branch_id,
+            role=UserRole.CASHIER,
+            is_active=True
+        ).first()
+        
+        if not cashier:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid cashier selected'
+            })
+        
+        # Verify cashier PIN
+        is_valid = CashierPin.verify_cashier_pin(
+            cashier_id=cashier_id,
+            branch_id=current_user.branch_id,
+            pin_code=cashier_pin
+        )
+        
+        if not is_valid:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid cashier PIN code'
+            })
+        
+        # Set the assignment (cashier is assigning themselves to the waiter)
+        WaiterCashierAssignment.set_assignment(
+            waiter_id=current_user.id,
+            branch_id=current_user.branch_id,
+            cashier_id=cashier_id,
+            assigned_by_cashier_id=cashier_id
+        )
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'cashier': {
+                'id': cashier.id,
+                'name': cashier.get_full_name(),
+                'username': cashier.username
+            },
+            'message': f'Orders will now be assigned to {cashier.get_full_name()}'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error assigning cashier: {str(e)}'
+        })
+
+@pos.route('/get_assigned_cashier')
+@login_required
+def get_assigned_cashier():
+    """Get currently assigned cashier for waiter from database"""
+    try:
+        # Only allow waiters to use this endpoint
+        if current_user.role != UserRole.WAITER:
+            return jsonify({
+                'success': False,
+                'message': 'Access denied'
+            })
+        
+        # Get assignment from database
+        assignment = WaiterCashierAssignment.get_assignment_for_waiter(
+            current_user.id, current_user.branch_id
+        )
+        
+        if assignment and assignment.assigned_cashier:
+            return jsonify({
+                'success': True,
+                'cashier': {
+                    'id': assignment.assigned_cashier.id,
+                    'name': assignment.assigned_cashier.get_full_name(),
+                    'username': assignment.assigned_cashier.username
+                }
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'No cashier assigned. Please enter admin PIN.'
+            })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error getting assigned cashier: {str(e)}'
+        })
+
+@pos.route('/clear_assigned_cashier', methods=['POST'])
+@login_required
+def clear_assigned_cashier():
+    """Clear assigned cashier from database (for admin override)"""
+    try:
+        # Only allow waiters to use this endpoint
+        if current_user.role != UserRole.WAITER:
+            return jsonify({
+                'success': False,
+                'message': 'Access denied'
+            })
+        
+        # Clear assignment from database
+        cleared = WaiterCashierAssignment.clear_assignment(
+            current_user.id, current_user.branch_id
+        )
+        
+        if cleared:
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'message': 'Cashier assignment cleared'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'No assignment found to clear'
+            })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error clearing assignment: {str(e)}'
+        })
+
+@pos.route('/verify_admin_pin_for_editing', methods=['POST'])
+@login_required
+def verify_admin_pin_for_editing():
+    """Verify admin PIN specifically for order editing (cashiers only)"""
+    if current_user.role != UserRole.CASHIER:
+        return jsonify({'success': False, 'message': 'Access denied. This feature is only for cashiers.'})
+    
+    try:
+        data = request.get_json()
+        pin_code = data.get('pin_code', '').strip()
+        
+        if not pin_code or len(pin_code) != 4:
+            return jsonify({'success': False, 'message': 'Please enter a 4-digit PIN code'})
+        
+        # Check for admin PIN specifically for order editing
+        from app.models import AdminPinCode
+        admin_pin = AdminPinCode.query.filter_by(
+            branch_id=current_user.branch_id,
+            pin_type='order_editing',  # New PIN type for order editing
+            is_active=True
+        ).first()
+        
+        if not admin_pin:
+            return jsonify({
+                'success': False, 
+                'message': 'No admin PIN configured for order editing. Please contact your administrator.'
+            })
+        
+        # Verify the PIN
+        if admin_pin.check_pin(pin_code):
+            return jsonify({
+                'success': True,
+                'message': 'PIN verified successfully! You can now edit orders.',
+                'admin_name': admin_pin.admin_name or 'Administrator'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid PIN code. Please try again.'
+            })
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@pos.route('/manual_card_payment', methods=['POST'])
+@login_required
+def manual_card_payment():
+    """Handle manual card payment entry by cashiers"""
+    if current_user.role != UserRole.CASHIER:
+        return jsonify({'success': False, 'error': 'Access denied. Only cashiers can enter manual card payments.'})
+    
+    try:
+        data = request.get_json()
+        amount = float(data.get('amount', 0))
+        notes = data.get('notes', '').strip()
+        
+        if amount <= 0:
+            return jsonify({'success': False, 'error': 'Amount must be greater than 0'})
+        
+        # Add or update manual card payment
+        payment = ManualCardPayment.add_or_update_payment(
+            cashier_id=current_user.id,
+            branch_id=current_user.branch_id,
+            amount=amount,
+            notes=notes
+        )
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Manual card payment of {amount:.2f} QAR saved successfully',
+            'payment_id': payment.id,
+            'amount': float(payment.amount)
+        })
+        
+    except ValueError:
+        return jsonify({'success': False, 'error': 'Invalid amount format'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@pos.route('/transfer_order_table', methods=['POST'])
+@login_required
+def transfer_order_table():
+    """Transfer an order from one table to another - Cashiers only"""
+    if current_user.role not in [UserRole.CASHIER, UserRole.BRANCH_ADMIN, UserRole.SUPER_USER]:
+        return jsonify({'success': False, 'message': 'Access denied. Only cashiers can transfer orders between tables.'}), 403
+    
+    try:
+        data = request.get_json()
+        order_id = data.get('order_id')
+        new_table_id = data.get('new_table_id')
+        
+        if not order_id or not new_table_id:
+            return jsonify({'success': False, 'message': 'Order ID and new table ID are required'}), 400
+        
+        # Get the order
+        order = Order.query.get(order_id)
+        if not order:
+            return jsonify({'success': False, 'message': 'Order not found'}), 404
+        
+        # Check branch access
+        if not current_user.is_super_user() and order.branch_id != current_user.branch_id:
+            return jsonify({'success': False, 'message': 'Access denied: Order not in your branch'}), 403
+        
+        # Check if order is still pending (can't transfer paid orders)
+        if order.status != OrderStatus.PENDING:
+            return jsonify({'success': False, 'message': 'Cannot transfer paid or cancelled orders'}), 400
+        
+        # Get the new table
+        new_table = Table.query.get(new_table_id)
+        if not new_table:
+            return jsonify({'success': False, 'message': 'New table not found'}), 404
+        
+        # Check if new table is in the same branch
+        if new_table.branch_id != order.branch_id:
+            return jsonify({'success': False, 'message': 'Cannot transfer order to table in different branch'}), 400
+        
+        # Check if new table already has a pending order
+        existing_order = Order.query.filter_by(
+            table_id=new_table_id,
+            branch_id=order.branch_id,
+            status=OrderStatus.PENDING
+        ).first()
+        
+        if existing_order and existing_order.id != order.id:
+            return jsonify({'success': False, 'message': f'Table {new_table.table_number} already has a pending order'}), 400
+        
+        # Store old table info for notifications
+        old_table = order.table
+        old_table_number = old_table.table_number if old_table else 'Unknown'
+        
+        # Transfer the order
+        order.table_id = new_table_id
+        order.updated_at = datetime.utcnow()
+        
+        # Add transfer note to order
+        transfer_note = f"[TRANSFERRED] From Table {old_table_number} to Table {new_table.table_number} by {current_user.get_full_name()}"
+        if order.notes:
+            order.notes += f"\n{transfer_note}"
+        else:
+            order.notes = transfer_note
+        
+        # Log the transfer
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action='TRANSFER_ORDER_TABLE',
+            description=f'Transferred order #{order.order_number} from Table {old_table_number} to Table {new_table.table_number}'
+        )
+        db.session.add(audit_log)
+        
+        db.session.commit()
+        
+        # Check if old table has any other pending orders
+        old_table_has_other_orders = False
+        if old_table:
+            other_orders = Order.query.filter_by(
+                table_id=old_table.id,
+                branch_id=order.branch_id,
+                status=OrderStatus.PENDING
+            ).filter(Order.id != order.id).first()
+            old_table_has_other_orders = bool(other_orders)
+        
+        # Emit real-time notifications
+        transfer_data = {
+            'order_id': order.id,
+            'order_number': order.order_number,
+            'old_table_id': old_table.id if old_table else None,
+            'old_table_number': old_table_number,
+            'old_table_is_now_free': not old_table_has_other_orders,
+            'new_table_id': new_table.id,
+            'new_table_number': new_table.table_number,
+            'transferred_by': current_user.get_full_name(),
+            'branch_id': order.branch_id,
+            'total_amount': float(order.total_amount)
+        }
+        
+        # Notify all users in the branch about the table transfer
+        socketio.emit('order_table_transferred', transfer_data, room=f'branch_{order.branch_id}')
+        
+        # Also notify the specific cashier room if this is a waiter order
+        if '[WAITER ORDER]' in (order.notes or '') and order.assigned_cashier_id:
+            socketio.emit('order_table_transferred', transfer_data, room=f'cashier_{order.assigned_cashier_id}')
+        
+        return jsonify({
+            'success': True,
+            'message': f'Order #{order.order_number} successfully transferred from Table {old_table_number} to Table {new_table.table_number}',
+            'order_id': order.id,
+            'old_table_number': old_table_number,
+            'new_table_number': new_table.table_number
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error transferring order table: {e}")
+        return jsonify({'success': False, 'message': f'Error transferring order: {str(e)}'}), 500
+
+@pos.route('/get_available_tables/<int:order_id>')
+@login_required
+def get_available_tables(order_id):
+    """Get list of available tables for order transfer - Cashiers only"""
+    if current_user.role not in [UserRole.CASHIER, UserRole.BRANCH_ADMIN, UserRole.SUPER_USER]:
+        return jsonify({'success': False, 'message': 'Access denied'}), 403
+    
+    try:
+        # Get the order to check branch
+        order = Order.query.get(order_id)
+        if not order:
+            return jsonify({'success': False, 'message': 'Order not found'}), 404
+        
+        # Check branch access
+        if not current_user.is_super_user() and order.branch_id != current_user.branch_id:
+            return jsonify({'success': False, 'message': 'Access denied: Order not in your branch'}), 403
+        
+        # Get all active tables in the same branch
+        tables = Table.query.filter_by(
+            branch_id=order.branch_id,
+            is_active=True
+        ).order_by(Table.table_number).all()
+        
+        available_tables = []
+        for table in tables:
+            # Check if table has a recent pending order (within last 4 hours)
+            from datetime import datetime, timedelta
+            four_hours_ago = datetime.utcnow() - timedelta(hours=4)
+            
+            has_pending_order = Order.query.filter_by(
+                table_id=table.id,
+                branch_id=order.branch_id,
+                status=OrderStatus.PENDING
+            ).filter(Order.created_at > four_hours_ago).first()
+            
+            # Table is available if it has no recent pending order OR if it's the current order's table
+            is_available = not has_pending_order or (has_pending_order and has_pending_order.id == order.id)
+            is_current = table.id == order.table_id
+            
+            available_tables.append({
+                'id': table.id,
+                'table_number': table.table_number,
+                'capacity': table.capacity,
+                'description': table.description,
+                'is_available': is_available,
+                'is_current': is_current,
+                'has_pending_order': bool(has_pending_order and has_pending_order.id != order.id)
+            })
+        
+        return jsonify({
+            'success': True,
+            'tables': available_tables,
+            'current_table_id': order.table_id
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting available tables: {e}")
+        return jsonify({'success': False, 'message': f'Error getting available tables: {str(e)}'}), 500
+
 def generate_order_number():
-    """Generate a unique order number"""
-    date_str = datetime.now().strftime('%Y%m%d')
+    """Generate a unique order number using configured timezone"""
+    # Use configured timezone for order number generation
+    local_time = TimezoneManager.get_current_time()
+    date_str = local_time.strftime('%Y%m%d')
     random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-    return f"ORD-{date_str}-{random_str}"
+    return f"ORD{date_str}{random_str}"

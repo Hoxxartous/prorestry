@@ -94,6 +94,9 @@
                         <div class="order-info">
                             <div class="small text-muted mb-1">Current Order</div>
                             <div class="fw-bold">#{{ table_info.order_info.order_number }}</div>
+                            {% if table_info.order_info.order_counter %}
+                            <div class="small"><span class="badge bg-dark">Count #{{ table_info.order_info.order_counter }}</span></div>
+                            {% endif %}
                             <div class="small">{{ table_info.order_info.total_amount|round(2) }} QAR</div>
                             <div class="small text-muted">{{ table_info.order_info.items_count }} items</div>
                             <div class="small text-muted">{{ table_info.order_info.created_at }}</div>
@@ -232,6 +235,29 @@
     animation: pulse 2s infinite;
 }
 
+/* Edit marker styles */
+.edit-marker .badge {
+    animation: editPulse 2s infinite;
+}
+
+@keyframes editPulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(255, 193, 7, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+}
+
+.table-card.order-edited .table-card-inner {
+    animation: editNotification 3s ease-in-out;
+}
+
+@keyframes editNotification {
+    0% { transform: scale(1); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    25% { transform: scale(1.05); box-shadow: 0 8px 25px rgba(255, 193, 7, 0.3); }
+    50% { transform: scale(1.02); box-shadow: 0 8px 25px rgba(255, 193, 7, 0.2); }
+    75% { transform: scale(1.05); box-shadow: 0 8px 25px rgba(255, 193, 7, 0.3); }
+    100% { transform: scale(1); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .table-card {
@@ -252,12 +278,56 @@
 {% block scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Socket.IO for real-time updates
-    const socket = io();
+// Sound generation function for order edit notifications
+function playOrderEditedSound() {
+    // Create audio context
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     
+    // Create oscillator for edit notification sound
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    // Connect nodes
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Configure sound - gentle notification tone
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(500, audioContext.currentTime);
+    oscillator.frequency.setValueAtTime(700, audioContext.currentTime + 0.15);
+    
+    // Configure volume envelope
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.05);
+    gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.1);
+    gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.2);
+    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+    
+    // Play sound
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Use global socket connection from base template
     // Store branch ID for JavaScript comparisons
     const currentBranchId = {{ current_user.branch_id }};
+    
+    // Check if current user can mark orders as paid (only cashiers and above)
+    const canMarkPaid = {{ 'true' if current_user.role.name in ['CASHIER', 'BRANCH_ADMIN', 'SUPER_USER'] else 'false' }};
+    
+    // Wait for global socket to be available
+    function setupTableManagementListeners() {
+        if (typeof socket !== 'undefined' && socket && socket.connected) {
+            console.log('Setting up table management listeners with global socket');
+            setupSocketListeners();
+        } else {
+            // Retry after a short delay
+            setTimeout(setupTableManagementListeners, 100);
+        }
+    }
+    
+    function setupSocketListeners() {
     
     // Join branch room for real-time updates
     socket.emit('join', {room: 'branch_{{ current_user.branch_id }}'});
@@ -279,6 +349,48 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check if this affects our branch
         if (data.branch_id === currentBranchId) {
             updateTableStatus(data.table_id, data.table_number, data.status);
+        }
+    });
+    
+    // Listen for order edit notifications from cashiers
+    socket.on('order_edited_by_cashier', function(data) {
+        console.log('Order edited by cashier event received:', data);
+        
+        // Check if this affects our branch
+        if (data.branch_id === currentBranchId) {
+            // Play notification sound for waiter
+            try {
+                playOrderEditedSound();
+            } catch (error) {
+                console.log('Could not play sound:', error);
+            }
+            
+            markTableOrderAsEdited(data.table_id, data.order_id, data.editor_name, data.edit_summary);
+            showNotification(`Order #${data.order_number} on Table ${data.table_number} was edited by ${data.editor_name}`, 'warning');
+        }
+    });
+    
+    // Listen for table transfer notifications
+    socket.on('order_table_transferred', function(data) {
+        console.log('Order table transferred event received:', data);
+        
+        // Check if this affects our branch
+        if (data.branch_id === currentBranchId) {
+            // Play notification sound
+            try {
+                playOrderEditedSound();
+            } catch (error) {
+                console.log('Could not play sound:', error);
+            }
+            
+            // Update table statuses
+            updateTableAfterTransfer(data.old_table_id, data.new_table_id, data.order_number, data.old_table_number, data.new_table_number, data.old_table_is_now_free);
+            
+            // Show notification
+            showNotification(
+                `Order #${data.order_number} transferred from Table ${data.old_table_number} to Table ${data.new_table_number} by ${data.transferred_by}`, 
+                'info'
+            );
         }
     });
     
@@ -340,9 +452,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                    class="btn btn-outline-primary me-2">
                                     <i class="bi bi-plus"></i> Add Items
                                 </a>
-                                <button class="btn btn-outline-success" onclick="markTablePaid(${tableId})">
+                                ${canMarkPaid ? `<button class="btn btn-outline-success" onclick="markTablePaid(${tableId})">
                                     <i class="bi bi-check-circle"></i> Mark Paid
-                                </button>
+                                </button>` : ''}
                             </div>
                         `;
                     }
@@ -377,6 +489,78 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 5000);
     }
+    
+    // Function to mark table order as edited
+    function markTableOrderAsEdited(tableId, orderId, editorName, editSummary) {
+        const tableCard = document.querySelector(`[data-table-id="${tableId}"]`);
+        if (tableCard && tableCard.classList.contains('busy')) {
+            // Add edit marker to the table card
+            const orderInfo = tableCard.querySelector('.order-info');
+            if (orderInfo) {
+                // Remove existing edit marker if any
+                const existingMarker = orderInfo.querySelector('.edit-marker');
+                if (existingMarker) {
+                    existingMarker.remove();
+                }
+                
+                // Add new edit marker
+                const editMarker = document.createElement('div');
+                editMarker.className = 'edit-marker mt-2';
+                editMarker.innerHTML = `
+                    <span class="badge bg-warning text-dark">
+                        <i class="bi bi-pencil-square me-1"></i>Edited by ${editorName}
+                    </span>
+                `;
+                orderInfo.appendChild(editMarker);
+                
+                // Add pulsing animation to the table card
+                tableCard.classList.add('order-edited');
+                setTimeout(() => {
+                    tableCard.classList.remove('order-edited');
+                }, 3000);
+            }
+        }
+    }
+    
+    // Function to update tables after transfer
+    function updateTableAfterTransfer(oldTableId, newTableId, orderNumber, oldTableNumber, newTableNumber, oldTableIsNowFree) {
+        // Update old table status based on backend calculation
+        if (oldTableId && oldTableIsNowFree) {
+            updateTableStatus(oldTableId, oldTableNumber, 'free');
+        }
+        
+        // Update new table (should become busy)
+        const newTableCard = document.querySelector(`[data-table-id="${newTableId}"]`);
+        if (newTableCard) {
+            updateTableStatus(newTableId, newTableNumber, 'busy');
+            
+            // Add transfer notification to the new table
+            const cardBody = newTableCard.querySelector('.card-body');
+            if (cardBody) {
+                const existingNotification = cardBody.querySelector('.transfer-notification');
+                if (existingNotification) {
+                    existingNotification.remove();
+                }
+                
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-info alert-sm mt-2 mb-0';
+                notification.innerHTML = `
+                    <i class="bi bi-arrow-left-right me-1"></i>
+                    <small><strong>Order #${orderNumber}</strong> transferred here from Table ${oldTableNumber}</small>
+                `;
+                
+                cardBody.appendChild(notification);
+                
+                // Remove notification after 8 seconds
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 8000);
+            }
+        }
+    }
+    
     let currentTableId = null;
     let currentTableNumber = null;
     
@@ -442,13 +626,27 @@ document.addEventListener('DOMContentLoaded', function() {
         // Format the creation date
         const createdDate = new Date(orderData.created_at).toLocaleString();
         
-        // Build items list
+        // Build items list with edit tracking
         let itemsHtml = '';
         orderData.items.forEach(item => {
+            // Style for deleted/new items
+            const isDeleted = item.is_deleted || false;
+            const isNew = item.is_new || false;
+            let rowStyle = '';
+            let itemPrefix = '';
+            
+            if (isDeleted) {
+                rowStyle = 'style="text-decoration: line-through; background-color: #ffebee; color: #666;"';
+                itemPrefix = '🚫 ';
+            } else if (isNew) {
+                rowStyle = 'style="background-color: #e8f5e8; font-weight: bold;"';
+                itemPrefix = '🆕 ';
+            }
+            
             itemsHtml += `
-                <div class="row align-items-center py-2 border-bottom">
+                <div class="row align-items-center py-2 border-bottom" ${rowStyle}>
                     <div class="col-6">
-                        <div class="fw-bold">${item.menu_item_name}</div>
+                        <div class="fw-bold">${itemPrefix}${item.menu_item_name}</div>
                         ${item.special_requests ? `<small class="text-muted">${item.special_requests}</small>` : ''}
                     </div>
                     <div class="col-2 text-center">
@@ -464,15 +662,40 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         });
         
+        // Edit history section
+        let editHistoryHtml = '';
+        if (orderData.edit_count && orderData.edit_count > 0) {
+            editHistoryHtml = `
+                <div class="alert alert-warning mb-4">
+                    <h6><i class="bi bi-pencil-square"></i> Edit History</h6>
+                    <p><strong>This order has been edited ${orderData.edit_count} time(s)</strong></p>
+                    ${orderData.last_edited_at ? `<p><small>Last edited: ${new Date(orderData.last_edited_at).toLocaleString()}</small></p>` : ''}
+                    ${orderData.last_edited_by ? `<p><small>Last edited by: ${orderData.last_edited_by}</small></p>` : ''}
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <strong>Legend:</strong> 
+                            🆕 = New items added | 🚫 = Items removed
+                        </small>
+                    </div>
+                </div>
+            `;
+        }
+
         content.innerHTML = `
             <div class="container-fluid">
+                ${editHistoryHtml}
+                
                 <!-- Order Header -->
                 <div class="row mb-4">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <h6 class="text-muted mb-1">Order Number</h6>
                         <div class="h5 text-primary">${orderData.order_number}</div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
+                        <h6 class="text-muted mb-1">Count #</h6>
+                        <div class="h5">${orderData.order_counter ? `<span class="badge bg-dark">${orderData.order_counter}</span>` : '<span class="text-muted">-</span>'}</div>
+                    </div>
+                    <div class="col-md-4">
                         <h6 class="text-muted mb-1">Total Amount</h6>
                         <div class="h4 text-success">${orderData.total_amount.toFixed(2)} QAR</div>
                     </div>
@@ -561,6 +784,11 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
     }
+    
+    } // Close setupSocketListeners function
+    
+    // Start setting up listeners
+    setupTableManagementListeners();
     
 });
 </script>

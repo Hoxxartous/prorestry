@@ -517,24 +517,6 @@
                             </label>
                             <div class="row g-3">
                                 <div class="col-md-3 col-6">
-                                    <div class="service-option {% if current_user.role.value == 'cashier' %}disabled{% endif %}" data-service="on_table">
-                                        <div class="card h-100 border-2 service-card {% if current_user.role.value == 'cashier' %}disabled-card{% endif %}">
-                                            <div class="card-body text-center p-3">
-                                                <i class="bi bi-table display-6 text-primary mb-2"></i>
-                                                <h6 class="card-title mb-0">On Table</h6>
-                                                <small class="text-muted">Dine In</small>
-                                                {% if current_user.role.value == 'cashier' %}
-                                                    <div class="mt-1">
-                                                        <span class="badge bg-danger">
-                                                            <i class="bi bi-lock-fill"></i> Cashier Restricted
-                                                        </span>
-                                                    </div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-6">
                                     <div class="service-option {% if current_user.role.value == 'waiter' %}disabled{% endif %}" data-service="take_away">
                                         <div class="card h-100 border-2 service-card {% if current_user.role.value == 'waiter' %}disabled-card{% endif %}">
                                             <div class="card-body text-center p-3">
@@ -559,24 +541,6 @@
                                                 <i class="bi bi-truck display-6 text-info mb-2"></i>
                                                 <h6 class="card-title mb-0">Delivery</h6>
                                                 <small class="text-muted">Home Delivery</small>
-                                                {% if current_user.role.value == 'waiter' %}
-                                                    <div class="mt-1">
-                                                        <span class="badge bg-danger">
-                                                            <i class="bi bi-lock-fill"></i> Waiter Restricted
-                                                        </span>
-                                                    </div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-6">
-                                    <div class="service-option {% if current_user.role.value == 'waiter' %}disabled{% endif %}" data-service="card">
-                                        <div class="card h-100 border-2 service-card {% if current_user.role.value == 'waiter' %}disabled-card{% endif %}">
-                                            <div class="card-body text-center p-3">
-                                                <i class="bi bi-credit-card display-6 text-success mb-2"></i>
-                                                <h6 class="card-title mb-0">Card Payment</h6>
-                                                <small class="text-muted">Paid by Card</small>
                                                 {% if current_user.role.value == 'waiter' %}
                                                     <div class="mt-1">
                                                         <span class="badge bg-danger">
@@ -637,31 +601,64 @@
                         </div>
                     </div>
                     
-                    <!-- Cashier Selection (Shown only for waiters) -->
+                    <!-- Cashier Assignment (Shown only for waiters) -->
                     {% if current_user.role.value == 'waiter' %}
-                    <div class="row mb-4" id="cashierSelectionSection">
+                    <div class="row mb-4" id="cashierAssignmentSection">
                         <div class="col-12">
                             <label class="form-label fw-bold">
-                                <i class="bi bi-person-badge text-success me-2"></i>Assign to Cashier
+                                <i class="bi bi-person-badge text-success me-2"></i>Cashier Assignment
                             </label>
-                            <div class="row g-3" id="cashierContainer">
-                                {% for cashier in branch_cashiers %}
-                                <div class="col-md-4 col-6">
-                                    <div class="cashier-option" data-cashier-id="{{ cashier.id }}">
-                                        <div class="card h-100 border-2 cashier-card">
-                                            <div class="card-body text-center p-3">
-                                                <i class="bi bi-person-circle display-6 text-success mb-2"></i>
-                                                <h6 class="card-title mb-0">{{ cashier.get_full_name() }}</h6>
-                                                <small class="text-muted">Cashier</small>
-                                            </div>
-                                        </div>
+                            
+                            <!-- PIN Entry Button -->
+                            <div class="card border-warning" id="pinEntryCard">
+                                <div class="card-body text-center p-4">
+                                    <i class="bi bi-exclamation-triangle display-4 text-warning mb-3"></i>
+                                    <h6 class="card-title mb-3 text-warning">⚠️ Cashier Assignment Required</h6>
+                                    <p class="text-muted mb-3"><strong>You cannot send orders without cashier assignment.</strong><br>Select a cashier and enter their PIN to assign them to your orders.</p>
+                                    <button type="button" class="btn btn-warning btn-lg" id="enterPinBtn">
+                                        <i class="bi bi-person-plus me-2"></i>Select Cashier
+                                    </button>
+                                    <div class="mt-2">
+                                        <small class="text-muted">Orders are blocked until cashier is assigned</small>
                                     </div>
                                 </div>
-                                {% endfor %}
                             </div>
+                            
+                            <!-- Cashier Selection (Hidden initially) -->
+                            <div class="card border-warning d-none" id="cashierSelectionCard">
+                                <div class="card-body p-4">
+                                    <div class="text-center mb-3">
+                                        <i class="bi bi-people display-4 text-warning mb-2"></i>
+                                        <h6 class="card-title">Select Cashier</h6>
+                                        <p class="text-muted small">Admin: Choose which cashier should handle this waiter's orders</p>
+                                    </div>
+                                    <div class="row g-2" id="cashierOptionsContainer">
+                                        <!-- Cashier options will be populated here -->
+                                    </div>
+                                    <div class="text-center mt-3">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="backToPinBtn">
+                                            <i class="bi bi-arrow-left me-2"></i>Back to PIN
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Assigned Cashier Display (Hidden initially) -->
+                            <div class="card border-success d-none" id="assignedCashierCard">
+                                <div class="card-body text-center p-4">
+                                    <i class="bi bi-check-circle display-4 text-success mb-3"></i>
+                                    <h6 class="card-title mb-3">Cashier Assigned</h6>
+                                    <p class="mb-2">Orders will be assigned to:</p>
+                                    <h5 class="text-success mb-3" id="assignedCashierName">-</h5>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="changeCashierBtn">
+                                        <i class="bi bi-arrow-repeat me-2"></i>Change Assignment
+                                    </button>
+                                </div>
+                            </div>
+                            
                             <small class="text-muted">
                                 <i class="bi bi-info-circle me-1"></i>
-                                Select which cashier should handle this order
+                                Admin PIN verification ensures secure cashier assignment
                             </small>
                         </div>
                     </div>
@@ -699,12 +696,54 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer justify-content-end">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-success btn-lg" id="confirmOrderBtn" disabled>
+                        <i class="bi bi-check-circle me-2"></i>Send to Cashier
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin PIN Entry Modal (for waiters) -->
+<div class="modal fade" id="adminPinModal" tabindex="-1" aria-labelledby="adminPinModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="adminPinModalLabel">
+                    <i class="bi bi-shield-lock me-2"></i>Admin PIN Required
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="mb-4">
+                    <i class="bi bi-person-badge display-1 text-primary mb-3"></i>
+                    <h6>Ask your admin to enter their PIN</h6>
+                    <p class="text-muted">This will automatically assign your orders to the correct cashier</p>
+                </div>
+                
+                <div class="mb-4">
+                    <input type="password" 
+                           class="form-control form-control-lg text-center" 
+                           id="adminPinInput" 
+                           maxlength="4" 
+                           placeholder="••••"
+                           style="font-size: 2rem; letter-spacing: 1rem; max-width: 200px; margin: 0 auto;">
+                </div>
+                
+                <div id="pinVerificationResult"></div>
+            </div>
+            <div class="modal-footer justify-content-center">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-2"></i>Cancel
                 </button>
-                <button type="button" class="btn btn-success" id="confirmOrderBtn" disabled>
-                    <i class="bi bi-check-circle me-2"></i>Confirm Order
+                <button type="button" class="btn btn-primary" id="verifyPinBtn">
+                    <i class="bi bi-check-circle me-2"></i>Verify PIN
                 </button>
             </div>
         </div>
@@ -4390,9 +4429,6 @@ function loadRecentOrders() {
                         case 'delivery':
                             serviceBadge = { class: 'bg-info', text: 'Delivery' };
                             break;
-                        case 'card':
-                            serviceBadge = { class: 'bg-success', text: 'Card Payment' };
-                            break;
                         default:
                             serviceBadge = { class: 'bg-secondary', text: order.service_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) };
                     }
@@ -4487,7 +4523,6 @@ function initializeServiceTypeSelection() {
             if (this.classList.contains('disabled')) {
                 // Show notification about restriction
                 const serviceNames = {
-                    'on_table': 'On Table',
                     'take_away': 'Take Away',
                     'delivery': 'Delivery',
                     'card': 'Card Payment'
@@ -4511,51 +4546,19 @@ function initializeServiceTypeSelection() {
             
             // Update display
             const serviceNames = {
-                'on_table': 'On Table',
                 'take_away': 'Take Away',
-                'delivery': 'Delivery',
-                'card': 'Card Payment'
+                'delivery': 'Delivery'
             };
             document.getElementById('selectedServiceType').textContent = serviceNames[selectedServiceType];
             
-            // Show/hide table selection for on_table service
+            // Hide table selection since on_table service is removed
             const tableSection = document.getElementById('tableSelectionSection');
-            if (selectedServiceType === 'on_table') {
-                // If we have a pre-selected table, show it nicely instead of the selection grid
-                if (window.isPreSelectedTable && window.selectedTableId && window.selectedTableNumber) {
-                    tableSection.style.display = 'block';
-                    tableSection.innerHTML = `
-                        <div class="col-12">
-                            <div class="alert alert-success d-flex align-items-center">
-                                <i class="bi bi-table text-success me-3" style="font-size: 2rem;"></i>
-                                <div>
-                                    <h5 class="mb-1">Table ${window.selectedTableNumber} Selected</h5>
-                                    <small class="text-muted">Order will be assigned to this table</small>
-                                </div>
-                                <div class="ms-auto">
-                                    <button class="btn btn-outline-secondary btn-sm" onclick="changeTable()">
-                                        <i class="bi bi-pencil"></i> Change Table
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    tableSection.style.display = 'block';
-                    // Reset table selection when switching to on_table (only if not pre-selected)
-                    if (!window.isPreSelectedTable) {
-                        window.selectedTableId = null;
-                        window.selectedTableNumber = null;
-                        document.querySelectorAll('.table-btn-modal').forEach(btn => btn.classList.remove('selected'));
-                    }
-                }
-            } else {
-                tableSection.style.display = 'none';
-                // Clear table selection for non-table services (only if not pre-selected)
-                if (!window.isPreSelectedTable) {
-                    window.selectedTableId = null;
-                    window.selectedTableNumber = null;
-                }
+            tableSection.style.display = 'none';
+            // Clear table selection since on_table service is no longer available
+            if (!window.isPreSelectedTable) {
+                window.selectedTableId = null;
+                window.selectedTableNumber = null;
+                document.querySelectorAll('.table-option').forEach(opt => opt.classList.remove('selected'));
             }
             
             // Show/hide delivery company section
@@ -4629,9 +4632,6 @@ function updateConfirmButton() {
         if (selectedServiceType === 'delivery') {
             // For delivery: need delivery company
             isValid = selectedDeliveryCompanyId != null;
-        } else if (selectedServiceType === 'on_table') {
-            // For on table: need table selection
-            isValid = window.selectedTableId != null;
         } else {
             // For take_away and card: no additional requirements
             isValid = true;
@@ -4673,9 +4673,6 @@ function printOrderDirectly(orderId) {
                             break;
                         case 'delivery':
                             serviceDisplay = '🚚 DELIVERY';
-                            break;
-                        case 'card':
-                            serviceDisplay = '💳 CARD PAYMENT';
                             break;
                         default:
                             serviceDisplay = data.order.service_type.replace('_', ' ').toUpperCase();
@@ -4940,7 +4937,21 @@ document.getElementById('confirmOrderBtn').addEventListener('click', function() 
                 }, 2000); // Wait 2 seconds for printing to complete
             }
         } else {
-            alert('Error creating order: ' + data.message);
+            // Check if it's a cashier assignment error
+            if (data.error_type === 'no_cashier_assignment') {
+                alert('⚠️ CASHIER ASSIGNMENT REQUIRED\n\n' + data.message + '\n\nPlease ask your admin to assign you to a cashier before creating orders.');
+                // Highlight the cashier assignment section
+                const cashierSection = document.getElementById('cashierAssignmentSection');
+                if (cashierSection) {
+                    cashierSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    cashierSection.classList.add('border', 'border-danger', 'rounded', 'p-2');
+                    setTimeout(() => {
+                        cashierSection.classList.remove('border', 'border-danger', 'rounded', 'p-2');
+                    }, 5000);
+                }
+            } else {
+                alert('Error creating order: ' + data.message);
+            }
         }
     })
     .catch(error => {
@@ -5926,6 +5937,348 @@ document.addEventListener('DOMContentLoaded', function() {
         addSpecialOrderToOrder();
     });
 });
+
+// Admin PIN functionality for waiters
+{% if current_user.role.value == 'waiter' %}
+document.addEventListener('DOMContentLoaded', function() {
+    const enterPinBtn = document.getElementById('enterPinBtn');
+    const changeCashierBtn = document.getElementById('changeCashierBtn');
+    const backToPinBtn = document.getElementById('backToPinBtn');
+    const adminPinModal = new bootstrap.Modal(document.getElementById('adminPinModal'));
+    const adminPinInput = document.getElementById('adminPinInput');
+    const verifyPinBtn = document.getElementById('verifyPinBtn');
+    const pinEntryCard = document.getElementById('pinEntryCard');
+    const cashierSelectionCard = document.getElementById('cashierSelectionCard');
+    const assignedCashierCard = document.getElementById('assignedCashierCard');
+    const assignedCashierName = document.getElementById('assignedCashierName');
+    const selectedCashier = document.getElementById('selectedCashier');
+    const cashierOptionsContainer = document.getElementById('cashierOptionsContainer');
+    
+    let currentAdminPin = '';
+    let availableCashiers = [];
+
+    // Format PIN input (numbers only)
+    adminPinInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 4) value = value.substring(0, 4);
+        e.target.value = value;
+    });
+
+    // Enter PIN button click - directly show cashier selection
+    enterPinBtn.addEventListener('click', function() {
+        // Get available cashiers directly
+        fetch('/pos/get_cashiers_for_assignment', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                availableCashiers = data.cashiers;
+                showCashierSelection();
+            } else {
+                alert('Error loading cashiers: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading cashiers:', error);
+            alert('An error occurred while loading cashiers');
+        });
+    });
+
+    // Change cashier button click
+    changeCashierBtn.addEventListener('click', function() {
+        // Clear current assignment and show cashier selection directly
+        fetch('/pos/clear_assigned_cashier', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Get available cashiers and show selection
+                fetch('/pos/get_cashiers_for_assignment', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        availableCashiers = data.cashiers;
+                        showCashierSelection();
+                    } else {
+                        alert('Error loading cashiers: ' + data.message);
+                        resetToInitialState();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading cashiers:', error);
+                    alert('An error occurred while loading cashiers');
+                    resetToInitialState();
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error clearing assignment:', error);
+        });
+    });
+
+    // Back to PIN button click
+    backToPinBtn.addEventListener('click', function() {
+        resetToInitialState();
+    });
+
+    // Admin PIN verification is no longer needed - cashiers use their own PINs
+
+    // Check if cashier is already assigned on page load
+    fetch('/pos/get_assigned_cashier')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Cashier already assigned
+                showAssignedCashier(data.cashier);
+            }
+        })
+        .catch(error => {
+            console.error('Error checking assigned cashier:', error);
+        });
+
+    function showCashierSelection() {
+        // Hide other cards and show cashier selection
+        pinEntryCard.classList.add('d-none');
+        assignedCashierCard.classList.add('d-none');
+        cashierSelectionCard.classList.remove('d-none');
+        
+        // Populate cashier options
+        cashierOptionsContainer.innerHTML = '';
+        availableCashiers.forEach(cashier => {
+            const cashierOption = document.createElement('div');
+            cashierOption.className = 'col-md-6 col-12';
+            cashierOption.innerHTML = `
+                <div class="card cashier-option-card border-2" data-cashier-id="${cashier.id}" style="cursor: pointer;">
+                    <div class="card-body text-center p-3">
+                        <i class="bi bi-person-circle display-6 text-success mb-2"></i>
+                        <h6 class="card-title mb-0">${cashier.name}</h6>
+                        <small class="text-muted">${cashier.username}</small>
+                    </div>
+                </div>
+            `;
+            
+            // Add click handler
+            cashierOption.addEventListener('click', function() {
+                showCashierPinEntry(cashier);
+            });
+            
+            cashierOptionsContainer.appendChild(cashierOption);
+        });
+        
+        updateConfirmButtonState();
+    }
+
+    function showCashierPinEntry(cashier) {
+        // Show PIN entry modal for the selected cashier
+        const pinModal = document.createElement('div');
+        pinModal.className = 'modal fade';
+        pinModal.id = 'cashierPinModal';
+        pinModal.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Enter PIN for ${cashier.name}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-3">
+                            <i class="bi bi-person-circle display-4 text-success"></i>
+                            <p class="mb-0">Please enter ${cashier.name}'s PIN code</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="cashierPinInput">Cashier PIN</label>
+                            <input type="password" class="form-control text-center" id="cashierPinInput" 
+                                   maxlength="4" placeholder="Enter 4-digit PIN" autocomplete="off">
+                        </div>
+                        <div id="cashierPinResult" class="mt-3"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="verifyCashierPinBtn">Verify PIN</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(pinModal);
+        const modalInstance = new bootstrap.Modal(pinModal);
+        modalInstance.show();
+        
+        // Focus on PIN input
+        setTimeout(() => {
+            document.getElementById('cashierPinInput').focus();
+        }, 500);
+        
+        // Handle PIN verification
+        document.getElementById('verifyCashierPinBtn').addEventListener('click', function() {
+            const pinCode = document.getElementById('cashierPinInput').value.trim();
+            if (!pinCode || pinCode.length !== 4) {
+                showCashierPinResult('Please enter a 4-digit PIN code', 'error');
+                return;
+            }
+            
+            selectCashier(cashier, pinCode);
+        });
+        
+        // Handle Enter key
+        document.getElementById('cashierPinInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('verifyCashierPinBtn').click();
+            }
+        });
+        
+        // Clean up modal when closed
+        pinModal.addEventListener('hidden.bs.modal', function() {
+            document.body.removeChild(pinModal);
+        });
+    }
+    
+    function showCashierPinResult(message, type) {
+        const resultDiv = document.getElementById('cashierPinResult');
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        resultDiv.innerHTML = `<div class="alert ${alertClass} mb-0">${message}</div>`;
+    }
+
+    function selectCashier(cashier, cashierPin) {
+        const verifyBtn = document.getElementById('verifyCashierPinBtn');
+        const originalText = verifyBtn.innerHTML;
+        verifyBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i>Verifying...';
+        verifyBtn.disabled = true;
+        
+        // Assign cashier to waiter with cashier PIN
+        fetch('/pos/assign_cashier_to_waiter', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                cashier_id: cashier.id,
+                cashier_pin: cashierPin
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showCashierPinResult('PIN verified successfully!', 'success');
+                setTimeout(() => {
+                    const modalInstance = bootstrap.Modal.getInstance(document.getElementById('cashierPinModal'));
+                    modalInstance.hide();
+                    showAssignedCashier(data.cashier);
+                }, 1500);
+            } else {
+                showCashierPinResult(data.message, 'error');
+                verifyBtn.innerHTML = originalText;
+                verifyBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error assigning cashier:', error);
+            showCashierPinResult('An error occurred while verifying PIN', 'error');
+            verifyBtn.innerHTML = originalText;
+            verifyBtn.disabled = false;
+        });
+    }
+
+    function showAssignedCashier(cashier) {
+        pinEntryCard.classList.add('d-none');
+        cashierSelectionCard.classList.add('d-none');
+        assignedCashierCard.classList.remove('d-none');
+        assignedCashierName.textContent = cashier.name;
+        selectedCashier.textContent = cashier.name;
+        
+        // Enable confirm button now that cashier is assigned
+        const confirmBtn = document.getElementById('confirmOrderBtn');
+        if (confirmBtn) {
+            confirmBtn.title = 'Send order to ' + cashier.name;
+        }
+        
+        updateConfirmButtonState();
+        
+        // Auto-refresh the order modal if it's currently open
+        const orderModal = document.getElementById('orderCompletionModal');
+        if (orderModal && orderModal.classList.contains('show')) {
+            // Close and reopen the modal to refresh its content
+            const modalInstance = bootstrap.Modal.getInstance(orderModal);
+            if (modalInstance) {
+                modalInstance.hide();
+                // Wait for modal to close, then reopen it
+                setTimeout(() => {
+                    const completeOrderBtn = document.getElementById('completeOrderBtn');
+                    if (completeOrderBtn && !completeOrderBtn.disabled) {
+                        completeOrderBtn.click();
+                    }
+                }, 300);
+            }
+        }
+    }
+
+    function resetToInitialState() {
+        pinEntryCard.classList.remove('d-none');
+        cashierSelectionCard.classList.add('d-none');
+        assignedCashierCard.classList.add('d-none');
+        selectedCashier.textContent = 'Not Selected';
+        currentAdminPin = '';
+        availableCashiers = [];
+        
+        // Ensure confirm button is disabled when no cashier assigned
+        const confirmBtn = document.getElementById('confirmOrderBtn');
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.title = 'Admin must assign a cashier before orders can be sent';
+        }
+        
+        updateConfirmButtonState();
+    }
+
+    function showPinResult(message, type) {
+        const resultDiv = document.getElementById('pinVerificationResult');
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const iconClass = type === 'success' ? 'bi-check-circle' : 'bi-x-circle';
+        
+        resultDiv.innerHTML = `
+            <div class="alert ${alertClass}">
+                <i class="bi ${iconClass} me-2"></i>${message}
+            </div>
+        `;
+    }
+
+    function updateConfirmButtonState() {
+        const confirmBtn = document.getElementById('confirmOrderBtn');
+        const serviceSelected = document.querySelector('.service-option.selected');
+        const cashierAssigned = !assignedCashierCard.classList.contains('d-none');
+        
+        // Enable confirm button if service is selected and cashier is assigned
+        if (serviceSelected && cashierAssigned) {
+            confirmBtn.disabled = false;
+        } else {
+            confirmBtn.disabled = true;
+        }
+    }
+
+    // Override the original cashier selection logic for waiters
+    const originalUpdateConfirmButton = window.updateConfirmButtonState;
+    window.updateConfirmButtonState = function() {
+        updateConfirmButtonState();
+    };
+});
+{% endif %}
 
 // Note: changeTable() function removed since Change Table button is no longer available for pre-selected tables
 

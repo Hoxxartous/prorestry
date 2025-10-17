@@ -1,7 +1,7 @@
 from flask import render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
 from app.superuser import superuser
-from app.models import User, Branch, UserRole, Order, Category, MenuItem, Table, Customer, DeliveryCompany, OrderItem, AuditLog, CashierSession, OrderStatus
+from app.models import User, Branch, UserRole, Order, Category, MenuItem, Table, Customer, DeliveryCompany, OrderItem, AuditLog, CashierSession, OrderStatus, AppSettings, TimezoneManager, OrderCounter, OrderEditHistory, ManualCardPayment
 from app import db
 from app.auth.decorators import super_admin_required
 from datetime import datetime, timedelta
@@ -47,8 +47,18 @@ def dashboard():
         Order.status == OrderStatus.PAID
     ).scalar() or 0
     
-    # Get branch performance data - fixed query to show real data
+    # Include manual card payments in revenue calculations
     today = datetime.utcnow().date()
+    manual_card_total_today = db.session.query(func.sum(ManualCardPayment.amount)).filter(
+        ManualCardPayment.date == today
+    ).scalar() or 0
+    manual_card_total_all_time = db.session.query(func.sum(ManualCardPayment.amount)).scalar() or 0
+    
+    # Update totals to include manual card payments
+    today_revenue_with_cards = today_revenue + manual_card_total_today
+    total_revenue_all_time_with_cards = total_revenue_all_time + manual_card_total_all_time
+    
+    # Get branch performance data - fixed query to show real data
     
     # Get today's orders per branch - all orders
     today_orders_subquery = db.session.query(
@@ -83,6 +93,13 @@ def dashboard():
     ).filter(User.is_active == True)\
      .group_by(User.branch_id).subquery()
     
+    # Get manual card payments per branch for today
+    manual_card_subquery = db.session.query(
+        ManualCardPayment.branch_id,
+        func.sum(ManualCardPayment.amount).label('manual_card_amount')
+    ).filter(ManualCardPayment.date == today)\
+     .group_by(ManualCardPayment.branch_id).subquery()
+    
     # Combine branch data with statistics
     branch_stats = db.session.query(
         Branch.id,
@@ -92,16 +109,84 @@ def dashboard():
         func.coalesce(today_paid_orders_subquery.c.paid_orders_count, 0).label('paid_orders_count'),
         func.coalesce(today_unpaid_orders_subquery.c.unpaid_orders_count, 0).label('unpaid_orders_count'),
         func.coalesce(today_paid_orders_subquery.c.revenue, 0).label('revenue'),
+        func.coalesce(manual_card_subquery.c.manual_card_amount, 0).label('manual_card_amount'),
         func.coalesce(users_subquery.c.users_count, 0).label('users_count')
     ).outerjoin(today_orders_subquery, Branch.id == today_orders_subquery.c.branch_id)\
      .outerjoin(today_paid_orders_subquery, Branch.id == today_paid_orders_subquery.c.branch_id)\
      .outerjoin(today_unpaid_orders_subquery, Branch.id == today_unpaid_orders_subquery.c.branch_id)\
+     .outerjoin(manual_card_subquery, Branch.id == manual_card_subquery.c.branch_id)\
      .outerjoin(users_subquery, Branch.id == users_subquery.c.branch_id)\
      .filter(Branch.is_active == True)\
      .all()
     
+    # Get edited orders statistics for today (all branches)
+    edited_orders_today = Order.query.filter(
+        today_filter,
+        Order.edit_count > 0
+    ).count()
+    
+    # Get total edited orders (all time, all branches)
+    total_edited_orders = Order.query.filter(Order.edit_count > 0).count()
+    
     # Get recent activities across all branches
     recent_orders = Order.query.order_by(Order.created_at.desc()).limit(10).all()
+    
+    # Get top cashiers by order edits this week (all branches)
+    week_start = datetime.utcnow() - timedelta(days=7)
+    
+    # Query to get cashiers with their edit counts this week across all branches
+    top_editing_cashiers_query = db.session.query(
+        User.id,
+        User.first_name,
+        User.last_name,
+        User.role,
+        User.branch_id,
+        Branch.name.label('branch_name'),
+        Branch.code.label('branch_code'),
+        func.count(OrderEditHistory.id).label('edit_count')
+    ).join(
+        OrderEditHistory, User.id == OrderEditHistory.edited_by
+    ).join(
+        Order, OrderEditHistory.order_id == Order.id
+    ).outerjoin(
+        Branch, User.branch_id == Branch.id
+    ).filter(
+        User.role == UserRole.CASHIER,
+        OrderEditHistory.edited_at >= week_start
+    )
+    
+    # Group by cashier and order by edit count
+    top_editing_cashiers_raw = top_editing_cashiers_query.group_by(
+        User.id, User.first_name, User.last_name, User.role, User.branch_id, Branch.name, Branch.code
+    ).order_by(
+        func.count(OrderEditHistory.id).desc()
+    ).limit(6).all()
+    
+    # Format the data for the chart
+    top_editing_cashiers = []
+    for cashier in top_editing_cashiers_raw:
+        full_name = f"{cashier.first_name} {cashier.last_name}".strip()
+        if not full_name:
+            full_name = f"Cashier {cashier.id}"
+        
+        # Format role name
+        role_name = cashier.role.name.replace('_', ' ').title() if cashier.role else 'Unknown'
+        
+        # Format branch info
+        branch_info = f"{cashier.branch_name} ({cashier.branch_code})" if cashier.branch_name else 'No Branch'
+        
+        top_editing_cashiers.append({
+            'full_name': full_name,
+            'edit_count': cashier.edit_count,
+            'role_name': role_name,
+            'branch_info': branch_info,
+            'branch_name': cashier.branch_name or 'No Branch',
+            'branch_code': cashier.branch_code or 'N/A'
+        })
+    
+    # Calculate cash payments (Order Revenue Only - NOT total revenue which includes cards)
+    cash_total_today = today_revenue  # This is order revenue only (cash payments)
+    cash_total_all_time = total_revenue_all_time  # This is order revenue only (cash payments)
     
     return render_template('superuser/dashboard.html',
                          total_branches=total_branches,
@@ -109,13 +194,20 @@ def dashboard():
                          total_orders_today=total_orders_today,
                          paid_orders_today=paid_orders_today,
                          unpaid_orders_today=unpaid_orders_today,
-                         today_revenue=today_revenue,
+                         today_revenue=today_revenue_with_cards,
                          total_orders_all_time=total_orders_all_time,
                          total_paid_orders=total_paid_orders,
                          total_unpaid_orders=total_unpaid_orders,
-                         total_revenue_all_time=total_revenue_all_time,
+                         total_revenue_all_time=total_revenue_all_time_with_cards,
                          branch_stats=branch_stats,
-                         recent_orders=recent_orders)
+                         recent_orders=recent_orders,
+                         edited_orders_today=edited_orders_today,
+                         total_edited_orders=total_edited_orders,
+                         top_editing_cashiers=top_editing_cashiers,
+                         manual_card_total_today=manual_card_total_today,
+                         manual_card_total_all_time=manual_card_total_all_time,
+                         cash_total_today=cash_total_today,
+                         cash_total_all_time=cash_total_all_time)
 
 @superuser.route('/branches')
 def branches():
@@ -381,7 +473,9 @@ def users():
                          branches=branches,
                          current_branch=branch_id,
                          current_role=role,
-                         current_status=status)
+                         current_status=status,
+                         can_manage_users=True,
+                         can_view_only=False)
 
 @superuser.route('/users/add', methods=['GET', 'POST'])
 def add_user():
@@ -407,6 +501,16 @@ def add_user():
             existing_user = User.query.filter_by(username=request.form.get('username')).first()
             if existing_user:
                 error_msg = 'Username already exists!'
+                if is_ajax:
+                    return jsonify({'success': False, 'message': error_msg}), 400
+                flash(error_msg, 'error')
+                branches = Branch.query.filter_by(is_active=True).all()
+                return render_template('superuser/add_user.html', branches=branches, roles=UserRole)
+            
+            # Check if email already exists
+            existing_email = User.query.filter_by(email=request.form.get('email')).first()
+            if existing_email:
+                error_msg = 'Email already exists!'
                 if is_ajax:
                     return jsonify({'success': False, 'message': error_msg}), 400
                 flash(error_msg, 'error')
@@ -685,6 +789,7 @@ def orders():
             order_data = {
                 'id': order.id,
                 'order_number': order.order_number,
+                'order_counter': order.order_counter if order.order_counter else None,
                 'table_number': order.table.table_number if order.table else 'N/A',
                 'items_count': len([item for item in order.order_items if 'طلبات خاصة' not in item.menu_item.name]),
                 'total_amount': float(order.total_amount),
@@ -912,10 +1017,30 @@ def cashier_performance():
         
         # Count only revenue from PAID orders
         paid_orders = [order for order in all_orders if hasattr(order, 'status') and order.status == OrderStatus.PAID]
-        total_revenue = sum(order.total_amount for order in paid_orders)
+        order_revenue = sum(order.total_amount for order in paid_orders)
         
-        # Calculate average based on PAID orders only
-        avg_order_value = total_revenue / len(paid_orders) if len(paid_orders) > 0 else 0
+        # Add manual card payments for this cashier in the date range
+        manual_card_query = ManualCardPayment.query.filter_by(cashier_id=cashier.id)
+        
+        if date_from:
+            try:
+                date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+                manual_card_query = manual_card_query.filter(ManualCardPayment.date >= date_from_obj)
+            except ValueError:
+                pass
+        
+        if date_to:
+            try:
+                date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+                manual_card_query = manual_card_query.filter(ManualCardPayment.date <= date_to_obj)
+            except ValueError:
+                pass
+        
+        manual_card_revenue = sum(payment.amount for payment in manual_card_query.all())
+        total_revenue = order_revenue + manual_card_revenue
+        
+        # Calculate average based on PAID orders only (manual card payments are separate)
+        avg_order_value = order_revenue / len(paid_orders) if len(paid_orders) > 0 else 0
         
         # Calculate login count based on date range
         login_query = CashierSession.query.filter_by(cashier_id=cashier.id)
@@ -944,7 +1069,9 @@ def cashier_performance():
             'orders_count': total_orders,  # ALL orders (including waiter PENDING orders)
             'paid_orders_count': len(paid_orders),  # Only PAID orders
             'unpaid_orders_count': len(unpaid_orders),  # Only PENDING orders
-            'total_sales': total_revenue,  # Only from PAID orders
+            'total_sales': total_revenue,  # Orders + Manual Card Payments
+            'order_revenue': order_revenue,  # Only from PAID orders
+            'manual_card_revenue': manual_card_revenue,  # Manual card payments
             'avg_order_value': avg_order_value,  # Based on PAID orders only
             'login_count': login_count,  # Real login count from CashierSession
             'efficiency_score': min(100, (total_orders * 10) if total_orders > 0 else 0),  # Based on ALL orders
@@ -1001,13 +1128,21 @@ def reports():
     
     # Revenue only from PAID orders
     paid_orders_query = base_query.filter(Order.status == OrderStatus.PAID)
-    total_revenue_query = db.session.query(func.sum(Order.total_amount)).filter(Order.status == OrderStatus.PAID)
+    order_revenue_query = db.session.query(func.sum(Order.total_amount)).filter(Order.status == OrderStatus.PAID)
     if branch_id:
-        total_revenue_query = total_revenue_query.filter(Order.branch_id == branch_id)
-    total_revenue = total_revenue_query.scalar() or 0
+        order_revenue_query = order_revenue_query.filter(Order.branch_id == branch_id)
+    order_revenue = order_revenue_query.scalar() or 0
     
-    # Average order value - calculated from PAID orders only
-    avg_order_value = (total_revenue / total_paid_orders) if total_paid_orders > 0 else 0
+    # Add manual card payments
+    manual_card_query = db.session.query(func.sum(ManualCardPayment.amount))
+    if branch_id:
+        manual_card_query = manual_card_query.filter(ManualCardPayment.branch_id == branch_id)
+    manual_card_revenue = manual_card_query.scalar() or 0
+    
+    total_revenue = order_revenue + manual_card_revenue
+    
+    # Average order value - calculated from PAID orders only (excluding manual card payments)
+    avg_order_value = (order_revenue / total_paid_orders) if total_paid_orders > 0 else 0
     
     # Today's statistics - separate paid and unpaid
     today = datetime.utcnow().date()
@@ -1017,13 +1152,23 @@ def reports():
     today_unpaid_orders = today_query.filter(Order.status == OrderStatus.PENDING).count()
     
     # Today's revenue only from PAID orders
-    today_revenue_query = db.session.query(func.sum(Order.total_amount)).filter(
+    today_order_revenue_query = db.session.query(func.sum(Order.total_amount)).filter(
         func.date(Order.created_at) == today,
         Order.status == OrderStatus.PAID
     )
     if branch_id:
-        today_revenue_query = today_revenue_query.filter(Order.branch_id == branch_id)
-    today_revenue = today_revenue_query.scalar() or 0
+        today_order_revenue_query = today_order_revenue_query.filter(Order.branch_id == branch_id)
+    today_order_revenue = today_order_revenue_query.scalar() or 0
+    
+    # Add today's manual card payments
+    today_manual_card_query = db.session.query(func.sum(ManualCardPayment.amount)).filter(
+        ManualCardPayment.date == today
+    )
+    if branch_id:
+        today_manual_card_query = today_manual_card_query.filter(ManualCardPayment.branch_id == branch_id)
+    today_manual_card_revenue = today_manual_card_query.scalar() or 0
+    
+    today_revenue = today_order_revenue + today_manual_card_revenue
     
     # Branch performance comparison - separate total orders and paid revenue
     from sqlalchemy import case
@@ -1122,14 +1267,395 @@ def reports():
                          total_paid_orders=total_paid_orders,
                          total_unpaid_orders=total_unpaid_orders,
                          total_revenue=total_revenue,
+                         order_revenue=order_revenue,
+                         manual_card_revenue=manual_card_revenue,
                          avg_order_value=avg_order_value,
                          today_orders=today_orders,
                          today_paid_orders=today_paid_orders,
                          today_unpaid_orders=today_unpaid_orders,
                          today_revenue=today_revenue,
+                         today_order_revenue=today_order_revenue,
+                         today_manual_card_revenue=today_manual_card_revenue,
                          branch_performance=branch_performance,
-                         daily_sales=daily_sales,
-                         top_items=top_items,
-                         branches=branches,
-                         current_branch=branch_id,
-                         service_type_data=service_type_data)
+                        daily_sales=daily_sales,
+                        top_items=top_items,
+                        branches=branches,
+                        current_branch=branch_id,
+                        service_type_data=service_type_data)
+
+
+@superuser.route('/settings')
+def settings():
+    """Super User settings page for app-wide configurations"""
+    # Get current settings
+    current_timezone = AppSettings.get_value('app_timezone', 'Asia/Qatar')
+    current_date_format = AppSettings.get_value('date_format', '%Y-%m-%d %H:%M:%S')
+    current_currency = AppSettings.get_value('default_currency', 'QAR')
+    
+    # Get counter reset settings
+    counter_reset_enabled = AppSettings.get_value('counter_reset_enabled', 'false').lower() == 'true'
+    counter_reset_time = AppSettings.get_value('counter_reset_time', '00:00')
+    
+    # Get available timezones
+    available_timezones = TimezoneManager.get_available_timezones()
+    
+    # Get current time in configured timezone
+    current_time_local = TimezoneManager.get_current_time()
+    current_time_utc = datetime.utcnow()
+    
+    # Get counter statistics
+    counter_stats = []
+    branches = Branch.query.filter_by(is_active=True).all()
+    for branch in branches:
+        counter_record = OrderCounter.query.filter_by(branch_id=branch.id).first()
+        counter_stats.append({
+            'branch_id': branch.id,
+            'branch_name': branch.name,
+            'branch_code': branch.code,
+            'current_counter': counter_record.current_counter if counter_record else 0,
+            'last_reset_date': counter_record.last_reset_date if counter_record else None
+        })
+    
+    return render_template('superuser/settings.html',
+                         current_timezone=current_timezone,
+                         current_date_format=current_date_format,
+                         current_currency=current_currency,
+                         counter_reset_enabled=counter_reset_enabled,
+                         counter_reset_time=counter_reset_time,
+                         counter_stats=counter_stats,
+                         available_timezones=available_timezones,
+                         current_time_local=current_time_local,
+                         current_time_utc=current_time_utc)
+
+
+@superuser.route('/settings/save', methods=['POST'])
+def save_settings():
+    """Save app-wide settings"""
+    try:
+        # Get form data
+        timezone = request.form.get('timezone')
+        date_format = request.form.get('date_format')
+        currency = request.form.get('currency')
+        counter_reset_enabled = request.form.get('counter_reset_enabled') == 'on'
+        counter_reset_time = request.form.get('counter_reset_time', '00:00')
+        
+        current_app.logger.info(f'Saving settings: timezone={timezone}, date_format={date_format}, currency={currency}, counter_reset_enabled={counter_reset_enabled}, counter_reset_time={counter_reset_time}')
+        
+        # Validate timezone
+        if timezone:
+            try:
+                import pytz
+                pytz.timezone(timezone)  # This will raise exception if invalid
+                AppSettings.set_value('app_timezone', timezone, 'Application timezone setting')
+                current_app.logger.info(f'Timezone setting saved: {timezone}')
+            except pytz.UnknownTimeZoneError as tz_error:
+                current_app.logger.error(f'Invalid timezone: {timezone}, error: {tz_error}')
+                flash('Invalid timezone selected', 'error')
+                return redirect(url_for('superuser.settings'))
+        
+        # Save date format
+        if date_format:
+            AppSettings.set_value('date_format', date_format, 'Default date format for displaying timestamps')
+            current_app.logger.info(f'Date format setting saved: {date_format}')
+        
+        # Save currency
+        if currency:
+            AppSettings.set_value('default_currency', currency, 'Default currency symbol for the application')
+            current_app.logger.info(f'Currency setting saved: {currency}')
+        
+        # Save counter reset settings
+        AppSettings.set_value('counter_reset_enabled', str(counter_reset_enabled).lower(), 'Enable/disable daily counter reset')
+        current_app.logger.info(f'Counter reset enabled setting saved: {counter_reset_enabled}')
+        
+        # Validate and save counter reset time
+        try:
+            # Validate time format
+            datetime.strptime(counter_reset_time, '%H:%M')
+            AppSettings.set_value('counter_reset_time', counter_reset_time, 'Daily reset time for order counters (HH:MM format)')
+            current_app.logger.info(f'Counter reset time setting saved: {counter_reset_time}')
+        except ValueError:
+            current_app.logger.error(f'Invalid time format: {counter_reset_time}')
+            flash('Invalid time format for counter reset time. Please use HH:MM format.', 'error')
+            return redirect(url_for('superuser.settings'))
+        
+        # Commit settings changes first
+        db.session.commit()
+        current_app.logger.info('Settings committed to database')
+        
+        # Log the change in audit log
+        try:
+            audit_log = AuditLog(
+                user_id=current_user.id,
+                action='UPDATE_APP_SETTINGS',
+                description=f'Updated timezone to {timezone}, date format to {date_format}, currency to {currency}'
+            )
+            db.session.add(audit_log)
+            db.session.commit()
+            current_app.logger.info('Audit log created successfully')
+        except Exception as audit_error:
+            current_app.logger.error(f'Failed to create audit log: {audit_error}')
+            # Don't fail the whole operation if audit log fails
+        
+        flash('Settings saved successfully! The new timezone will be used for all new orders and datetime displays.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Error saving settings: {str(e)}', exc_info=True)
+        flash(f'Error saving settings: {str(e)}', 'error')
+    
+    return redirect(url_for('superuser.settings'))
+
+
+@superuser.route('/settings/test_timezone')
+def test_timezone():
+    """Test endpoint to show current timezone information"""
+    try:
+        current_tz = TimezoneManager.get_app_timezone()
+        current_time = TimezoneManager.get_current_time()
+        utc_time = datetime.utcnow()
+        
+        # Test conversion
+        test_utc = datetime.utcnow()
+        test_local = TimezoneManager.convert_utc_to_local(test_utc)
+        
+        return jsonify({
+            'success': True,
+            'timezone_name': str(current_tz),
+            'current_local_time': current_time.strftime('%Y-%m-%d %H:%M:%S %Z'),
+            'current_utc_time': utc_time.strftime('%Y-%m-%d %H:%M:%S UTC'),
+            'test_conversion': {
+                'utc': test_utc.strftime('%Y-%m-%d %H:%M:%S UTC'),
+                'local': test_local.strftime('%Y-%m-%d %H:%M:%S %Z')
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@superuser.route('/settings/reset_counters', methods=['POST'])
+def reset_counters():
+    """Manually reset all order counters"""
+    try:
+        # Reset all counters
+        OrderCounter.reset_all_counters()
+        db.session.commit()
+        
+        # Log the action
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action='RESET_ORDER_COUNTERS',
+            description='Manually reset all order counters'
+        )
+        db.session.add(audit_log)
+        db.session.commit()
+        
+        flash('All order counters have been reset successfully!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Error resetting counters: {str(e)}')
+        flash(f'Error resetting counters: {str(e)}', 'error')
+    
+    return redirect(url_for('superuser.settings'))
+
+
+@superuser.route('/settings/reset_counter/<int:branch_id>', methods=['POST'])
+def reset_branch_counter(branch_id):
+    """Reset counter for a specific branch"""
+    try:
+        branch = Branch.query.get_or_404(branch_id)
+        
+        # Reset counter for this branch
+        OrderCounter.reset_counter(branch_id)
+        db.session.commit()
+        
+        # Log the action
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action='RESET_BRANCH_COUNTER',
+            description=f'Manually reset order counter for branch: {branch.name}'
+        )
+        db.session.add(audit_log)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Counter for branch "{branch.name}" has been reset successfully!'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Error resetting branch counter: {str(e)}')
+        return jsonify({
+            'success': False,
+            'message': f'Error resetting counter: {str(e)}'
+        }), 500
+
+@superuser.route('/api/reports/cash-per-date')
+@login_required
+def api_cash_per_date():
+    """API endpoint for cash per date data - all branches or branch-specific"""
+    if current_user.role != UserRole.SUPER_USER:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        # Get parameters
+        date_from = request.args.get('date_from')
+        date_to = request.args.get('date_to')
+        branch_id = request.args.get('branch_id', type=int)
+        time_period = request.args.get('time_period')
+        service_type = request.args.get('service_type')
+        delivery_company_id = request.args.get('delivery_company_id')
+        
+        # Handle time period filtering
+        if time_period and time_period != 'custom':
+            days = int(time_period)
+            end_date = datetime.utcnow()
+            start_date = end_date - timedelta(days=days)
+        elif date_from and date_to:
+            start_date = datetime.strptime(date_from, '%Y-%m-%d')
+            end_date = datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
+        else:
+            # Default to last 7 days
+            end_date = datetime.utcnow()
+            start_date = end_date - timedelta(days=7)
+        
+        # Build query for cash (order payments only) per date
+        from sqlalchemy import case
+        cash_per_date_query = db.session.query(
+            func.date(Order.created_at).label('date'),
+            func.sum(case((Order.status == OrderStatus.PAID, Order.total_amount), else_=0)).label('cash_amount')
+        ).filter(
+            Order.created_at >= start_date,
+            Order.created_at < end_date
+        )
+        
+        # Apply branch filtering if specified
+        if branch_id:
+            cash_per_date_query = cash_per_date_query.filter(Order.branch_id == branch_id)
+        
+        # Add service type filtering
+        if service_type and service_type != 'all':
+            from app.models import ServiceType
+            if service_type == 'on_table':
+                cash_per_date_query = cash_per_date_query.filter(Order.service_type == ServiceType.ON_TABLE)
+            elif service_type == 'take_away':
+                cash_per_date_query = cash_per_date_query.filter(Order.service_type == ServiceType.TAKE_AWAY)
+            elif service_type == 'delivery':
+                cash_per_date_query = cash_per_date_query.filter(Order.service_type == ServiceType.DELIVERY)
+        
+        # Add delivery company filtering
+        if delivery_company_id and delivery_company_id != 'all':
+            cash_per_date_query = cash_per_date_query.filter(Order.delivery_company_id == delivery_company_id)
+        
+        cash_per_date_query = cash_per_date_query.group_by(
+            func.date(Order.created_at)
+        ).order_by(
+            func.date(Order.created_at)
+        )
+        
+        cash_data = cash_per_date_query.all()
+        
+        # Format data for chart
+        result = {
+            'dates': [str(item.date) for item in cash_data],
+            'cash_amounts': [float(item.cash_amount or 0) for item in cash_data]
+        }
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@superuser.route('/api/reports/peak-hours')
+@login_required
+def api_peak_hours():
+    """API endpoint for peak selling hours data - all branches or branch-specific"""
+    if current_user.role != UserRole.SUPER_USER:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        # Get parameters
+        date_from = request.args.get('date_from')
+        date_to = request.args.get('date_to')
+        branch_id = request.args.get('branch_id', type=int)
+        time_period = request.args.get('time_period')
+        service_type = request.args.get('service_type')
+        delivery_company_id = request.args.get('delivery_company_id')
+        
+        # Handle time period filtering
+        if time_period and time_period != 'custom':
+            days = int(time_period)
+            end_date = datetime.utcnow()
+            start_date = end_date - timedelta(days=days)
+        elif date_from and date_to:
+            start_date = datetime.strptime(date_from, '%Y-%m-%d')
+            end_date = datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
+        else:
+            # Default to last 7 days
+            end_date = datetime.utcnow()
+            start_date = end_date - timedelta(days=7)
+        
+        # Build query for hourly sales data
+        from sqlalchemy import case, extract
+        hourly_sales_query = db.session.query(
+            extract('hour', Order.created_at).label('hour'),
+            func.count(Order.id).label('order_count'),
+            func.sum(case((Order.status == OrderStatus.PAID, Order.total_amount), else_=0)).label('revenue')
+        ).filter(
+            Order.created_at >= start_date,
+            Order.created_at < end_date
+        )
+        
+        # Apply branch filtering if specified
+        if branch_id:
+            hourly_sales_query = hourly_sales_query.filter(Order.branch_id == branch_id)
+        
+        # Add service type filtering
+        if service_type and service_type != 'all':
+            from app.models import ServiceType
+            if service_type == 'on_table':
+                hourly_sales_query = hourly_sales_query.filter(Order.service_type == ServiceType.ON_TABLE)
+            elif service_type == 'take_away':
+                hourly_sales_query = hourly_sales_query.filter(Order.service_type == ServiceType.TAKE_AWAY)
+            elif service_type == 'delivery':
+                hourly_sales_query = hourly_sales_query.filter(Order.service_type == ServiceType.DELIVERY)
+        
+        # Add delivery company filtering
+        if delivery_company_id and delivery_company_id != 'all':
+            hourly_sales_query = hourly_sales_query.filter(Order.delivery_company_id == delivery_company_id)
+        
+        hourly_sales_query = hourly_sales_query.group_by(
+            extract('hour', Order.created_at)
+        ).order_by(
+            extract('hour', Order.created_at)
+        )
+        
+        hourly_data = hourly_sales_query.all()
+        
+        # Create 24-hour format with all hours (0-23)
+        hours = list(range(24))
+        order_counts = [0] * 24
+        revenues = [0] * 24
+        
+        # Fill in actual data
+        for item in hourly_data:
+            hour_index = int(item.hour)
+            if 0 <= hour_index <= 23:
+                order_counts[hour_index] = item.order_count
+                revenues[hour_index] = float(item.revenue or 0)
+        
+        # Format data for chart
+        result = {
+            'hours': [f"{hour:02d}:00" for hour in hours],
+            'order_counts': order_counts,
+            'revenues': revenues
+        }
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
