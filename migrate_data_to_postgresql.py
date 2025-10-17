@@ -111,8 +111,9 @@ def create_postgresql_schema(postgres_conn):
         # Import Flask app to create tables
         sys.path.append(os.path.dirname(os.path.abspath(__file__)))
         from app import create_app, db
+        from config import ProductionConfig
         
-        app = create_app('production')
+        app = create_app(ProductionConfig)
         with app.app_context():
             # Create all tables
             db.create_all()
