@@ -38,8 +38,9 @@ def initialize_database():
     try:
         from app import create_app, db
         from app.db_init import init_multibranch_db
+        from config import ProductionConfig
         
-        app = create_app('production')
+        app = create_app(ProductionConfig)
         
         with app.app_context():
             logger.info("Initializing PostgreSQL database...")
@@ -62,8 +63,9 @@ def run_health_check():
     """Run basic health checks"""
     try:
         from app import create_app
+        from config import ProductionConfig
         
-        app = create_app('production')
+        app = create_app(ProductionConfig)
         
         with app.app_context():
             from app import db
