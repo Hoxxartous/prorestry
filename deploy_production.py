@@ -69,9 +69,10 @@ def run_health_check():
         
         with app.app_context():
             from app import db
+            from sqlalchemy import text
             
             # Test database connection
-            db.session.execute('SELECT 1')
+            db.session.execute(text('SELECT 1'))
             logger.info("Database connection test passed")
             
             # Check if tables exist
