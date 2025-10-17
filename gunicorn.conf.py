@@ -7,8 +7,8 @@ backlog = 2048
 
 # Optimized for Render FREE PLAN - very limited resources
 cpu_cores = multiprocessing.cpu_count()
-workers = 1  # Single worker for free plan to minimize memory usage
 
+workers = 1  # Single worker for free plan to minimize memory usage
 # Worker class - eventlet for async performance and WebSocket support
 worker_class = "eventlet"
 

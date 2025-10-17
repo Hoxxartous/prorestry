@@ -71,7 +71,10 @@ def on_join(data):
 @socketio.on('disconnect')
 def on_disconnect():
     """Handle user disconnection"""
-    print(f"User {current_user.get_full_name()} disconnected")
+    if current_user.is_authenticated:
+        print(f"User {current_user.get_full_name()} disconnected")
+    else:
+        print("Anonymous user disconnected")
 
 @pos.before_request
 @pos_access_required
