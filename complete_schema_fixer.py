@@ -174,8 +174,26 @@ def get_default_value(default_obj, column_type):
     if default_obj is None:
         return None
     
-    # Handle different default types
-    default_str = str(default_obj)
+    # Handle SQLAlchemy default objects
+    if hasattr(default_obj, 'arg'):
+        # Extract the actual default value from SQLAlchemy default object
+        actual_value = default_obj.arg
+        if actual_value is None:
+            return None
+        
+        # Handle different value types
+        if isinstance(actual_value, (int, float)):
+            return str(actual_value)
+        elif isinstance(actual_value, bool):
+            return 'TRUE' if actual_value else 'FALSE'
+        elif isinstance(actual_value, str):
+            return f"'{actual_value}'"
+        else:
+            # Convert to string and handle as before
+            default_str = str(actual_value)
+    else:
+        # Handle different default types as string
+        default_str = str(default_obj)
     
     if 'datetime.utcnow' in default_str or 'func.now()' in default_str:
         return 'CURRENT_TIMESTAMP'
@@ -188,6 +206,22 @@ def get_default_value(default_obj, column_type):
     elif default_str.replace('.', '').isdigit():
         return default_str
     else:
+        # For ScalarElementColumnDefault and other complex objects, try to extract numeric values
+        if 'ScalarElementColumnDefault' in default_str:
+            # Extract numeric value from ScalarElementColumnDefault(value)
+            import re
+            match = re.search(r'ScalarElementColumnDefault\(([^)]+)\)', default_str)
+            if match:
+                value = match.group(1)
+                # Remove quotes if present
+                value = value.strip('\'"')
+                try:
+                    # Try to convert to float to validate it's numeric
+                    float(value)
+                    return value
+                except ValueError:
+                    pass
+        
         return f"'{default_str}'"
 
 def fix_all_missing_columns():

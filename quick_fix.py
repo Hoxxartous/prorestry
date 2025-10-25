@@ -35,6 +35,7 @@ def quick_fix_database():
             ("order_items", "special_requests", "TEXT"),
             ("order_items", "is_new", "BOOLEAN DEFAULT TRUE"),
             ("order_items", "is_deleted", "BOOLEAN DEFAULT FALSE"),
+            ("order_items", "modifiers_total_price", "NUMERIC(10, 2) DEFAULT 0.00"),
             
             # User Branch Assignments table
             ("user_branch_assignments", "id", "SERIAL PRIMARY KEY"),

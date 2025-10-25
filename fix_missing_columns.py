@@ -95,6 +95,12 @@ def fix_missing_columns():
                     'column': 'is_deleted',
                     'type': 'BOOLEAN',
                     'sql': 'ALTER TABLE order_items ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE'
+                },
+                {
+                    'table': 'order_items',
+                    'column': 'modifiers_total_price',
+                    'type': 'NUMERIC',
+                    'sql': 'ALTER TABLE order_items ADD COLUMN modifiers_total_price NUMERIC(10, 2) DEFAULT 0.00'
                 }
             ]
             
