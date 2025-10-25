@@ -289,6 +289,29 @@ class Order(db.Model):
     
     def __repr__(self):
         return f'<Order {self.order_number} (Branch: {self.branch_id})>'
+    
+    @property
+    def total_amount_with_modifiers(self):
+        """Get total amount including all modifier prices"""
+        base_total = float(self.total_amount or 0)
+        modifiers_total = sum(float(item.modifiers_total_price or 0) for item in self.order_items)
+        return base_total + modifiers_total
+    
+    def update_total_with_modifiers(self):
+        """Update order total to include modifier prices"""
+        # Calculate base total from items
+        base_total = sum(float(item.total_price) for item in self.order_items if not item.is_deleted)
+        
+        # Calculate modifiers total
+        modifiers_total = 0
+        for item in self.order_items:
+            if not item.is_deleted:
+                item.update_modifiers_price()
+                modifiers_total += float(item.modifiers_total_price or 0)
+        
+        # Update the order total to include modifiers
+        self.total_amount = base_total + modifiers_total
+        return self.total_amount
 
 class OrderEditHistory(db.Model):
     __tablename__ = 'order_edit_history'
@@ -319,6 +342,7 @@ class OrderItem(db.Model):
     special_requests = db.Column(db.Text)  # For special requests/modifications
     is_new = db.Column(db.Boolean, default=False)  # Track if item was added during edit
     is_deleted = db.Column(db.Boolean, default=False)  # Track if item was deleted during edit
+    modifiers_total_price = db.Column(db.Numeric(10, 2), default=0.00)  # Total price of special item modifiers
     
     # Foreign keys
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
@@ -326,6 +350,75 @@ class OrderItem(db.Model):
     
     def __repr__(self):
         return f'<OrderItem {self.id}>'
+    
+    @property
+    def total_price_with_modifiers(self):
+        """Get total price including modifiers"""
+        return float(self.total_price) + float(self.modifiers_total_price or 0)
+    
+    def calculate_modifiers_price(self):
+        """Calculate total price of modifiers from notes field"""
+        if not self.notes:
+            return 0.00
+        
+        from decimal import Decimal
+        total_modifier_price = Decimal('0')
+        
+        # Parse modifiers from notes (format: "modifier1, modifier2, 2x modifier3")
+        modifiers_text = self.notes
+        
+        # Skip custom price notes
+        if 'Custom Price:' in modifiers_text:
+            # Extract only the modifiers part after custom price
+            parts = modifiers_text.split(', ')
+            modifiers_text = ', '.join([part for part in parts if not part.startswith('Custom Price:')])
+        
+        if not modifiers_text.strip():
+            return 0.00
+        
+        # Get special items category to find modifier prices
+        special_category = Category.query.filter_by(
+            name='طلبات خاصة',
+            branch_id=self.order.branch_id,
+            is_active=True
+        ).first()
+        
+        if not special_category:
+            return 0.00
+        
+        # Parse each modifier
+        modifier_parts = [part.strip() for part in modifiers_text.split(',') if part.strip()]
+        
+        for modifier_part in modifier_parts:
+            # Handle quantity prefix (e.g., "2x modifier_name")
+            if 'x ' in modifier_part:
+                qty_str, modifier_name = modifier_part.split('x ', 1)
+                try:
+                    qty = int(qty_str.strip())
+                except ValueError:
+                    qty = 1
+                    modifier_name = modifier_part
+            else:
+                qty = 1
+                modifier_name = modifier_part.strip()
+            
+            # Find the special item by name
+            special_item = MenuItem.query.filter_by(
+                name=modifier_name,
+                category_id=special_category.id,
+                branch_id=self.order.branch_id,
+                is_active=True
+            ).first()
+            
+            if special_item:
+                total_modifier_price += special_item.price * qty
+        
+        return float(total_modifier_price)
+    
+    def update_modifiers_price(self):
+        """Update the modifiers_total_price field based on current notes"""
+        self.modifiers_total_price = self.calculate_modifiers_price()
+        return self.modifiers_total_price
 
 class Payment(db.Model):
     __tablename__ = 'payments'
@@ -992,3 +1085,172 @@ class ManualCardPayment(db.Model):
             )
             db.session.add(payment)
             return payment
+
+
+# Kitchen Management Models
+
+class Kitchen(db.Model):
+    """Kitchen accounts for receiving and managing orders"""
+    __tablename__ = 'kitchens'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False)  # Kitchen name (e.g., "Hot Kitchen", "Cold Kitchen", "Grill")
+    description = db.Column(db.Text)
+    is_active = db.Column(db.Boolean(), default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Branch support
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=False)
+    
+    # Kitchen user account
+    kitchen_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Relationships
+    branch = db.relationship('Branch', backref='kitchens')
+    kitchen_user = db.relationship('User', backref='managed_kitchen')
+    category_assignments = db.relationship('CategoryKitchenAssignment', backref='kitchen', lazy='dynamic')
+    kitchen_orders = db.relationship('KitchenOrder', backref='kitchen', lazy='dynamic')
+    
+    def __repr__(self):
+        return f'<Kitchen {self.name} (Branch: {self.branch_id})>'
+    
+    def get_assigned_categories(self):
+        """Get all categories assigned to this kitchen"""
+        return [assignment.category for assignment in self.category_assignments.filter_by(is_active=True)]
+    
+    def can_receive_category(self, category_id):
+        """Check if this kitchen can receive orders from a specific category"""
+        return self.category_assignments.filter_by(
+            category_id=category_id, 
+            is_active=True
+        ).first() is not None
+
+
+class CategoryKitchenAssignment(db.Model):
+    """Assignment of categories to kitchens for order distribution"""
+    __tablename__ = 'category_kitchen_assignments'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
+    kitchen_id = db.Column(db.Integer, db.ForeignKey('kitchens.id'), nullable=False)
+    is_active = db.Column(db.Boolean(), default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Admin who created assignment
+    
+    # Relationships
+    category = db.relationship('Category', backref='kitchen_assignments')
+    creator = db.relationship('User', backref='category_kitchen_assignments_created')
+    
+    # Unique constraint - one kitchen per category
+    __table_args__ = (db.UniqueConstraint('category_id', name='unique_category_per_kitchen'),)
+    
+    def __repr__(self):
+        return f'<CategoryKitchenAssignment Category:{self.category_id} -> Kitchen:{self.kitchen_id}>'
+    
+    @classmethod
+    def get_kitchen_for_category(cls, category_id):
+        """Get the kitchen assigned to handle a specific category"""
+        assignment = cls.query.filter_by(category_id=category_id, is_active=True).first()
+        return assignment.kitchen if assignment else None
+    
+    @classmethod
+    def assign_category_to_kitchen(cls, category_id, kitchen_id, created_by_id):
+        """Assign a category to a kitchen"""
+        # Remove any existing assignment for this category
+        existing = cls.query.filter_by(category_id=category_id).first()
+        if existing:
+            existing.is_active = False
+        
+        # Create new assignment
+        assignment = cls(
+            category_id=category_id,
+            kitchen_id=kitchen_id,
+            created_by=created_by_id
+        )
+        db.session.add(assignment)
+        db.session.flush()
+        return assignment
+
+
+# Kitchen Order Status Enum
+class KitchenOrderStatus(Enum):
+    RECEIVED = 'received'      # Order received by kitchen
+    PREPARING = 'preparing'    # Kitchen is preparing the items
+    READY = 'ready'           # Items are ready for serving
+    SERVED = 'served'         # Items have been served
+
+
+class KitchenOrder(db.Model):
+    """Kitchen-specific order items for tracking preparation status"""
+    __tablename__ = 'kitchen_orders'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
+    kitchen_id = db.Column(db.Integer, db.ForeignKey('kitchens.id'), nullable=False)
+    status = db.Column(db.Enum(KitchenOrderStatus), default=KitchenOrderStatus.RECEIVED, nullable=False)
+    
+    # Timing information
+    received_at = db.Column(db.DateTime, default=datetime.utcnow)
+    started_preparing_at = db.Column(db.DateTime)
+    ready_at = db.Column(db.DateTime)
+    served_at = db.Column(db.DateTime)
+    
+    # Notes from kitchen
+    kitchen_notes = db.Column(db.Text)
+    
+    # Relationships
+    order = db.relationship('Order', backref='kitchen_orders')
+    kitchen_items = db.relationship('KitchenOrderItem', backref='kitchen_order', lazy='dynamic', cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<KitchenOrder Order:{self.order_id} Kitchen:{self.kitchen_id}>'
+    
+    def update_status(self, new_status):
+        """Update kitchen order status with timestamp"""
+        self.status = new_status
+        now = datetime.utcnow()
+        
+        if new_status == KitchenOrderStatus.PREPARING:
+            self.started_preparing_at = now
+        elif new_status == KitchenOrderStatus.READY:
+            self.ready_at = now
+        elif new_status == KitchenOrderStatus.SERVED:
+            self.served_at = now
+        
+        db.session.flush()
+    
+    def get_items_for_kitchen(self):
+        """Get all order items that belong to this kitchen"""
+        return self.kitchen_items.all()
+    
+    def get_total_items_count(self):
+        """Get total quantity of items for this kitchen"""
+        return sum(item.quantity for item in self.kitchen_items)
+
+
+class KitchenOrderItem(db.Model):
+    """Individual items within a kitchen order"""
+    __tablename__ = 'kitchen_order_items'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    kitchen_order_id = db.Column(db.Integer, db.ForeignKey('kitchen_orders.id'), nullable=False)
+    order_item_id = db.Column(db.Integer, db.ForeignKey('order_items.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    special_requests = db.Column(db.Text)  # Copy of special requests for kitchen reference
+    status = db.Column(db.Enum(KitchenOrderStatus), default=KitchenOrderStatus.RECEIVED, nullable=False)
+    
+    # Item details (copied for kitchen reference)
+    item_name = db.Column(db.String(128), nullable=False)
+    item_name_ar = db.Column(db.String(128))
+    
+    # Relationships
+    order_item = db.relationship('OrderItem', backref='kitchen_order_items')
+    
+    def __repr__(self):
+        return f'<KitchenOrderItem {self.item_name} x{self.quantity}>'
+    
+    def update_status(self, new_status):
+        """Update individual item status"""
+        self.status = new_status
+        db.session.flush()

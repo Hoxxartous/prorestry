@@ -15,6 +15,8 @@ def index():
                     return redirect(url_for('admin.dashboard'))
                 elif current_user.role.name == 'WAITER':
                     return redirect(url_for('pos.table_management'))
+                elif current_user.role.name == 'KITCHEN':
+                    return redirect(url_for('kitchen.dashboard'))
                 else:
                     return redirect(url_for('pos.index'))
             else:

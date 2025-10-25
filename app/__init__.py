@@ -39,14 +39,7 @@ def create_app(config_class=Config):
     login_manager.login_message = 'Your session has expired. Please log in again.'
     login_manager.login_message_category = 'info'
     login_manager.session_protection = 'strong'  # Strong session protection
-    # Initialize SocketIO with production optimizations
-    socketio.init_app(app, 
-                     cors_allowed_origins="*",
-                     async_mode='eventlet',  # Use eventlet for better concurrency
-                     logger=False,           # Disable SocketIO logging in production
-                     engineio_logger=False,  # Disable EngineIO logging
-                     ping_timeout=60,        # Longer ping timeout for free plan
-                     ping_interval=25)       # Ping interval for connection health
+    socketio.init_app(app, cors_allowed_origins="*")
     
     # Initialize session manager for better session handling
     from app.session_manager import init_session_manager
@@ -86,6 +79,9 @@ def create_app(config_class=Config):
     
     from app.cashier import cashier as cashier_blueprint
     app.register_blueprint(cashier_blueprint, url_prefix='/cashier')
+    
+    from app.kitchen import kitchen as kitchen_blueprint
+    app.register_blueprint(kitchen_blueprint, url_prefix='/kitchen')
     
     # Register debug blueprint (for troubleshooting)
     from app.debug_routes import debug_bp
@@ -346,7 +342,13 @@ def configure_logging(app):
     # Set the application logger level
     app.logger.setLevel(log_level)
     
+    # Register template filters for modifier pricing
+    from app.template_filters import register_template_filters
+    register_template_filters(app)
+    
     # Log application startup
     app.logger.info('Restaurant POS application startup')
     app.logger.info(f'Log level set to: {app.config.get("LOG_LEVEL", "INFO")}')
     app.logger.info(f'Debug mode: {app.config.get("DEBUG", False)}')
+    
+    return app

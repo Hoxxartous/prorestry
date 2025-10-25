@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Order #{{ kitchen_order.order.order_number }}</title>
+    <style>
+        @media print {
+            @page {
+                size: 80mm auto;
+                margin: 0;
+            }
+            body {
+                margin: 0;
+                padding: 5mm;
+            }
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.3;
+            margin: 0;
+            padding: 5mm;
+            background: white;
+            color: black;
+            width: 70mm;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .kitchen-name {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        
+        .order-info {
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 5px;
+        }
+        
+        .order-number {
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        
+        .order-details {
+            font-size: 11px;
+        }
+        
+        .items-section {
+            margin-bottom: 10px;
+        }
+        
+        .section-title {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+            text-decoration: underline;
+        }
+        
+        .item {
+            margin-bottom: 8px;
+            padding-bottom: 3px;
+            border-bottom: 1px dotted #ccc;
+        }
+        
+        .item-name {
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        
+        .item-name-ar {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 2px;
+        }
+        
+        .item-quantity {
+            float: right;
+            font-weight: bold;
+            background: #000;
+            color: white;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+        
+        .special-requests {
+            font-size: 10px;
+            color: #333;
+            margin-top: 2px;
+            padding-left: 5px;
+            border-left: 2px solid #ccc;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 10px;
+            padding-top: 5px;
+            border-top: 1px dashed #000;
+            font-size: 10px;
+        }
+        
+        .print-time {
+            margin-top: 5px;
+            font-size: 9px;
+            color: #666;
+        }
+        
+        .clearfix::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="kitchen-name">{{ kitchen.name }}</div>
+        <div style="font-size: 10px;">Kitchen Order Items</div>
+    </div>
+    
+    <div class="order-info">
+        <div class="order-number">ORDER #{{ kitchen_order.order.order_number }}</div>
+        <div class="order-details">
+            <div><strong>Table:</strong> {{ kitchen_order.order.table.table_number if kitchen_order.order.table else 'Takeaway' }}</div>
+            <div><strong>Status:</strong> {{ kitchen_order.status.value|title }}</div>
+            <div><strong>Received:</strong> {{ received_at_formatted }}</div>
+            {% if ready_at_formatted %}
+            <div><strong>Ready:</strong> {{ ready_at_formatted }}</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="items-section">
+        <div class="section-title">ITEMS TO PREPARE</div>
+        {% for item in kitchen_order.combined_items %}
+        <div class="item clearfix">
+            <div class="item-quantity">{{ item.quantity }}x</div>
+            <div class="item-name">{{ item.item_name }}</div>
+            {% if item.item_name_ar %}
+            <div class="item-name-ar">{{ item.item_name_ar }}</div>
+            {% endif %}
+            {% if item.special_requests %}
+            <div class="special-requests">
+                <strong>Special:</strong> {{ item.special_requests }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="footer">
+        <div>{{ kitchen.name }} Kitchen</div>
+        <div class="print-time">Printed: {{ print_time.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+    </div>
+    
+    <script>
+        // Auto-print when page loads
+        window.onload = function() {
+            window.print();
+            // Close window after printing (for popup windows)
+            setTimeout(function() {
+                window.close();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,2656 @@
+{% extends "base.html" %}
+
+{% block title %}🔥 Kitchen Dashboard{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    /* Simplified Kitchen Dashboard Styles */
+    .kitchen-dashboard {
+        background-color: #1e1e1e;
+        min-height: 100vh;
+        color: white;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .dashboard-header {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .kitchen-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 3px;
+    }
+    
+    .kitchen-subtitle {
+        font-size: 0.9rem;
+        opacity: 0.7;
+        font-weight: 400;
+        color: #cccccc;
+    }
+    
+    /* Enhanced Filter Controls - Horizontal Layout */
+    .filter-sort-controls {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    /* Horizontal Row with 4 Columns */
+    .filters-horizontal-row {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+        gap: 20px;
+        align-items: start;
+    }
+
+    /* Individual Filter Columns */
+    .filter-column {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-width: 0; /* Allow content to shrink */
+    }
+
+    /* Vertical Separators */
+    .vertical-separator {
+        width: 1px;
+        background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        position: relative;
+        align-self: stretch;
+        min-height: 100px;
+    }
+
+    .vertical-separator::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 4px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+    }
+
+    /* Legacy separator for active filters section */
+    .section-separator {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        margin: 8px 0;
+        position: relative;
+    }
+
+    .section-separator::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 4px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+    }
+
+    .filter-section {
+        padding: 16px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* Top Row: Arrange Controls */
+    .arrange-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .arrange-section {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    /* Bottom Row: Filter Controls */
+    .filters-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .control-label {
+        color: #ffffff;
+        font-size: 1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        opacity: 0.95;
+    }
+
+    .control-label i {
+        font-size: 1.1rem;
+    }
+
+    .arrange-buttons, .status-filters, .table-filters, .layout-buttons {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    /* Active Filters in Top Right */
+    .active-filters-inline {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-left: auto;
+    }
+
+    .active-filter-tags {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    /* Modern Button Styles - Larger Size */
+    .arrange-btn, .filter-btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 25px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        white-space: nowrap;
+        position: relative;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .arrange-btn:hover, .filter-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .arrange-btn.active {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-color: #667eea;
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+        color: #ffffff;
+        transform: translateY(-1px);
+    }
+
+    .arrange-btn::before, .filter-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .arrange-btn:hover::before, .filter-btn:hover::before {
+        left: 100%;
+    }
+
+    /* Modern Filter Active States */
+    .filter-btn.active {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Modern Status Filter Colors */
+    .status-filter[data-status="all"].active {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-color: #667eea;
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5);
+    }
+
+    .status-filter[data-status="received"].active {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+        border-color: #ff6b6b;
+        box-shadow: 0 4px 16px rgba(255, 107, 107, 0.5);
+    }
+
+    .status-filter[data-status="preparing"].active {
+        background: linear-gradient(135deg, #feca57, #ff9ff3);
+        border-color: #feca57;
+        box-shadow: 0 4px 16px rgba(254, 202, 87, 0.5);
+    }
+
+    .status-filter[data-status="ready"].active {
+        background: linear-gradient(135deg, #48dbfb, #0abde3);
+        border-color: #48dbfb;
+        box-shadow: 0 4px 16px rgba(72, 219, 251, 0.5);
+    }
+
+    /* Modern Location Filter Colors */
+    .table-filter[data-table="all"].active {
+        background: linear-gradient(135deg, #a55eea, #8854d0);
+        border-color: #a55eea;
+        box-shadow: 0 4px 16px rgba(165, 94, 234, 0.5);
+    }
+
+    .table-filter[data-table="table"].active {
+        background: linear-gradient(135deg, #26de81, #20bf6b);
+        border-color: #26de81;
+        box-shadow: 0 4px 16px rgba(38, 222, 129, 0.5);
+    }
+
+    .table-filter[data-table="takeaway"].active {
+        background: linear-gradient(135deg, #fd9644, #f8b500);
+        border-color: #fd9644;
+        box-shadow: 0 4px 16px rgba(253, 150, 68, 0.5);
+    }
+
+    /* Modern Active Filters */
+    .filter-tag {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 16px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 3px 8px rgba(255, 107, 107, 0.4);
+        animation: filterTagAppear 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
+    }
+
+    @keyframes filterTagAppear {
+        from { opacity: 0; transform: scale(0.8) translateY(10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .filter-tag .remove-filter {
+        background: rgba(255, 255, 255, 0.25);
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 0;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .filter-tag .remove-filter:hover {
+        background: rgba(255, 255, 255, 0.4);
+        transform: scale(1.2);
+    }
+
+    .clear-filters-btn {
+        background: linear-gradient(135deg, #ff4757, #ff3838);
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 16px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
+    }
+
+    .clear-filters-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 71, 87, 0.5);
+    }
+    
+    .filter-new {
+        background: #ff6b6b;
+        color: black;
+        font-weight: 500;
+    }
+    
+    
+    .filter-ready {
+        background: #48dbfb;
+        color: black;
+        font-weight: 500;
+    }
+    
+    .filter-all {
+        background: #5f27cd;
+        color: black;
+        font-weight: 500;
+    }
+    
+    /* Orders Grid - Multiple Layout Support */
+    .orders-grid {
+        padding: 0;
+        transition: all 0.3s ease;
+    }
+
+    /* Masonry Layout (Default) */
+    .orders-grid.layout-masonry {
+        column-count: 3;
+        column-gap: 20px;
+        column-fill: balance;
+    }
+
+    /* Grid Layout */
+    .orders-grid.layout-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 20px;
+    }
+
+    /* List Layout */
+    .orders-grid.layout-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* Compact Layout */
+    .orders-grid.layout-compact {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 12px;
+    }
+    
+    .order-card {
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 8px;
+        padding: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+    }
+
+    /* Layout-specific order card styles */
+    .layout-masonry .order-card {
+        display: inline-block;
+        width: 100%;
+        margin-bottom: 20px;
+        break-inside: avoid;
+    }
+
+    .layout-grid .order-card {
+        display: flex;
+        flex-direction: column;
+        height: fit-content;
+    }
+
+    .layout-list .order-card {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 12px 20px;
+        margin-bottom: 0;
+    }
+
+    .layout-compact .order-card {
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+        border-radius: 6px;
+    }
+    
+    /* Animated line only for pending orders */
+    .order-card.status-received::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+        animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    
+    .order-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+    
+    .order-card.status-received {
+        border-left: 4px solid #fbbf24;
+        background: linear-gradient(135deg, rgba(116, 66, 16, 0.3), rgba(139, 90, 26, 0.3)) !important; /* Match new order stats */
+    }
+    
+    
+    .order-card.status-ready {
+        border-left: 4px solid #48dbfb;
+        background: rgba(30, 58, 138, 0.15) !important; /* Soft dark blue */
+    }
+    
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .order-number {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #4ecdc4;
+    }
+    
+    .order-time {
+        font-size: 0.85rem;
+        opacity: 0.7;
+        background: rgba(255, 255, 255, 0.08);
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-weight: 400;
+    }
+    
+    .order-table {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #96ceb4;
+        margin-bottom: 10px;
+    }
+    
+    .order-items {
+        margin-bottom: 15px;
+        background: rgba(255, 255, 255, 0.15) !important;
+        border-radius: 10px;
+        padding: 15px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(255, 255, 255, 0.1);
+        /* Explicitly ensure no scrolling */
+        overflow: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    .item-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 1rem;
+        min-height: 50px;
+    }
+    
+    .item-row:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    
+    .item-name {
+        font-weight: 900;
+        color: #ffffff;
+        line-height: 1.4;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 8px rgba(255, 255, 255, 0.3);
+        font-size: 1.1rem;
+        letter-spacing: 0.5px;
+        flex: 1;
+        margin-right: 15px;
+        word-wrap: break-word;
+    }
+    
+    .item-quantity {
+        padding: 8px 14px;
+        border-radius: 18px;
+        font-weight: 900;
+        font-size: 1.1rem;
+        min-width: 45px;
+        text-align: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+        color: #000000;
+        letter-spacing: 0.3px;
+        transform: scale(1.05);
+        flex-shrink: 0;
+        align-self: flex-start;
+    }
+    
+    /* Different colors for different quantities */
+    .quantity-1 {
+        background: linear-gradient(135deg, #ff6b6b, #ff8e53) !important; /* Red gradient */
+    }
+    
+    .quantity-2 {
+        background: linear-gradient(135deg, #4ecdc4, #45b7d1) !important; /* Cyan gradient */
+    }
+    
+    .quantity-3 {
+        background: linear-gradient(135deg, #feca57, #ff9ff3) !important; /* Yellow-Pink gradient */
+    }
+    
+    .quantity-4 {
+        background: linear-gradient(135deg, #48dbfb, #0abde3) !important; /* Blue gradient */
+    }
+    
+    .quantity-5 {
+        background: linear-gradient(135deg, #55a3ff, #003d82) !important; /* Dark blue gradient */
+    }
+    
+    /* For quantities 6 and above, use purple gradient */
+    .quantity-high {
+        background: linear-gradient(135deg, #9c88ff, #5f27cd) !important; /* Purple gradient */
+    }
+    
+    .order-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .action-btn {
+        flex: 1;
+        min-width: 100px;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        position: relative;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        transform: scale(1.02);
+    }
+    
+    .action-btn:hover {
+        transform: scale(1.05) translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+        filter: brightness(1.1);
+    }
+    
+    .action-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: scale(0.98);
+        filter: grayscale(0.3);
+    }
+    
+    .btn-preparing {
+        background: linear-gradient(135deg, #feca57, #ff9ff3);
+        color: rgba(0, 0, 0, 0.9);
+    }
+    
+    .btn-ready {
+        background: linear-gradient(135deg, #48dbfb, #0abde3);
+        color: rgba(0, 0, 0, 0.9);
+    }
+    
+    .btn-served {
+        background: linear-gradient(135deg, #55a3ff, #003d82);
+        color: rgba(0, 0, 0, 0.9);
+    }
+    
+    .btn-print {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: rgba(0, 0, 0, 0.9);
+        flex: 0 0 auto;
+        min-width: 90px;
+    }
+    
+    .btn-print-bulk {
+        background: linear-gradient(135deg, #ff6b35, #f7931e);
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-print-bulk:hover {
+        background: linear-gradient(135deg, #e55a2b, #e8841a);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+    }
+    
+    .btn-print-bulk:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+    }
+    
+    .btn-clear-ready {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-clear-ready:hover {
+        background: linear-gradient(135deg, #218838, #1ea080);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+    }
+    
+    .btn-clear-ready:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    }
+    
+    /* Sequential Numbering for Received Orders */
+    .order-sequence-number {
+        position: absolute;
+        top: -8px;
+        left: -8px;
+        background: linear-gradient(135deg, #ff6b35, #f7931e);
+        color: white;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        z-index: 10;
+    }
+    
+    .order-card.status-received {
+        position: relative;
+    }
+    
+    .white-theme .order-sequence-number {
+        background: linear-gradient(135deg, #ff9800, #f57c00) !important;
+        border: 2px solid rgba(255, 255, 255, 0.8) !important;
+        box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4) !important;
+    }
+    
+    /* Bulk Print Modal Styles */
+    .bulk-print-modal {
+        background: rgba(30, 30, 30, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        color: white;
+    }
+    
+    .bulk-print-modal .modal-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 20px 24px 16px;
+        background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(247, 147, 30, 0.1));
+    }
+    
+    .modal-title-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .modal-icon {
+        font-size: 1.5rem;
+        color: #ff6b35;
+    }
+    
+    .bulk-print-modal .modal-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+        color: white;
+    }
+    
+    .bulk-print-modal .modal-body {
+        padding: 24px;
+    }
+    
+    .print-info {
+        text-align: center;
+    }
+    
+    .print-count {
+        margin-bottom: 24px;
+        padding: 20px;
+        background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(247, 147, 30, 0.1));
+        border-radius: 12px;
+        border: 1px solid rgba(255, 107, 53, 0.2);
+    }
+    
+    .count-number {
+        display: block;
+        font-size: 3rem;
+        font-weight: 700;
+        color: #ff6b35;
+        line-height: 1;
+        margin-bottom: 8px;
+    }
+    
+    .count-label {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.8);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 500;
+    }
+    
+    .print-details {
+        text-align: left;
+    }
+    
+    .print-details p {
+        margin-bottom: 12px;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .print-details p:last-child {
+        margin-bottom: 0;
+    }
+    
+    .bulk-print-modal .modal-footer {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 16px 24px 20px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    
+    .btn-cancel {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-cancel:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .btn-confirm {
+        background: linear-gradient(135deg, #ff6b35, #f7931e);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+    }
+    
+    .btn-confirm:hover {
+        background: linear-gradient(135deg, #e55a2b, #e8841a);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+    }
+    
+    /* Action button pulse animation for new orders */
+    .btn-preparing {
+        animation: pulse-preparing 2s infinite;
+    }
+    
+    @keyframes pulse-preparing {
+        0% { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 0 rgba(254, 202, 87, 0.7); }
+        70% { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 10px rgba(254, 202, 87, 0); }
+        100% { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 0 rgba(254, 202, 87, 0); }
+    }
+    
+    /* Comprehensive Classic Light Theme - Eye Comfortable */
+    .kitchen-dashboard.white-theme {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+        color: #2c3e50 !important;
+    }
+    
+    /* Header in Light Theme */
+    .white-theme .dashboard-header {
+        background: rgba(255, 255, 255, 0.95) !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+        border-radius: 8px !important;
+    }
+    
+    .white-theme .kitchen-title {
+        color: #2c3e50 !important;
+        text-shadow: none !important;
+    }
+    
+    .white-theme .kitchen-subtitle {
+        color: #6c757d !important;
+        text-shadow: none !important;
+    }
+    
+    /* Statistics Cards in Light Theme - Premium Design */
+    .white-theme .stat-card {
+        color: #1f2937 !important;
+        border: 2px solid rgba(0, 0, 0, 0.12) !important;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+        border-radius: 12px !important;
+        backdrop-filter: blur(10px) !important;
+    }
+
+    .white-theme .stat-card::before {
+        background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent) !important;
+    }
+
+    .white-theme .stat-card:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.18), 0 3px 8px rgba(0, 0, 0, 0.12) !important;
+    }
+
+    .white-theme .stat-card.stat-new {
+        background: linear-gradient(135deg, #fef3c7, #fed7aa) !important;
+        border-color: #f59e0b !important;
+    }
+
+    .white-theme .stat-card.stat-new::before {
+        background: linear-gradient(90deg, transparent, #f59e0b, transparent) !important;
+    }
+
+    .white-theme .stat-card.stat-ready {
+        background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important;
+        border-color: #3b82f6 !important;
+    }
+
+    .white-theme .stat-card.stat-ready::before {
+        background: linear-gradient(90deg, transparent, #3b82f6, transparent) !important;
+    }
+
+    .white-theme .stat-card.stat-total {
+        background: linear-gradient(135deg, #d1fae5, #bbf7d0) !important;
+        border-color: #10b981 !important;
+    }
+
+    .white-theme .stat-card.stat-total::before {
+        background: linear-gradient(90deg, transparent, #10b981, transparent) !important;
+    }
+    
+    .white-theme .stat-label {
+        color: #4b5563 !important;
+        font-weight: 700 !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .white-theme .stat-number {
+        font-weight: 900 !important;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    /* Enhanced light theme number colors */
+    .white-theme .stat-new .stat-number {
+        color: #d97706 !important;
+        text-shadow: 0 2px 4px rgba(217, 119, 6, 0.3), 0 0 8px rgba(217, 119, 6, 0.2) !important;
+    }
+
+    .white-theme .stat-ready .stat-number {
+        color: #2563eb !important;
+        text-shadow: 0 2px 4px rgba(37, 99, 235, 0.3), 0 0 8px rgba(37, 99, 235, 0.2) !important;
+    }
+
+    .white-theme .stat-total .stat-number {
+        color: #059669 !important;
+        text-shadow: 0 2px 4px rgba(5, 150, 105, 0.3), 0 0 8px rgba(5, 150, 105, 0.2) !important;
+    }
+    
+    /* Filter and Sort Controls in Light Theme */
+    .white-theme .filter-sort-controls {
+        background: rgba(248, 249, 250, 0.95) !important;
+        border: 2px solid rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08) !important;
+        backdrop-filter: blur(20px) !important;
+    }
+
+    .white-theme .control-label {
+        color: #2c3e50 !important;
+        opacity: 1 !important;
+    }
+
+    .white-theme .arrange-btn, 
+    .white-theme .filter-btn {
+        background: rgba(255, 255, 255, 0.9) !important;
+        color: #2c3e50 !important;
+        border: 2px solid rgba(0, 0, 0, 0.12) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    .white-theme .arrange-btn:hover, 
+    .white-theme .filter-btn:hover {
+        background: rgba(255, 255, 255, 1) !important;
+        border-color: rgba(0, 0, 0, 0.2) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+        transform: translateY(-2px) !important;
+    }
+
+    .white-theme .arrange-btn.active {
+        background: linear-gradient(135deg, #667eea, #764ba2) !important;
+        border-color: #667eea !important;
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4) !important;
+        color: white !important;
+    }
+
+    /* Light Theme Vertical Separators */
+    .white-theme .vertical-separator {
+        background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.2), transparent) !important;
+    }
+
+    .white-theme .vertical-separator::before {
+        background: rgba(0, 0, 0, 0.4) !important;
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    /* Light Theme Section Separators */
+    .white-theme .section-separator {
+        background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.2), transparent) !important;
+    }
+
+    .white-theme .section-separator::before {
+        background: rgba(0, 0, 0, 0.4) !important;
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .white-theme .active-filters {
+        background: rgba(0, 0, 0, 0.03) !important;
+        border-color: rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* Light theme filter colors */
+    .white-theme .status-filter[data-status="all"].active {
+        background: linear-gradient(135deg, #4285f4, #1a73e8) !important;
+        color: white !important;
+    }
+
+    .white-theme .status-filter[data-status="received"].active {
+        background: linear-gradient(135deg, #ea4335, #d33b2c) !important;
+        color: white !important;
+    }
+
+    .white-theme .status-filter[data-status="preparing"].active {
+        background: linear-gradient(135deg, #fbbc04, #f9ab00) !important;
+        color: white !important;
+    }
+
+    .white-theme .status-filter[data-status="ready"].active {
+        background: linear-gradient(135deg, #34a853, #137333) !important;
+        color: white !important;
+    }
+
+    .white-theme .table-filter[data-table="all"].active {
+        background: linear-gradient(135deg, #9c27b0, #7b1fa2) !important;
+        color: white !important;
+    }
+
+    .white-theme .table-filter[data-table="table"].active {
+        background: linear-gradient(135deg, #00acc1, #0097a7) !important;
+        color: white !important;
+    }
+
+    .white-theme .table-filter[data-table="takeaway"].active {
+        background: linear-gradient(135deg, #ff7043, #f4511e) !important;
+        color: white !important;
+    }
+    
+    /* Order Cards in Light Theme - More Prominent */
+    .white-theme .order-card {
+        background: rgba(255, 255, 255, 0.98) !important;
+        color: #2c3e50 !important;
+        border: 2px solid rgba(0, 0, 0, 0.12) !important;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15) !important;
+        border-radius: 10px !important;
+        transform: scale(1.02) !important;
+    }
+    
+    .white-theme .order-card:hover {
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2) !important;
+        transform: scale(1.03) translateY(-2px) !important;
+    }
+    
+    /* Status-specific Light Colors - Match Stats Colors */
+    .white-theme .order-card.status-received {
+        background: linear-gradient(135deg, #fef3c7, #fed7aa) !important; /* Match new order stats */
+        border-left: 6px solid #f59e0b !important;
+        border-color: rgba(245, 158, 11, 0.3) !important;
+    }
+    
+    
+    .white-theme .order-card.status-ready {
+        background: rgba(187, 222, 251, 0.85) !important; /* Darker blue */
+        border-left: 6px solid #1976d2 !important;
+        border-color: rgba(25, 118, 210, 0.3) !important;
+    }
+    
+    /* Order Card Content in Light Theme */
+    .white-theme .order-number {
+        color: #2c3e50 !important;
+        font-weight: 700 !important;
+    }
+    
+    .white-theme .order-time {
+        color: #6c757d !important;
+    }
+    
+    .white-theme .order-table {
+        color: #28a745 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Items Container in Light Theme */
+    .white-theme .order-items {
+        background: rgba(248, 249, 250, 0.95) !important;
+        border: 2px solid rgba(0, 0, 0, 0.1) !important;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        border-radius: 10px !important;
+        /* Explicitly ensure no scrolling in light theme */
+        overflow: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    .white-theme .item-name {
+        color: #2c3e50 !important;
+        text-shadow: none !important;
+        font-weight: 600 !important;
+    }
+    
+    .white-theme .item-row {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+    }
+    
+    /* Quantity Badges in Light Theme - Keep Colorful but Softer */
+    .white-theme .quantity-1 {
+        background: linear-gradient(135deg, #ff8a80, #ffab91) !important;
+        color: #2c3e50 !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .white-theme .quantity-2 {
+        background: linear-gradient(135deg, #80deea, #81c784) !important;
+        color: #2c3e50 !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .white-theme .quantity-3 {
+        background: linear-gradient(135deg, #fff176, #ffb74d) !important;
+        color: #2c3e50 !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .white-theme .quantity-4 {
+        background: linear-gradient(135deg, #90caf9, #64b5f6) !important;
+        color: #2c3e50 !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .white-theme .quantity-5 {
+        background: linear-gradient(135deg, #b39ddb, #9575cd) !important;
+        color: #2c3e50 !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .white-theme .quantity-high {
+        background: linear-gradient(135deg, #f48fb1, #ce93d8) !important;
+        color: #2c3e50 !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    /* Action Buttons in Light Theme - Softer Gradients */
+    .white-theme .btn-preparing {
+        background: linear-gradient(135deg, #fff176, #ffcc02) !important;
+        color: #2c3e50 !important;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .white-theme .btn-ready {
+        background: linear-gradient(135deg, #81d4fa, #29b6f6) !important;
+        color: #2c3e50 !important;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .white-theme .btn-served {
+        background: linear-gradient(135deg, #a5d6a7, #66bb6a) !important;
+        color: #2c3e50 !important;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .white-theme .btn-print {
+        background: linear-gradient(135deg, #c8e6c9, #4caf50) !important;
+        color: #2c3e50 !important;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .white-theme .btn-print-bulk {
+        background: linear-gradient(135deg, #ffcc80, #ff9800) !important;
+        color: #2c3e50 !important;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .white-theme .btn-print-bulk:hover {
+        background: linear-gradient(135deg, #ffb74d, #f57c00) !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+    }
+    
+    .white-theme .btn-clear-ready {
+        background: linear-gradient(135deg, #66bb6a, #4caf50) !important;
+        color: white !important;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .white-theme .btn-clear-ready:hover {
+        background: linear-gradient(135deg, #5cb85c, #449d44) !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+    }
+    
+    /* Bulk Print Modal Light Theme */
+    .white-theme .bulk-print-modal {
+        background: rgba(248, 249, 250, 0.98) !important;
+        border: 2px solid rgba(0, 0, 0, 0.1) !important;
+        color: #2c3e50 !important;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .white-theme .bulk-print-modal .modal-header {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+        background: linear-gradient(135deg, rgba(255, 152, 0, 0.1), rgba(245, 124, 0, 0.1)) !important;
+    }
+    
+    .white-theme .bulk-print-modal .modal-title {
+        color: #2c3e50 !important;
+    }
+    
+    .white-theme .modal-icon {
+        color: #ff9800 !important;
+    }
+    
+    .white-theme .print-count {
+        background: linear-gradient(135deg, rgba(255, 152, 0, 0.1), rgba(245, 124, 0, 0.1)) !important;
+        border: 1px solid rgba(255, 152, 0, 0.2) !important;
+    }
+    
+    .white-theme .count-number {
+        color: #ff9800 !important;
+    }
+    
+    .white-theme .count-label {
+        color: #6c757d !important;
+    }
+    
+    .white-theme .print-details p {
+        color: #6c757d !important;
+    }
+    
+    .white-theme .bulk-print-modal .modal-footer {
+        border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .white-theme .btn-cancel {
+        background: rgba(0, 0, 0, 0.05) !important;
+        color: #6c757d !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .white-theme .btn-cancel:hover {
+        background: rgba(0, 0, 0, 0.1) !important;
+        color: #2c3e50 !important;
+    }
+    
+    .white-theme .btn-confirm {
+        background: linear-gradient(135deg, #ffcc80, #ff9800) !important;
+        color: #2c3e50 !important;
+        box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3) !important;
+    }
+    
+    .white-theme .btn-confirm:hover {
+        background: linear-gradient(135deg, #ffb74d, #f57c00) !important;
+        box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4) !important;
+    }
+    
+    /* Enhanced light theme item styling */
+    .white-theme .item-name {
+        font-weight: 700 !important;
+    }
+    
+    .white-theme .item-row:last-child {
+        border-bottom: none !important;
+    }
+    
+    /* No Orders Message in Light Theme */
+    .white-theme .no-orders {
+        color: #6c757d !important;
+    }
+    
+    .white-theme .no-orders-icon {
+        color: #28a745 !important;
+    }
+    
+    /* Header Action Buttons in Light Theme */
+    .white-theme .refresh-btn {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .white-theme .theme-switcher-btn {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .stats-bar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+    }
+    
+    .stat-card {
+        flex: 1;
+        min-width: 160px;
+        background: #2d3748;
+        border-radius: 12px;
+        padding: 20px 16px;
+        text-align: center;
+        border: 2px solid #4a5568;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+    
+    /* Individual stat card colors for dark theme - Enhanced */
+    .stat-card.stat-new {
+        background: linear-gradient(135deg, #744210, #8b5a1a);
+        border-color: #b8751f;
+    }
+    
+    .stat-card.stat-new::before {
+        background: linear-gradient(90deg, transparent, #fbbf24, transparent);
+    }
+    
+    .stat-card.stat-ready {
+        background: linear-gradient(135deg, #1a365d, #1e40af);
+        border-color: #3b82f6;
+    }
+    
+    .stat-card.stat-ready::before {
+        background: linear-gradient(90deg, transparent, #60a5fa, transparent);
+    }
+    
+    .stat-card.stat-total {
+        background: linear-gradient(135deg, #22543d, #16a34a);
+        border-color: #22c55e;
+    }
+    
+    .stat-card.stat-total::before {
+        background: linear-gradient(90deg, transparent, #4ade80, transparent);
+    }
+    
+    .stat-number {
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin-bottom: 6px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        line-height: 1;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        opacity: 0.85;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        font-weight: 600;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Enhanced number colors with better contrast */
+    .stat-new .stat-number { 
+        color: #fbbf24; 
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 8px rgba(251, 191, 36, 0.3);
+    }
+    .stat-ready .stat-number { 
+        color: #60a5fa; 
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 8px rgba(96, 165, 250, 0.3);
+    }
+    .stat-total .stat-number { 
+        color: #4ade80; 
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 8px rgba(74, 222, 128, 0.3);
+    }
+    
+    .refresh-btn, .theme-switcher-btn {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .theme-switcher-btn {
+        background: linear-gradient(135deg, #f093fb, #f5576c);
+    }
+    
+    .refresh-btn:hover, .theme-switcher-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .header-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    .no-orders {
+        text-align: center;
+        padding: 40px 20px;
+        opacity: 0.6;
+    }
+    
+    .no-orders-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        opacity: 0.4;
+    }
+    
+    .no-orders-text {
+        font-size: 1.2rem;
+        font-weight: 300;
+    }
+    
+    .loading {
+        text-align: center;
+        padding: 20px;
+        opacity: 0.7;
+    }
+    
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #4ecdc4;
+        animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .kitchen-title { font-size: 1.3rem; }
+        .kitchen-subtitle { font-size: 0.8rem; }
+        
+        /* Modern Mobile Layout */
+        .filter-sort-controls {
+            padding: 20px 16px;
+        }
+        
+        /* Stack horizontally on mobile */
+        .filters-horizontal-row {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        
+        /* Hide vertical separators on mobile */
+        .vertical-separator {
+            display: none;
+        }
+        
+        /* Add horizontal separators between sections on mobile */
+        .filter-column:not(:last-child)::after {
+            content: '';
+            display: block;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            margin: 16px 0 0 0;
+            position: relative;
+        }
+        
+        .filter-column:not(:last-child)::after::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+        }
+        
+        .filter-section {
+            padding: 12px 0;
+        }
+        
+        .control-label {
+            font-size: 0.9rem;
+        }
+        
+        .filter-btn, .arrange-btn {
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            min-height: 40px;
+        }
+        
+        .arrange-buttons, .status-filters, .table-filters, .layout-buttons {
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        /* Mobile layout adjustments */
+        .orders-grid.layout-masonry {
+            column-count: 1;
+        }
+        
+        .orders-grid.layout-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .orders-grid.layout-compact {
+            grid-template-columns: 1fr;
+        }
+        
+        .orders-grid { 
+            column-count: 1; 
+            column-width: auto; 
+            column-gap: 0; 
+        }
+        .stats-bar { flex-direction: column; }
+        .order-card { 
+            padding: 12px; 
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        .item-name { font-size: 1rem; }
+        .item-quantity { 
+            padding: 6px 10px; 
+            font-size: 0.9rem; 
+            min-width: 35px;
+        }
+    }
+    
+    @media (min-width: 769px) and (max-width: 1200px) {
+        .orders-grid {
+            column-width: 300px;
+        }
+    }
+    
+    @media (min-width: 1201px) {
+        .orders-grid {
+            column-width: 350px;
+        }
+    }
+    
+    /* Enhanced Animations */
+    .fade-in {
+        animation: fadeIn 0.4s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(15px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    
+    .pulse {
+        animation: statPulse 1.2s ease-in-out infinite;
+    }
+    
+    @keyframes statPulse {
+        0% { transform: scale(1); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1); }
+        50% { transform: scale(1.05); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2); }
+        100% { transform: scale(1); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1); }
+    }
+
+    /* Light theme pulse animation */
+    .white-theme .pulse {
+        animation: statPulseLight 1.2s ease-in-out infinite;
+    }
+    
+    @keyframes statPulseLight {
+        0% { transform: scale(1); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08); }
+        50% { transform: scale(1.05); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.12); }
+        100% { transform: scale(1); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08); }
+    }
+
+    /* Subtle glow animation for stat numbers */
+    .stat-number {
+        animation: numberGlow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes numberGlow {
+        0% { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 8px rgba(255, 255, 255, 0.1); }
+        100% { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255, 255, 255, 0.2); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="kitchen-dashboard">
+    <div class="container-fluid py-4">
+        <!-- Header Section -->
+        <div class="dashboard-header fade-in">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h1 class="kitchen-title">🔥 Kitchen Dashboard</h1>
+                    <p class="kitchen-subtitle">👨‍🍳 {{ current_user.username }} | Real-Time Orders</p>
+                </div>
+                <div class="header-actions d-flex gap-2">
+                    <button class="btn-print-bulk" onclick="printAllPending()" id="printPendingBtn">
+                        <i class="bi bi-printer-fill me-2"></i>PRINT NEW
+                    </button>
+                    <button class="btn-clear-ready" onclick="clearReadyOrders()" id="clearReadyBtn">
+                        <i class="bi bi-check-circle-fill me-2"></i>CLEAR READY
+                    </button>
+                    <button class="theme-switcher-btn" onclick="toggleTheme()" id="themeSwitcher">
+                        <i class="bi bi-sun-fill me-2"></i>LIGHT MODE
+                    </button>
+                    <button class="refresh-btn" onclick="loadDashboardData()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>REFRESH
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Bar -->
+        <div class="stats-bar fade-in">
+            <div class="stat-card stat-new">
+                <div class="stat-number" id="stat-new">0</div>
+                <div class="stat-label">New Orders</div>
+            </div>
+            <div class="stat-card stat-ready">
+                <div class="stat-number" id="stat-ready">0</div>
+                <div class="stat-label">Ready</div>
+            </div>
+            <div class="stat-card stat-total">
+                <div class="stat-number" id="stat-total">0</div>
+                <div class="stat-label">Total Active</div>
+            </div>
+        </div>
+
+        <!-- Enhanced Filter & Layout Controls - Horizontal Layout -->
+        <div class="filter-sort-controls fade-in">
+            <!-- Main Filter Row with 4 Columns -->
+            <div class="filters-horizontal-row">
+                <!-- Column 1: Layout Selection -->
+                <div class="filter-column">
+                    <div class="control-label">
+                        <i class="bi bi-grid-3x3"></i>
+                        Layout View
+                    </div>
+                    <div class="layout-buttons">
+                        <button class="arrange-btn layout-btn active" onclick="setLayout('masonry')" data-layout="masonry">
+                            <i class="bi bi-grid me-1"></i>Masonry
+                        </button>
+                        <button class="arrange-btn layout-btn" onclick="setLayout('grid')" data-layout="grid">
+                            <i class="bi bi-grid-3x3 me-1"></i>Grid
+                        </button>
+                        <button class="arrange-btn layout-btn" onclick="setLayout('list')" data-layout="list">
+                            <i class="bi bi-list me-1"></i>List
+                        </button>
+                        <button class="arrange-btn layout-btn" onclick="setLayout('compact')" data-layout="compact">
+                            <i class="bi bi-grid-1x2 me-1"></i>Compact
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Vertical Separator -->
+                <div class="vertical-separator"></div>
+
+                <!-- Column 2: Sort Controls -->
+                <div class="filter-column">
+                    <div class="control-label">
+                        <i class="bi bi-sort-down"></i>
+                        Sort By
+                    </div>
+                    <div class="arrange-buttons">
+                        <button class="arrange-btn active" onclick="setArrangeBy('recent')" data-arrange="recent">
+                            <i class="bi bi-clock me-1"></i>Recently Added
+                        </button>
+                        <button class="arrange-btn" onclick="setArrangeBy('table')" data-arrange="table">
+                            <i class="bi bi-table me-1"></i>Table Number
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Vertical Separator -->
+                <div class="vertical-separator"></div>
+
+                <!-- Column 3: Status Filters -->
+                <div class="filter-column">
+                    <div class="control-label">
+                        <i class="bi bi-activity"></i>
+                        Order Status
+                    </div>
+                    <div class="status-filters">
+                        <button class="filter-btn status-filter active" onclick="toggleStatusFilter('all')" data-status="all">
+                            <i class="bi bi-grid-3x3-gap me-1"></i>All Orders
+                        </button>
+                        <button class="filter-btn status-filter" onclick="toggleStatusFilter('received')" data-status="received">
+                            <i class="bi bi-bell me-1"></i>New Orders
+                        </button>
+                        <button class="filter-btn status-filter" onclick="toggleStatusFilter('preparing')" data-status="preparing">
+                            <i class="bi bi-hourglass-split me-1"></i>Preparing
+                        </button>
+                        <button class="filter-btn status-filter" onclick="toggleStatusFilter('ready')" data-status="ready">
+                            <i class="bi bi-check-circle me-1"></i>Ready
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Vertical Separator -->
+                <div class="vertical-separator"></div>
+
+                <!-- Column 4: Location Filters -->
+                <div class="filter-column">
+                    <div class="control-label">
+                        <i class="bi bi-geo-alt"></i>
+                        Location Type
+                    </div>
+                    <div class="table-filters">
+                        <button class="filter-btn table-filter active" onclick="toggleTableFilter('all')" data-table="all">
+                            <i class="bi bi-house me-1"></i>All Locations
+                        </button>
+                        <button class="filter-btn table-filter" onclick="toggleTableFilter('table')" data-table="table">
+                            <i class="bi bi-table me-1"></i>Dine-in Tables
+                        </button>
+                        <button class="filter-btn table-filter" onclick="toggleTableFilter('takeaway')" data-table="takeaway">
+                            <i class="bi bi-bag me-1"></i>Takeaway Orders
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Filters Display -->
+            <div class="active-filters-section" id="activeFilters" style="display: none;">
+                <div class="section-separator"></div>
+                <div class="filter-section">
+                    <div class="control-label">
+                        <i class="bi bi-funnel-fill"></i>
+                        Active Filters
+                    </div>
+                    <div class="active-filter-tags" id="activeFilterTags"></div>
+                    <button class="clear-filters-btn" onclick="clearAllFilters()">
+                        <i class="bi bi-x-circle me-1"></i>Clear All Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Grid -->
+        <div class="orders-grid layout-masonry" id="ordersGrid">
+            <div class="loading" id="loadingIndicator">
+                <div class="loading-spinner"></div>
+                <div>Loading orders...</div>
+            </div>
+        </div>
+        
+        <div class="no-orders fade-in" id="noOrdersMessage" style="display: none;">
+            <div class="no-orders-icon">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="no-orders-text">
+                All caught up! No orders at the moment.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Print Confirmation Modal -->
+<div class="modal fade" id="bulkPrintModal" tabindex="-1" aria-labelledby="bulkPrintModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bulk-print-modal">
+            <div class="modal-header">
+                <div class="modal-title-container">
+                    <i class="bi bi-printer-fill modal-icon"></i>
+                    <h5 class="modal-title" id="bulkPrintModalLabel">Bulk Print Orders</h5>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="print-info">
+                    <div class="print-count">
+                        <span class="count-number" id="printOrderCount">0</span>
+                        <span class="count-label">New Orders</span>
+                    </div>
+                    <div class="print-details">
+                        <p><i class="bi bi-info-circle me-2"></i>Each order will be printed on a separate page</p>
+                        <p><i class="bi bi-clock me-2"></i>This will open a new window for printing</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn-confirm" id="confirmBulkPrint">
+                    <i class="bi bi-printer-fill me-2"></i>Print All Orders
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clear Ready Orders Confirmation Modal -->
+<div class="modal fade" id="clearReadyModal" tabindex="-1" aria-labelledby="clearReadyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bulk-print-modal">
+            <div class="modal-header">
+                <div class="modal-title-container">
+                    <i class="bi bi-check-circle-fill modal-icon" style="color: #28a745;"></i>
+                    <h5 class="modal-title" id="clearReadyModalLabel">Clear Ready Orders</h5>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="print-info">
+                    <div class="print-count">
+                        <span class="count-number" id="clearOrderCount" style="color: #28a745;">0</span>
+                        <span class="count-label">Ready Orders</span>
+                    </div>
+                    <div class="print-details">
+                        <p><i class="bi bi-info-circle me-2"></i>All ready orders will be marked as served</p>
+                        <p><i class="bi bi-exclamation-triangle me-2"></i>This action cannot be undone</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn-confirm" id="confirmClearReady" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                    <i class="bi bi-check-circle-fill me-2"></i>Clear All Ready Orders
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let currentFilters = {
+    status: JSON.parse(localStorage.getItem('kitchenStatusFilters')) || ['all'],
+    table: JSON.parse(localStorage.getItem('kitchenTableFilters')) || ['all'],
+    sort: localStorage.getItem('kitchenSortBy') || 'recent',
+    layout: localStorage.getItem('kitchenLayout') || 'masonry'
+};
+let dashboardData = null;
+let isUpdating = false;
+let currentTheme = localStorage.getItem('kitchenTheme') || 'dark';
+
+// Initialize dashboard on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Restore theme state
+    restoreTheme();
+    
+    // Restore filter state
+    restoreFilterState();
+    
+    // Load initial data
+    loadDashboardData();
+    
+    // Setup WebSocket connection
+    setupKitchenSocket();
+    
+    // Setup bulk print modal event listener
+    document.getElementById('confirmBulkPrint').addEventListener('click', executeBulkPrint);
+    
+    // Setup clear ready modal event listener
+    document.getElementById('confirmClearReady').addEventListener('click', executeClearReady);
+});
+
+function setupKitchenSocket() {
+    function connectSocket() {
+        if (typeof socket !== 'undefined' && socket && socket.connected) {
+            try {
+                // Join kitchen room for real-time notifications
+                socket.emit('join', {room: 'kitchen_{{ current_user.id }}'});
+                console.log('Kitchen joined room: kitchen_{{ current_user.id }}');
+                setupKitchenListeners();
+            } catch (error) {
+                console.log('Error setting up kitchen socket:', error);
+                setTimeout(connectSocket, 2000);
+            }
+        } else {
+            setTimeout(connectSocket, 500);
+        }
+    }
+    connectSocket();
+}
+
+function setupKitchenListeners() {
+    // Listen for new kitchen orders
+    socket.on('new_kitchen_order', function(data) {
+        console.log('New kitchen order received:', data);
+        
+        // Play notification sound
+        playNotificationSound();
+        
+        // Show notification
+        showNotification('New Order!', `Order #${data.order_number} - ${data.items_count} items`, 'info');
+        
+        // Refresh dashboard data without page reload
+        setTimeout(() => {
+            loadDashboardData();
+        }, 1000);
+    });
+
+    // Listen for kitchen order status updates
+    socket.on('kitchen_order_status_update', function(data) {
+        console.log('Kitchen order status update:', data);
+        loadDashboardData();
+    });
+}
+
+function loadDashboardData() {
+    if (isUpdating) return;
+    
+    isUpdating = true;
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    
+    // Show loading indicator
+    loadingIndicator.style.display = 'block';
+    
+    // Build query parameters based on current filters
+    const params = new URLSearchParams();
+    
+    // Add status filters (exclude 'all')
+    if (!currentFilters.status.includes('all')) {
+        currentFilters.status.forEach(status => params.append('status', status));
+    }
+    
+    // Add table filters (exclude 'all')
+    if (!currentFilters.table.includes('all')) {
+        currentFilters.table.forEach(table => params.append('table', table));
+    }
+    
+    // Add sort parameter
+    params.append('sort', currentFilters.sort);
+    
+    const queryString = params.toString();
+    const url = `/kitchen/api/dashboard${queryString ? '?' + queryString : ''}`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                dashboardData = data;
+                updateStatistics(data.statistics);
+                displayOrders();
+            } else {
+                console.error('Failed to load dashboard data:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading dashboard data:', error);
+        })
+        .finally(() => {
+            isUpdating = false;
+            loadingIndicator.style.display = 'none';
+        });
+}
+
+function displayOrders() {
+    if (!dashboardData) return;
+    
+    const ordersGrid = document.getElementById('ordersGrid');
+    const noOrdersMessage = document.getElementById('noOrdersMessage');
+    
+    // Clear existing orders (except loading indicator)
+    const existingCards = ordersGrid.querySelectorAll('.order-card');
+    existingCards.forEach(card => card.remove());
+    
+    // Get all filtered and sorted orders from API
+    let allOrders = [...dashboardData.pending_orders, ...dashboardData.ready_orders];
+    
+    if (allOrders.length === 0) {
+        noOrdersMessage.style.display = 'block';
+        return;
+    } else {
+        noOrdersMessage.style.display = 'none';
+    }
+    
+    allOrders.forEach(order => {
+        const orderCard = createOrderCard(order);
+        ordersGrid.appendChild(orderCard);
+    });
+    
+    // Add sequential numbering to received orders after all cards are created
+    setTimeout(() => {
+        addSequentialNumbering();
+    }, 100);
+}
+
+function createOrderCard(order) {
+    const card = document.createElement('div');
+    card.className = `order-card status-${order.status} fade-in`;
+    card.setAttribute('data-status', order.status);
+    card.setAttribute('data-order-id', order.id);
+    
+    const timeDisplay = order.status === 'ready' && order.ready_at ? order.ready_at : order.received_at;
+    
+    card.innerHTML = `
+        <div class="order-header">
+            <div class="order-number">#${order.order_number}</div>
+            <div class="order-time">${timeDisplay}</div>
+        </div>
+        
+        <div class="order-table">
+            <i class="bi bi-table me-2"></i>${order.table_number}
+        </div>
+        
+        <div class="order-items">
+            ${order.items.map(item => {
+                // Determine quantity class for color coding
+                let quantityClass = '';
+                const qty = parseInt(item.quantity);
+                if (qty === 1) quantityClass = 'quantity-1';
+                else if (qty === 2) quantityClass = 'quantity-2';
+                else if (qty === 3) quantityClass = 'quantity-3';
+                else if (qty === 4) quantityClass = 'quantity-4';
+                else if (qty === 5) quantityClass = 'quantity-5';
+                else quantityClass = 'quantity-high';
+                
+                return `
+                <div class="item-row">
+                    <div class="item-name">
+                        ${item.name}
+                        ${item.name_ar ? `<br><small style="opacity: 0.7;">${item.name_ar}</small>` : ''}
+                        ${item.special_requests ? `<br><small style="color: #96ceb4;"><i class="bi bi-plus-circle me-1"></i>${item.special_requests}</small>` : ''}
+                    </div>
+                    <div class="item-quantity ${quantityClass}">${item.quantity}x</div>
+                </div>
+                `;
+            }).join('')}
+        </div>
+        
+        <div class="order-actions">
+            ${getActionButtons(order)}
+        </div>
+    `;
+    
+    return card;
+}
+
+function getActionButtons(order) {
+    let statusButton = '';
+    switch(order.status) {
+        case 'received':
+            statusButton = `<button class="action-btn btn-ready" onclick="updateOrderStatus(${order.id}, 'ready')">
+                        <i class="bi bi-check-circle me-2"></i>MARK READY
+                    </button>`;
+            break;
+        case 'ready':
+            // No action button for ready orders - they're complete
+            statusButton = `<span class="text-success"><i class="bi bi-check-circle-fill me-2"></i>COMPLETED</span>`;
+            break;
+        default:
+            statusButton = '';
+    }
+    
+    // Always add print button beside the status button
+    const printButton = `<button class="action-btn btn-print" onclick="printOrderItems(${order.id})">
+                            <i class="bi bi-printer me-2"></i>PRINT
+                        </button>`;
+    
+    return statusButton + printButton;
+}
+
+function updateOrderStatus(kitchenOrderId, newStatus) {
+    // Disable the button to prevent double clicks
+    const button = event.target.closest('.action-btn');
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<div class="loading-spinner"></div> Updating...';
+    }
+    
+    fetch('/kitchen/update_status', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            kitchen_order_id: kitchenOrderId,
+            status: newStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Success', data.message, 'success');
+            // Reload dashboard data to reflect changes
+            loadDashboardData();
+        } else {
+            showNotification('Error', data.message, 'error');
+            // Re-enable button on error
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = getActionButtons({id: kitchenOrderId, status: 'received'}); // Reset button
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error updating order status:', error);
+        showNotification('Error', 'Failed to update order status', 'error');
+        if (button) {
+            button.disabled = false;
+        }
+    });
+}
+
+function setArrangeBy(sortBy) {
+    currentFilters.sort = sortBy;
+    localStorage.setItem('kitchenSortBy', sortBy);
+    
+    // Update button states
+    document.querySelectorAll('.arrange-btn:not(.layout-btn)').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-arrange="${sortBy}"]`).classList.add('active');
+    
+    // Reload data
+    loadDashboardData();
+}
+
+function setLayout(layout) {
+    currentFilters.layout = layout;
+    localStorage.setItem('kitchenLayout', layout);
+    
+    // Update button states
+    document.querySelectorAll('.layout-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-layout="${layout}"]`).classList.add('active');
+    
+    // Update orders grid class
+    const ordersGrid = document.getElementById('ordersGrid');
+    ordersGrid.className = `orders-grid layout-${layout}`;
+    
+    // Re-render current data with new layout
+    if (dashboardData) {
+        renderOrders(dashboardData);
+    }
+}
+
+function toggleStatusFilter(status) {
+    if (status === 'all') {
+        currentFilters.status = ['all'];
+    } else {
+        // Remove 'all' if it exists
+        if (currentFilters.status.includes('all')) {
+            currentFilters.status = [];
+        }
+        
+        // Toggle the specific status
+        const index = currentFilters.status.indexOf(status);
+        if (index > -1) {
+            currentFilters.status.splice(index, 1);
+        } else {
+            currentFilters.status.push(status);
+        }
+        
+        // If no filters selected, default to 'all'
+        if (currentFilters.status.length === 0) {
+            currentFilters.status = ['all'];
+        }
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('kitchenStatusFilters', JSON.stringify(currentFilters.status));
+    
+    // Update UI
+    updateFilterButtons();
+    updateActiveFilters();
+    
+    // Reload data
+    loadDashboardData();
+}
+
+function toggleTableFilter(table) {
+    if (table === 'all') {
+        currentFilters.table = ['all'];
+    } else {
+        // Remove 'all' if it exists
+        if (currentFilters.table.includes('all')) {
+            currentFilters.table = [];
+        }
+        
+        // Toggle the specific table type
+        const index = currentFilters.table.indexOf(table);
+        if (index > -1) {
+            currentFilters.table.splice(index, 1);
+        } else {
+            currentFilters.table.push(table);
+        }
+        
+        // If no filters selected, default to 'all'
+        if (currentFilters.table.length === 0) {
+            currentFilters.table = ['all'];
+        }
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('kitchenTableFilters', JSON.stringify(currentFilters.table));
+    
+    // Update UI
+    updateFilterButtons();
+    updateActiveFilters();
+    
+    // Reload data
+    loadDashboardData();
+}
+
+function updateFilterButtons() {
+    // Update status filter buttons
+    document.querySelectorAll('.status-filter').forEach(btn => {
+        const status = btn.getAttribute('data-status');
+        if (currentFilters.status.includes(status)) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    // Update table filter buttons
+    document.querySelectorAll('.table-filter').forEach(btn => {
+        const table = btn.getAttribute('data-table');
+        if (currentFilters.table.includes(table)) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+function updateActiveFilters() {
+    const activeFiltersDiv = document.getElementById('activeFilters');
+    const activeFilterTags = document.getElementById('activeFilterTags');
+    
+    // Clear existing tags
+    activeFilterTags.innerHTML = '';
+    
+    let hasActiveFilters = false;
+    
+    // Add status filter tags
+    if (!currentFilters.status.includes('all')) {
+        currentFilters.status.forEach(status => {
+            const tag = createFilterTag(status, 'status');
+            activeFilterTags.appendChild(tag);
+            hasActiveFilters = true;
+        });
+    }
+    
+    // Add table filter tags
+    if (!currentFilters.table.includes('all')) {
+        currentFilters.table.forEach(table => {
+            const tag = createFilterTag(table, 'table');
+            activeFilterTags.appendChild(tag);
+            hasActiveFilters = true;
+        });
+    }
+    
+    // Show/hide active filters section
+    activeFiltersDiv.style.display = hasActiveFilters ? 'block' : 'none';
+}
+
+function createFilterTag(value, type) {
+    const tag = document.createElement('div');
+    tag.className = 'filter-tag';
+    
+    const labels = {
+        'received': 'New Orders',
+        'preparing': 'Preparing',
+        'ready': 'Ready',
+        'table': 'Tables',
+        'takeaway': 'Takeaways'
+    };
+    
+    tag.innerHTML = `
+        ${labels[value] || value}
+        <button class="remove-filter" onclick="removeFilter('${value}', '${type}')">×</button>
+    `;
+    
+    return tag;
+}
+
+function removeFilter(value, type) {
+    if (type === 'status') {
+        toggleStatusFilter(value);
+    } else if (type === 'table') {
+        toggleTableFilter(value);
+    }
+}
+
+function clearAllFilters() {
+    currentFilters.status = ['all'];
+    currentFilters.table = ['all'];
+    
+    // Save to localStorage
+    localStorage.setItem('kitchenStatusFilters', JSON.stringify(currentFilters.status));
+    localStorage.setItem('kitchenTableFilters', JSON.stringify(currentFilters.table));
+    
+    // Update UI
+    updateFilterButtons();
+    updateActiveFilters();
+    
+    // Reload data
+    loadDashboardData();
+}
+
+function updateOrderStatus(kitchenOrderId, newStatus) {
+    fetch('/kitchen/update_status', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            kitchen_order_id: kitchenOrderId,
+            status: newStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload dashboard data to reflect changes
+            loadDashboardData();
+        } else {
+            alert('Failed to update order status: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating order status:', error);
+        alert('Failed to update order status');
+    });
+}
+
+function restoreFilterState() {
+    // Restore arrange buttons
+    document.querySelectorAll('.arrange-btn:not(.layout-btn)').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-arrange="${currentFilters.sort}"]`)?.classList.add('active');
+    
+    // Restore layout buttons
+    document.querySelectorAll('.layout-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-layout="${currentFilters.layout}"]`)?.classList.add('active');
+    
+    // Set initial layout class
+    const ordersGrid = document.getElementById('ordersGrid');
+    ordersGrid.className = `orders-grid layout-${currentFilters.layout}`;
+    
+    // Update filter buttons
+    updateFilterButtons();
+    
+    // Update active filters display
+    updateActiveFilters();
+}
+
+function updateStatistics(stats) {
+    animateNumber('stat-new', stats.new);
+    animateNumber('stat-ready', stats.ready);
+    animateNumber('stat-total', stats.total);
+}
+
+function animateNumber(elementId, targetNumber) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    element.textContent = targetNumber;
+    
+    // Add pulse effect
+    element.parentElement.classList.add('pulse');
+    setTimeout(() => {
+        element.parentElement.classList.remove('pulse');
+    }, 1000);
+}
+
+function playNotificationSound() {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+    } catch (e) {
+        console.log('Could not play notification sound:', e);
+    }
+}
+
+function printOrderItems(kitchenOrderId) {
+    // Open print window
+    const printUrl = `/kitchen/print_order/${kitchenOrderId}`;
+    const printWindow = window.open(printUrl, 'printWindow', 'width=400,height=600,scrollbars=yes');
+    
+    if (!printWindow) {
+        // If popup blocked, fallback to same window
+        window.open(printUrl, '_blank');
+    }
+}
+
+function printAllPending() {
+    // Check if there are any new orders (status="received" only)
+    const ordersContainer = document.getElementById('ordersGrid');
+    const allOrderCards = ordersContainer ? ordersContainer.querySelectorAll('.order-card') : [];
+    const newOrderCards = ordersContainer ? ordersContainer.querySelectorAll('.order-card.status-received') : [];
+    
+    // Debug logging
+    console.log('Total order cards found:', allOrderCards.length);
+    console.log('New order cards found:', newOrderCards.length);
+    if (allOrderCards.length > 0) {
+        console.log('First order card classes:', allOrderCards[0].className);
+    }
+    
+    if (newOrderCards.length === 0) {
+        // Show more helpful message with debug info
+        const totalOrders = allOrderCards.length;
+        showNotification('No New Orders', `Found ${totalOrders} total orders, but 0 are "New Orders" (received status). Only new orders can be bulk printed.`, 'info');
+        return;
+    }
+    
+    // Show beautiful modal instead of confirm dialog
+    document.getElementById('printOrderCount').textContent = newOrderCards.length;
+    const modal = new bootstrap.Modal(document.getElementById('bulkPrintModal'));
+    modal.show();
+}
+
+function executeBulkPrint() {
+    // Get the order count from the modal
+    const orderCount = parseInt(document.getElementById('printOrderCount').textContent);
+    
+    // Close the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('bulkPrintModal'));
+    modal.hide();
+    
+    // Disable the print button temporarily
+    const printBtn = document.getElementById('printPendingBtn');
+    if (printBtn) {
+        printBtn.disabled = true;
+        printBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>PRINTING...';
+    }
+    
+    // Open bulk print window
+    const printUrl = '/kitchen/print_all_pending';
+    const printWindow = window.open(printUrl, 'bulkPrintWindow', 'width=500,height=700,scrollbars=yes');
+    
+    if (!printWindow) {
+        // If popup blocked, fallback to same window
+        window.open(printUrl, '_blank');
+        showNotification('Print Started', `Opening bulk print for ${orderCount} new orders...`, 'info');
+    } else {
+        showNotification('Bulk Print Started', `Printing ${orderCount} new orders...`, 'success');
+    }
+    
+    // Re-enable button after a delay
+    setTimeout(() => {
+        if (printBtn) {
+            printBtn.disabled = false;
+            printBtn.innerHTML = '<i class="bi bi-printer-fill me-2"></i>PRINT NEW';
+        }
+    }, 3000);
+}
+
+function clearReadyOrders() {
+    // Check if there are any ready orders
+    const ordersContainer = document.getElementById('ordersGrid');
+    const readyOrderCards = ordersContainer ? ordersContainer.querySelectorAll('.order-card.status-ready') : [];
+    
+    if (readyOrderCards.length === 0) {
+        showNotification('No Ready Orders', 'There are no ready orders to clear.', 'info');
+        return;
+    }
+    
+    // Show confirmation modal
+    document.getElementById('clearOrderCount').textContent = readyOrderCards.length;
+    const modal = new bootstrap.Modal(document.getElementById('clearReadyModal'));
+    modal.show();
+}
+
+function executeClearReady() {
+    // Get the order count from the modal
+    const orderCount = parseInt(document.getElementById('clearOrderCount').textContent);
+    
+    // Close the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('clearReadyModal'));
+    modal.hide();
+    
+    // Disable the clear button temporarily
+    const clearBtn = document.getElementById('clearReadyBtn');
+    if (clearBtn) {
+        clearBtn.disabled = true;
+        clearBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>CLEARING...';
+    }
+    
+    // Send AJAX request to clear ready orders
+    fetch('/kitchen/clear_ready_orders', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Orders Cleared', `Successfully cleared ${data.cleared_count} ready orders.`, 'success');
+            // Refresh the dashboard to show updated data
+            loadDashboardData();
+        } else {
+            showNotification('Clear Failed', data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error clearing ready orders:', error);
+        showNotification('Clear Failed', 'Failed to clear ready orders', 'error');
+    })
+    .finally(() => {
+        // Re-enable button
+        if (clearBtn) {
+            clearBtn.disabled = false;
+            clearBtn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>CLEAR READY';
+        }
+    });
+}
+
+function addSequentialNumbering() {
+    // Get all received orders and add sequential numbering based on received time
+    const ordersContainer = document.getElementById('ordersGrid');
+    const receivedOrderCards = ordersContainer ? ordersContainer.querySelectorAll('.order-card.status-received') : [];
+    
+    // Remove existing sequence numbers
+    document.querySelectorAll('.order-sequence-number').forEach(el => el.remove());
+    
+    if (receivedOrderCards.length === 0) return;
+    
+    // Get all received orders from dashboard data and sort by received time
+    const allReceivedOrders = dashboardData ? dashboardData.pending_orders.filter(order => order.status === 'received') : [];
+    
+    // Sort by received_at timestamp (oldest first)
+    allReceivedOrders.sort((a, b) => {
+        const timeA = new Date(a.received_at);
+        const timeB = new Date(b.received_at);
+        return timeA - timeB;
+    });
+    
+    // Create a mapping of order ID to sequence number
+    const orderSequenceMap = {};
+    allReceivedOrders.forEach((order, index) => {
+        orderSequenceMap[order.id] = index + 1;
+    });
+    
+    // Add sequential numbers to visible received order cards
+    receivedOrderCards.forEach((card) => {
+        const orderId = card.getAttribute('data-order-id');
+        if (orderId && orderSequenceMap[orderId]) {
+            const sequenceNumber = document.createElement('div');
+            sequenceNumber.className = 'order-sequence-number';
+            sequenceNumber.textContent = orderSequenceMap[orderId];
+            card.appendChild(sequenceNumber);
+        }
+    });
+}
+
+function toggleTheme() {
+    const dashboard = document.querySelector('.kitchen-dashboard');
+    const themeSwitcher = document.getElementById('themeSwitcher');
+    
+    if (currentTheme === 'dark') {
+        // Switch to white theme
+        currentTheme = 'white';
+        dashboard.classList.add('white-theme');
+        themeSwitcher.innerHTML = '<i class="bi bi-moon-fill me-2"></i>DARK MODE';
+        showNotification('Theme Changed', 'Switched to Light Mode', 'info');
+    } else {
+        // Switch to dark theme
+        currentTheme = 'dark';
+        dashboard.classList.remove('white-theme');
+        themeSwitcher.innerHTML = '<i class="bi bi-sun-fill me-2"></i>LIGHT MODE';
+        showNotification('Theme Changed', 'Switched to Dark Mode', 'info');
+    }
+    
+    // Save theme preference to localStorage
+    localStorage.setItem('kitchenTheme', currentTheme);
+}
+
+function restoreTheme() {
+    const dashboard = document.querySelector('.kitchen-dashboard');
+    const themeSwitcher = document.getElementById('themeSwitcher');
+    
+    if (currentTheme === 'white') {
+        dashboard.classList.add('white-theme');
+        themeSwitcher.innerHTML = '<i class="bi bi-moon-fill me-2"></i>DARK MODE';
+    } else {
+        dashboard.classList.remove('white-theme');
+        themeSwitcher.innerHTML = '<i class="bi bi-sun-fill me-2"></i>LIGHT MODE';
+    }
+}
+
+function showNotification(title, message, type) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; backdrop-filter: blur(10px);';
+    notification.innerHTML = `
+        <strong>${title}</strong> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

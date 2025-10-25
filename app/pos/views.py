@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from flask_socketio import join_room, leave_room
 from app.pos import pos
 from app.models import (
-    User, MenuItem, Category, Order, AuditLog, Table, Customer, UserRole, OrderItem, DeliveryCompany, ServiceType, OrderStatus, PaymentMethod, TimezoneManager, AdminPinCode, WaiterCashierAssignment, OrderEditHistory, CashierUiPreference, CashierUiSetting, OrderCounter, CashierPin, CashierSession, ManualCardPayment
+    User, MenuItem, Category, Order, AuditLog, Table, Customer, UserRole, OrderItem, DeliveryCompany, ServiceType, OrderStatus, PaymentMethod, TimezoneManager, AdminPinCode, WaiterCashierAssignment, OrderEditHistory, CashierUiPreference, CashierUiSetting, OrderCounter, CashierPin, CashierSession, ManualCardPayment, Kitchen, CategoryKitchenAssignment, KitchenOrder, KitchenOrderItem, KitchenOrderStatus
 )
 from app import db, socketio
 from app.auth.decorators import cashier_or_above_required, pos_access_required, filter_by_user_branch
@@ -20,6 +20,112 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table as Re
 from reportlab.lib.colors import HexColor, PCMYKColor
 import io
 import base64
+
+def distribute_order_to_kitchens(order):
+    """Distribute order items to appropriate kitchens based on category assignments"""
+    try:
+        # Get order items as a list to avoid AppenderQuery issues
+        order_items = list(order.order_items)
+        print(f"DEBUG: Distributing order #{order.order_number} with {len(order_items)} items")
+        
+        # Group order items by category
+        category_items = {}
+        
+        for order_item in order_items:
+            # Use original_category_id if available (for Quick category items), otherwise use category_id
+            category_id = order_item.menu_item.original_category_id or order_item.menu_item.category_id
+            
+            # Get category name for debugging
+            if order_item.menu_item.original_category_id:
+                # Item is in Quick category, show both current and original
+                current_category_name = order_item.menu_item.category.name if order_item.menu_item.category else 'Unknown'
+                original_category = Category.query.get(order_item.menu_item.original_category_id)
+                original_category_name = original_category.name if original_category else 'Unknown'
+                category_name = f"{current_category_name} (originally {original_category_name})"
+            else:
+                # Regular item, use current category
+                category_name = order_item.menu_item.category.name if order_item.menu_item.category else 'Unknown'
+            
+            print(f"DEBUG: Item '{order_item.menu_item.name}' assigned to kitchen based on category '{category_name}' (ID: {category_id})")
+            
+            if category_id not in category_items:
+                category_items[category_id] = []
+            category_items[category_id].append(order_item)
+        
+        # For each category, find assigned kitchen and create kitchen order
+        for category_id, items in category_items.items():
+            # Skip special items category (طلبات خاصة) as they are modifiers
+            category = Category.query.get(category_id)
+            if category and category.name == 'طلبات خاصة':
+                continue
+            
+            # Find kitchen assigned to this category
+            assignment = CategoryKitchenAssignment.query.filter_by(
+                category_id=category_id,
+                is_active=True
+            ).first()
+            
+            print(f"DEBUG: Looking for kitchen assignment for category '{category.name if category else category_id}' (ID: {category_id}) - using original category for kitchen assignment")
+            
+            if not assignment:
+                # No kitchen assigned to this category, skip
+                print(f"DEBUG: No kitchen assigned to category {category.name if category else category_id}")
+                continue
+            
+            print(f"DEBUG: Found assignment - Kitchen: {assignment.kitchen.name} (ID: {assignment.kitchen.id})")
+            
+            kitchen = assignment.kitchen
+            if not kitchen.is_active:
+                print(f"Kitchen {kitchen.name} is inactive, skipping")
+                continue
+            
+            # Create kitchen order
+            kitchen_order = KitchenOrder(
+                order_id=order.id,
+                kitchen_id=kitchen.id,
+                status=KitchenOrderStatus.RECEIVED,
+                received_at=datetime.utcnow()
+            )
+            
+            db.session.add(kitchen_order)
+            db.session.flush()  # Get kitchen_order.id
+            
+            # Create kitchen order items
+            for order_item in items:
+                kitchen_order_item = KitchenOrderItem(
+                    kitchen_order_id=kitchen_order.id,
+                    order_item_id=order_item.id,
+                    quantity=order_item.quantity,
+                    special_requests=order_item.notes,
+                    item_name=order_item.menu_item.name,
+                    item_name_ar=order_item.menu_item.name_ar,
+                    status=KitchenOrderStatus.RECEIVED
+                )
+                
+                db.session.add(kitchen_order_item)
+            
+            # Emit real-time notification to kitchen
+            socketio.emit('new_kitchen_order', {
+                'kitchen_order_id': kitchen_order.id,
+                'order_id': order.id,
+                'order_number': order.order_number,
+                'table_number': order.table.table_number if order.table else 'N/A',
+                'items_count': len(items),
+                'service_type': order.service_type.value if order.service_type else 'on_table',
+                'items': [{
+                    'name': item.menu_item.name,
+                    'name_ar': item.menu_item.name_ar,
+                    'quantity': item.quantity
+                } for item in items]
+            }, room=f'kitchen_{kitchen.kitchen_user_id}')
+            
+            print(f"Sent WebSocket notification to kitchen user {kitchen.kitchen_user_id}")
+        
+        db.session.commit()
+        
+    except Exception as e:
+        print(f"Error distributing order to kitchens: {str(e)}")
+        db.session.rollback()
 
 # WebSocket event handlers
 @socketio.on('join')
@@ -47,6 +153,18 @@ def on_join(data):
         waiter_room = f'waiter_{current_user.id}'
         join_room(waiter_room)
         print(f"Waiter {current_user.get_full_name()} auto-joined room: {waiter_room}")
+    
+    elif current_user.role == UserRole.KITCHEN:
+        # Kitchen users join their specific kitchen room for order notifications
+        kitchen_room = f'kitchen_{current_user.id}'
+        join_room(kitchen_room)
+        print(f"Kitchen {current_user.get_full_name()} auto-joined room: {kitchen_room}")
+        
+        # Also join branch room for general notifications
+        branch_room = f'branch_{current_user.branch_id}'
+        if room != branch_room:  # Avoid duplicate join
+            join_room(branch_room)
+            print(f"Kitchen {current_user.get_full_name()} auto-joined branch room: {branch_room}")
         
         # Also join branch room for general notifications (but not for new_order events from other waiters)
         branch_room = f'branch_{current_user.branch_id}'
@@ -1744,6 +1862,7 @@ def orders():
                 'order_number': order.order_number,
                 'table_number': order.table.table_number if order.table else 'N/A',
                 'total_amount': float(order.total_amount),
+                'total_amount_with_modifiers': order.total_amount_with_modifiers,
                 'created_at': order.created_at.strftime('%Y-%m-%d %H:%M'),
                 'service_type': order.service_type.value if order.service_type else 'on_table',
                 'delivery_company': delivery_company_name,
@@ -1768,9 +1887,13 @@ def orders():
                 'last_edited_by': User.query.get(order.last_edited_by).get_full_name() if order.last_edited_by else None
             })
         
+        # Check if there are any paid orders to determine column visibility
+        has_paid_orders = any(order['status'] == 'paid' for order in orders_data)
+        
         return jsonify({
             'success': True,
             'orders': orders_data,
+            'has_paid_orders': has_paid_orders,
             'pagination': {
                 'page': user_orders.page,
                 'pages': user_orders.pages,
@@ -1851,9 +1974,22 @@ def get_order_for_editing(order_id):
                         qty = 1
                         name = modifier
                     
+                    # Look up the price for this special item
+                    special_item_price = 0
+                    special_category = Category.query.filter_by(name='طلبات خاصة').first()
+                    if special_category:
+                        special_menu_item = MenuItem.query.filter_by(
+                            name=name,
+                            category_id=special_category.id,
+                            is_active=True
+                        ).first()
+                        if special_menu_item:
+                            special_item_price = float(special_menu_item.price)
+                    
                     special_items.append({
                         'name': name,
-                        'quantity': qty
+                        'quantity': qty,
+                        'price': special_item_price
                     })
             
             # If we have special items from notes, clear special_requests to avoid duplication
@@ -1866,7 +2002,10 @@ def get_order_for_editing(order_id):
                 'menu_item_name': item.menu_item.name,
                 'quantity': item.quantity,
                 'unit_price': float(item.unit_price),
-                'total_price': float(item.total_price),
+                'total_price': float(item.total_price),  # Base price without modifiers
+                'total_price_with_modifiers_display': item.total_price_with_modifiers,  # For display in edit modal
+                'modifiers_total_price': float(item.modifiers_total_price or 0),
+                'total_price_with_modifiers': item.total_price_with_modifiers,
                 'special_requests': special_requests_text,
                 'notes': notes_text,
                 'special_items': special_items,  # Include parsed special items
@@ -1880,6 +2019,7 @@ def get_order_for_editing(order_id):
                 'id': order.id,
                 'order_number': order.order_number,
                 'total_amount': float(order.total_amount),
+                'total_amount_with_modifiers': order.total_amount_with_modifiers,
                 'items': order_items,
                 'table_number': order.table.table_number if order.table else None,
                 'service_type': order.service_type.value if order.service_type else None
@@ -2027,25 +2167,36 @@ def save_order_changes():
                 
                 # Handle notes field (preserve existing special items from notes)
                 # If there are special_items in the frontend data, convert them back to notes format
-                if 'special_items' in item_data and item_data['special_items']:
-                    # Convert special_items array back to notes format
-                    special_items_notes = []
-                    for special_item in item_data['special_items']:
-                        if special_item['quantity'] > 1:
-                            special_items_notes.append(f"{special_item['quantity']}x {special_item['name']}")
-                        else:
-                            special_items_notes.append(special_item['name'])
-                    existing_item.notes = ', '.join(special_items_notes)
+                if 'special_items' in item_data:
+                    if item_data['special_items'] and len(item_data['special_items']) > 0:
+                        # Convert special_items array back to notes format
+                        special_items_notes = []
+                        for special_item in item_data['special_items']:
+                            if special_item['quantity'] > 1:
+                                special_items_notes.append(f"{special_item['quantity']}x {special_item['name']}")
+                            else:
+                                special_items_notes.append(special_item['name'])
+                        new_notes = ', '.join(special_items_notes)
+                        existing_item.notes = new_notes
+                    else:
+                        # Empty special_items array - clear notes
+                        existing_item.notes = ''
                 elif item_data.get('notes'):
                     # Preserve existing notes if no special_items array
                     existing_item.notes = item_data.get('notes', '')
+                else:
+                    # Clear notes if no special items
+                    existing_item.notes = ''
+                
+                # Update modifier prices
+                existing_item.update_modifiers_price()
                 
                 existing_item.is_deleted = is_deleted
                 processed_item_ids.add(item_id)
                 
-                # Only add to total if not deleted
+                # Only add to total if not deleted (include modifiers)
                 if not is_deleted:
-                    new_total += item_data['total_price']
+                    new_total += item_data['total_price'] + float(existing_item.modifiers_total_price or 0)
                     
             elif is_new and not is_deleted:
                 # Create new item (marked as new)
@@ -2075,7 +2226,12 @@ def save_order_changes():
                     is_deleted=False
                 )
                 db.session.add(order_item)
-                new_total += item_data['total_price']
+                db.session.flush()  # Ensure the item is saved before calculating modifiers
+                
+                # Calculate and update modifier prices for new item
+                order_item.update_modifiers_price()
+                
+                new_total += item_data['total_price'] + float(order_item.modifiers_total_price or 0)
         
         # Mark any items not in the update as deleted (but don't actually delete them)
         for item_id, existing_item in existing_items.items():
@@ -2221,10 +2377,10 @@ def waiter_requests():
                 'order_number': order.order_number,
                 'table_number': order.table.table_number if order.table else 'N/A',
                 'total_amount': float(order.total_amount),
-                'created_at': order.created_at.strftime('%Y-%m-%d %H:%M'),
-                'created_at_relative': order.created_at.strftime('%H:%M'),
+                'created_at': TimezoneManager.format_local_time(order.created_at, '%Y-%m-%d %H:%M'),
+                'created_at_relative': TimezoneManager.format_local_time(order.created_at, '%H:%M'),
                 'status': order.status.value,
-                'paid_at': order.paid_at.strftime('%Y-%m-%d %H:%M') if order.paid_at else None,
+                'paid_at': TimezoneManager.format_local_time(order.paid_at, '%Y-%m-%d %H:%M') if order.paid_at else None,
                 'creator_name': creator_name,
                 'items_count': items_count,
                 'can_mark_paid': order.status == OrderStatus.PENDING,
@@ -2232,7 +2388,7 @@ def waiter_requests():
                            (order.cashier_id == current_user.id or order.assigned_cashier_id == current_user.id) and
                            order.status == OrderStatus.PENDING),  # Only allow editing pending on-table orders
                 'edit_count': order.edit_count or 0,
-                'last_edited_at': order.last_edited_at.strftime('%Y-%m-%d %H:%M') if order.last_edited_at else None,
+                'last_edited_at': TimezoneManager.format_local_time(order.last_edited_at, '%Y-%m-%d %H:%M') if order.last_edited_at else None,
                 'last_edited_by': User.query.get(order.last_edited_by).get_full_name() if order.last_edited_by else None,
                 'is_edited': (order.edit_count and order.edit_count > 0)
             })
@@ -2414,7 +2570,7 @@ def table_management():
                     'id': recent_order.id,
                     'order_number': recent_order.order_number,
                     'total_amount': float(recent_order.total_amount),
-                    'created_at': recent_order.created_at.strftime('%H:%M'),
+                    'created_at': TimezoneManager.format_local_time(recent_order.created_at, '%H:%M'),
                     'status': recent_order.status.value,
                     'items_count': recent_order.order_items.count(),
                     'waiter_name': recent_order.cashier.get_full_name() if recent_order.cashier else 'Unknown'
@@ -2503,16 +2659,44 @@ def create_order():
                 
                 # Handle modifiers for custom price items
                 modifiers_text = ""
+                modifiers_total_price = Decimal('0')
+                
                 if 'modifiers' in item_data and item_data['modifiers']:
                     modifier_list = []
+                    
+                    # Get special items category for price lookup
+                    special_category = Category.query.filter_by(
+                        name='طلبات خاصة',
+                        branch_id=current_user.branch_id,
+                        is_active=True
+                    ).first()
+                    
                     for modifier in item_data['modifiers']:
                         modifier_qty = modifier.get('quantity', 1)
                         modifier_name = modifier.get('name', '')
+                        
+                        # Add to text format
                         if modifier_qty > 1:
                             modifier_list.append(f"{modifier_qty}x {modifier_name}")
                         else:
                             modifier_list.append(modifier_name)
+                        
+                        # Calculate modifier price
+                        if special_category:
+                            special_item = MenuItem.query.filter_by(
+                                name=modifier_name,
+                                category_id=special_category.id,
+                                branch_id=current_user.branch_id,
+                                is_active=True
+                            ).first()
+                            
+                            if special_item:
+                                modifiers_total_price += special_item.price * modifier_qty
+                    
                     modifiers_text = ", ".join(modifier_list)
+                
+                # Add modifier price to total amount
+                total_amount += modifiers_total_price
                 
                 # Add note about custom price
                 custom_price_note = f"Custom Price: {custom_price:.2f} QAR"
@@ -2526,7 +2710,8 @@ def create_order():
                     quantity=quantity,
                     unit_price=custom_price,  # Use custom price
                     total_price=item_total,
-                    notes=modifiers_text
+                    notes=modifiers_text,
+                    modifiers_total_price=modifiers_total_price
                 )
                 order_items.append(order_item)
                 continue
@@ -2540,25 +2725,54 @@ def create_order():
             item_total = menu_item.price * quantity
             total_amount += item_total
             
-            # Handle modifiers - store them in notes field
+            # Handle modifiers - store them in notes field and calculate modifier prices
             modifiers_text = ""
+            modifiers_total_price = Decimal('0')
+            
             if 'modifiers' in item_data and item_data['modifiers']:
                 modifier_list = []
+                
+                # Get special items category for price lookup
+                special_category = Category.query.filter_by(
+                    name='طلبات خاصة',
+                    branch_id=current_user.branch_id,
+                    is_active=True
+                ).first()
+                
                 for modifier in item_data['modifiers']:
                     modifier_qty = modifier.get('quantity', 1)
                     modifier_name = modifier.get('name', '')
+                    
+                    # Add to text format
                     if modifier_qty > 1:
                         modifier_list.append(f"{modifier_qty}x {modifier_name}")
                     else:
                         modifier_list.append(modifier_name)
+                    
+                    # Calculate modifier price
+                    if special_category:
+                        special_item = MenuItem.query.filter_by(
+                            name=modifier_name,
+                            category_id=special_category.id,
+                            branch_id=current_user.branch_id,
+                            is_active=True
+                        ).first()
+                        
+                        if special_item:
+                            modifiers_total_price += special_item.price * modifier_qty
+                
                 modifiers_text = ", ".join(modifier_list)
+            
+            # Add modifier price to total amount
+            total_amount += modifiers_total_price
             
             order_item = OrderItem(
                 menu_item_id=menu_item.id,
                 quantity=quantity,
                 unit_price=menu_item.price,
                 total_price=item_total,
-                notes=modifiers_text if modifiers_text else None
+                notes=modifiers_text if modifiers_text else None,
+                modifiers_total_price=modifiers_total_price
             )
             order_items.append(order_item)
         
@@ -2627,6 +2841,19 @@ def create_order():
             # Save updated order
             db.session.commit()
             
+            # Distribute new items to kitchens based on category assignments
+            # Create a temporary order object with only the new items for distribution
+            temp_order = Order(
+                id=order.id,
+                order_number=order.order_number,
+                table_id=order.table_id,
+                service_type=order.service_type,
+                branch_id=order.branch_id
+            )
+            temp_order.order_items = order_items  # Only the new items
+            temp_order.table = order.table  # Copy table relationship
+            distribute_order_to_kitchens(temp_order)
+            
             is_new_order = False
         else:
             # CREATE NEW ORDER
@@ -2659,6 +2886,9 @@ def create_order():
             # Save to database
             db.session.add(order)
             db.session.commit()
+            
+            # Distribute order to kitchens based on category assignments
+            distribute_order_to_kitchens(order)
             
             is_new_order = True
         
@@ -2893,6 +3123,41 @@ def mark_order_paid(order_id):
             'message': f'Error marking order as paid: {str(e)}'
         }), 500
 
+@pos.route('/api/get_order_by_number/<int:order_number>')
+@login_required
+def get_order_by_number(order_number):
+    """Get order details by order number for table transfer functionality"""
+    try:
+        # Find order by order number in current user's branch
+        order = Order.query.filter_by(
+            order_number=order_number,
+            branch_id=current_user.branch_id
+        ).first()
+        
+        if not order:
+            return jsonify({
+                'success': False,
+                'message': f'Order #{order_number} not found'
+            })
+        
+        return jsonify({
+            'success': True,
+            'order': {
+                'id': order.id,
+                'order_number': order.order_number,
+                'table_id': order.table_id,
+                'total_amount': float(order.total_amount) if order.total_amount else 0,
+                'status': order.status.value if order.status else 'pending'
+            }
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting order by number {order_number}: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error retrieving order: {str(e)}'
+        }), 500
+
 @pos.route('/get_delivery_companies')
 @login_required
 def get_delivery_companies():
@@ -2970,6 +3235,8 @@ def get_order_details(order_id):
                 'price': float(item.unit_price),  # Frontend expects price
                 'unit_price': float(item.unit_price),
                 'total_price': float(item.total_price),
+                'modifiers_total_price': float(item.modifiers_total_price or 0),
+                'total_price_with_modifiers': item.total_price_with_modifiers,
                 'special_requests': item.special_requests or item.notes,  # Use special_requests field first, fallback to notes
                 'is_new': item.is_new or False,  # Get from database
                 'is_deleted': item.is_deleted or False  # Get from database
@@ -2987,6 +3254,7 @@ def get_order_details(order_id):
                 'order_number': order.order_number,
                 'order_counter': order.order_counter if order.order_counter else None,
                 'total_amount': float(order.total_amount),
+                'total_amount_with_modifiers': order.total_amount_with_modifiers,
                 'created_at': TimezoneManager.format_local_time(order.created_at, '%Y-%m-%d %H:%M:%S'),
                 'paid_at': TimezoneManager.format_local_time(order.paid_at, '%Y-%m-%d %H:%M:%S') if order.paid_at else None,
                 'table_number': order.table.table_number if order.table else None,

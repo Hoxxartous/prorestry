@@ -129,7 +129,7 @@
                                  role="tabpanel">
                                 <div class="row g-2 g-md-3">
                                     {% for item in items if item.category_id == category.id %}
-                                    <div class="col-6 col-md-4 col-lg-3 pos-item-col dyn-width">
+                                    <div class="col-4 col-sm-4 col-md-4 col-lg-3 pos-item-col dyn-width">
                                         <div class="card modern-item dyn-height item-card draggable-item" 
                                              data-item-id="{{ item.id }}" 
                                              data-item-name="{{ item.name }}" 
@@ -269,11 +269,11 @@
                     </button>
                 </div>
                 <div class="card-body d-flex flex-column" style="height: 500px;">
-                    <div class="order-items flex-grow-1 order-items-container" id="orderItems" style="max-height: 350px; overflow-y: auto; padding-right: 8px;">
+                    <div class="order-items flex-grow-1 order-items-container" id="orderItems" style="max-height: 350px; overflow-y: auto; padding-right: 8px; flex: 1 1 auto;">
                         <p class="text-muted text-center">No items added yet</p>
                     </div>
                     
-                    <div class="order-summary mt-auto">
+                    <div class="order-summary mt-auto" style="flex: 0 0 auto; position: sticky; bottom: 0; background: white; border-top: 2px solid #e9ecef; padding-top: 0.75rem; z-index: 10;">
                         <div class="d-flex justify-content-between mb-2">
                             <strong>Total:</strong>
                             <strong id="orderTotal">0.00 QAR</strong>
@@ -1094,6 +1094,54 @@
     </div>
 </div>
 
+<!-- Mobile Special Items Modal -->
+<div class="modal fade mobile-special-modal" id="mobileSpecialModal" tabindex="-1" aria-labelledby="mobileSpecialModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mobileSpecialModalLabel">
+                    <i class="bi bi-star-fill me-2"></i>Add Special Items
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <p class="text-muted mb-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Select special items to add to: <strong id="selectedItemName">-</strong>
+                    </p>
+                </div>
+                <div class="mobile-special-grid" id="mobileSpecialGrid">
+                    {% if special_items %}
+                        {% for item in special_items %}
+                        <div class="mobile-special-item" 
+                             data-item-id="{{ item.id }}" 
+                             data-item-name="{{ item.name }}" 
+                             data-item-price="{{ item.price }}">
+                            <div class="item-name">{{ item.name }}</div>
+                            <div class="item-price">+{{ item.price }} QAR</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="col-12 text-center text-muted">
+                            <i class="bi bi-info-circle me-2"></i>
+                            No special items available
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="addSelectedSpecialItems">
+                    <i class="bi bi-plus-circle me-2"></i>Add Selected Items
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block styles %}
@@ -1312,12 +1360,13 @@
     margin-bottom: calc(var(--special-spacing-px, 8) * 1px) !important;
     transition: all 0.2s ease;
 }
-/* Ensure layout remains responsive regardless of custom sizes */
-@media (max-width: 767.98px) {
-  .pos-item-col.dyn-width { flex: 0 0 50% !important; max-width: 50% !important; }
+/* Ensure layout remains responsive regardless of custom sizes - DISABLED FOR MAXIMUM WIDTH */
+@media (max-width: 1024px) {
+  /* .pos-item-col.dyn-width { flex: 0 0 50% !important; max-width: 50% !important; } */
+  /* This rule is disabled to allow maximum width utilization in 3-column grid - INCLUDES TABLETS */
 }
-/* Collapsible navbar on hover - only for desktop screens */
-@media (min-width: 992px) {
+/* Collapsible navbar on hover - only for large desktop screens */
+@media (min-width: 1025px) {
     .collapsible-navbar {
         height: 20px;
         overflow: hidden;
@@ -1343,8 +1392,8 @@
     }
 }
 
-/* Mobile and tablet navbar - normal behavior */
-@media (max-width: 991.98px) {
+/* Mobile and tablet navbar - normal behavior - INCLUDES ALL TABLETS */
+@media (max-width: 1024px) {
     .collapsible-navbar {
         height: auto !important;
         overflow: visible !important;
@@ -1357,10 +1406,11 @@
         line-height: normal !important;
     }
     .collapsible-navbar .navbar-collapse {
-        background: rgba(13, 110, 253, 0.95);
+        
         border-radius: 8px;
         margin-top: 8px;
-        padding: 10px;
+        margin-right:0px;
+        
     }
 }
 
@@ -1575,131 +1625,1067 @@
     font-weight: 700;
 }
 
-/* Responsive layout adjustments */
-@media (max-width: 767.98px) {
-    /* Mobile layout - stack columns */
+/* MOBILE AND TABLET RESPONSIVE LAYOUT */
+@media (max-width: 1024px) {
+    /* Reset and base mobile styles */
+    html, body {
+        overflow-x: hidden !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+    }
+    
     .container-fluid {
-        padding: 0.5rem;
+        padding: 0.25rem !important;
+        margin: 0 !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
     }
     
-    /* Adjust card spacing */
+    /* MOBILE LAYOUT RESTRUCTURE - CART AT TOP */
+    
+    /* Main row - stack vertically on mobile */
+    .row.g-3 {
+        display: flex !important;
+        flex-direction: column !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* CART SECTION - FORCE TO TOP */
+    .col-xl-4.col-lg-3.col-md-4 {
+        order: -1 !important; /* Force cart to appear first */
+        flex: 0 0 auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* MENU SECTION - BELOW CART */
+    .col-xl-8.col-lg-9.col-md-8 {
+        order: 1 !important; /* Menu appears after cart */
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* MOBILE CART STYLING */
+    .pos-right-column {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* FORCE MAXIMUM WIDTH FOR MENU CONTAINER AND FIX OVERFLOW */
+    .col-xl-8.col-lg-9.col-md-8 .card {
+        width: 100% !important;
+        max-width: 100vw !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+    
+    .col-xl-8.col-lg-9.col-md-8 .card-body {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0.5rem !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* FIX TAB CONTENT AND CATEGORY TABS OVERFLOW */
+    .tab-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+    
+    .tab-pane {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+        padding: 0 !important;
+    }
+    
+    /* Ensure category tabs don't overflow */
+    .nav-tabs {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        white-space: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    
+    .nav-tabs .nav-item {
+        flex-shrink: 0 !important;
+    }
+    
+    .order-section {
+        margin-bottom: 0.5rem !important;
+        border-radius: 8px !important;
+    }
+    
+    .order-items {
+        max-height: 180px !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    
+    /* Increase cart height for tablets and reduce empty space */
+    @media (min-width: 768px) and (max-width: 1024px) {
+        .order-items {
+            max-height: 400px !important;
+            min-height: 250px !important;
+            flex: 1 1 auto !important;
+        }
+        
+        .order-items-container {
+            max-height: 400px !important;
+            min-height: 250px !important;
+            flex: 1 1 auto !important;
+        }
+        
+        /* Ensure cart body uses flexbox for proper layout */
+        .pos-right-column .card-body {
+            display: flex !important;
+            flex-direction: column !important;
+            height: auto !important;
+        }
+        
+        /* Reduce empty space and optimize layout for tablets */
+        .pos-right-column .card {
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .pos-right-column .card-body {
+            padding: 0.75rem !important;
+        }
+        
+        .order-section {
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .order-summary {
+            padding: 0.75rem !important;
+            margin-top: 0.5rem !important;
+        }
+        
+        /* Reduce spacing between order items */
+        .order-item-card {
+            margin-bottom: 0.5rem !important;
+            padding: 0.75rem !important;
+        }
+        
+        /* Reduce empty space between cart and menu sections */
+        .col-xl-8.col-lg-9.col-md-8 {
+            padding-top: 0.5rem !important;
+            margin-top: 0 !important;
+        }
+        
+        .col-xl-8.col-lg-9.col-md-8 .card {
+            margin-top: 0 !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        /* Reduce spacing in menu sections */
+        .nav.nav-tabs {
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .tab-content {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+        
+        .tab-pane {
+            padding-top: 0.5rem !important;
+        }
+        
+        /* Reduce overall container spacing */
+        .container-fluid {
+            padding-top: 0.25rem !important;
+            padding-bottom: 0.25rem !important;
+        }
+        
+        .row {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+        }
+        
+        /* COMPREHENSIVE TABLET RESPONSIVITY IMPROVEMENTS */
+        
+        /* Navbar optimization for tablets */
+        .navbar {
+            padding: 0.5rem 1rem !important;
+        }
+        
+        .navbar-brand {
+            font-size: 1.1rem !important;
+        }
+        
+        .navbar-nav .nav-link {
+            padding: 0.5rem 0.75rem !important;
+            font-size: 0.9rem !important;
+        }
+        
+        /* Main layout columns optimization */
+        .col-xl-4.col-lg-3.col-md-4 {
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+        }
+        
+        .col-xl-8.col-lg-9.col-md-8 {
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+        }
+        
+        /* Menu item buttons optimization */
+        .modern-item {
+            min-height: 140px !important;
+            max-height: 140px !important;
+            font-size: 0.85rem !important;
+            padding: 0.75rem !important;
+        }
+        
+        .modern-item .item-name {
+            font-size: 0.9rem !important;
+            line-height: 1.2 !important;
+            margin-bottom: 0.25rem !important;
+        }
+        
+        .modern-item .item-price {
+            font-size: 0.85rem !important;
+            font-weight: 600 !important;
+        }
+        
+        /* Grid layout optimization */
+        .row.g-2.g-md-3 {
+            gap: 0.75rem !important;
+            padding: 0.75rem !important;
+        }
+        
+        /* Calculator section optimization */
+        .calculator-section .card {
+            margin-bottom: 0.75rem !important;
+        }
+        
+        .calculator-section .card-body {
+            padding: 0.75rem !important;
+        }
+        
+        .calc-display {
+            font-size: 1.5rem !important;
+            padding: 0.75rem !important;
+            min-height: 60px !important;
+        }
+        
+        .calc-btn {
+            min-height: 55px !important;
+            font-size: 1.2rem !important;
+            font-weight: 600 !important;
+            margin: 0.125rem !important;
+        }
+        
+        .calc-btn[data-action="apply"] {
+            min-height: 60px !important;
+            font-size: 1.3rem !important;
+        }
+        
+        /* Order summary optimization */
+        .order-summary .d-flex {
+            margin-bottom: 0.5rem !important;
+            font-size: 0.9rem !important;
+        }
+        
+        .order-summary strong {
+            font-size: 1rem !important;
+        }
+        
+        /* Checkout buttons optimization */
+        .checkout-buttons .btn {
+            padding: 0.75rem 1rem !important;
+            font-size: 0.95rem !important;
+            margin-bottom: 0.5rem !important;
+            min-height: 50px !important;
+        }
+        
+        /* Modal optimization for tablets */
+        .modal-dialog {
+            margin: 1rem !important;
+            max-width: calc(100vw - 2rem) !important;
+        }
+        
+        .modal-content {
+            border-radius: 10px !important;
+        }
+        
+        .modal-header {
+            padding: 1rem !important;
+        }
+        
+        .modal-body {
+            padding: 1rem !important;
+        }
+        
+        .modal-footer {
+            padding: 0.75rem 1rem !important;
+        }
+        
+        /* Form elements optimization */
+        .form-control {
+            font-size: 1rem !important;
+            padding: 0.75rem !important;
+            min-height: 48px !important;
+        }
+        
+        .form-select {
+            font-size: 1rem !important;
+            padding: 0.75rem !important;
+            min-height: 48px !important;
+        }
+        
+        /* Button optimization */
+        .btn {
+            padding: 0.75rem 1rem !important;
+            font-size: 0.9rem !important;
+            min-height: 44px !important;
+            border-radius: 6px !important;
+        }
+        
+        .btn-lg {
+            padding: 1rem 1.5rem !important;
+            font-size: 1rem !important;
+            min-height: 52px !important;
+        }
+        
+        .btn-sm {
+            padding: 0.5rem 0.75rem !important;
+            font-size: 0.85rem !important;
+            min-height: 38px !important;
+        }
+        
+        /* Badge optimization */
+        .badge {
+            font-size: 0.75rem !important;
+            padding: 0.35rem 0.6rem !important;
+        }
+        
+        /* Alert optimization */
+        .alert {
+            padding: 0.75rem !important;
+            margin-bottom: 0.75rem !important;
+            font-size: 0.9rem !important;
+        }
+        
+        /* Table optimization */
+        .table {
+            font-size: 0.9rem !important;
+        }
+        
+        .table th,
+        .table td {
+            padding: 0.75rem !important;
+        }
+        
+        /* Card optimization */
+        .card {
+            border-radius: 8px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        }
+        
+        .card-header {
+            padding: 0.75rem 1rem !important;
+            font-size: 0.95rem !important;
+        }
+        
+        .card-body {
+            padding: 1rem !important;
+        }
+        
+        /* Input group optimization */
+        .input-group {
+            margin-bottom: 0.75rem !important;
+        }
+        
+        .input-group-text {
+            padding: 0.75rem !important;
+            font-size: 0.9rem !important;
+        }
+        
+        /* Dropdown optimization */
+        .dropdown-menu {
+            font-size: 0.9rem !important;
+            border-radius: 6px !important;
+        }
+        
+        .dropdown-item {
+            padding: 0.75rem 1rem !important;
+        }
+        
+        /* Toast notification optimization */
+        .toast {
+            font-size: 0.9rem !important;
+        }
+        
+        .toast-header {
+            padding: 0.75rem !important;
+        }
+        
+        .toast-body {
+            padding: 0.75rem !important;
+        }
+        
+        /* PORTRAIT/VERTICAL ORIENTATION OPTIMIZATION FOR TABLETS */
+        @media (orientation: portrait) and (min-width: 768px) and (max-width: 1024px) {
+            /* Reduce cart height to make room for calculator */
+            .order-items {
+                max-height: 200px !important;
+                min-height: 120px !important;
+            }
+            
+            .order-items-container {
+                max-height: 200px !important;
+                min-height: 120px !important;
+            }
+            
+            /* Optimize overall cart section for portrait - LARGER INTERFACE */
+            .pos-right-column .card-body {
+                padding: 0.75rem !important;
+                height: auto !important;
+                max-height: none !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            
+            /* Ensure order summary stays at bottom */
+            .order-items {
+                flex: 1 1 auto !important;
+            }
+            
+            .order-summary {
+                flex: 0 0 auto !important;
+                margin-top: auto !important;
+                position: sticky !important;
+                bottom: 0 !important;
+                background: white !important;
+                border-top: 2px solid #e9ecef !important;
+                padding-top: 0.75rem !important;
+                z-index: 10 !important;
+            }
+            
+            /* LARGER cart items for better tablet experience */
+            .order-item-card {
+                margin-bottom: 0.5rem !important;
+                padding: 0.75rem !important;
+                font-size: 1rem !important;
+                min-height: 60px !important;
+            }
+            
+            .order-item-card .item-name {
+                font-size: 1.1rem !important;
+                font-weight: 600 !important;
+            }
+            
+            .order-item-card .item-price {
+                font-size: 1rem !important;
+                font-weight: 700 !important;
+            }
+            
+            /* LARGER order summary for tablet portrait */
+            .order-summary {
+                padding: 0.75rem !important;
+                margin-top: 0.5rem !important;
+                font-size: 1rem !important;
+            }
+            
+            .order-summary .d-flex {
+                margin-bottom: 0.5rem !important;
+                font-size: 1.1rem !important;
+            }
+            
+            .order-summary strong {
+                font-size: 1.2rem !important;
+                font-weight: 700 !important;
+            }
+            
+            /* LARGER checkout buttons for tablet portrait */
+            .order-summary .btn {
+                padding: 0.75rem 1rem !important;
+                font-size: 1.1rem !important;
+                margin-bottom: 0.5rem !important;
+                min-height: 55px !important;
+                font-weight: 600 !important;
+            }
+            
+            .checkout-buttons .btn {
+                padding: 0.75rem 1rem !important;
+                font-size: 1.1rem !important;
+                margin-bottom: 0.5rem !important;
+                min-height: 55px !important;
+                font-weight: 600 !important;
+            }
+            
+            /* Reduce calculator height in portrait */
+            .calculator-section .card-body {
+                padding: 0.5rem !important;
+                min-height: auto !important;
+            }
+            
+            .calc-display {
+                font-size: 1.3rem !important;
+                padding: 0.5rem !important;
+                min-height: 50px !important;
+            }
+            
+            .calc-btn {
+                min-height: 45px !important;
+                font-size: 1.1rem !important;
+                margin: 0.1rem !important;
+            }
+            
+            .calc-btn[data-action="apply"] {
+                min-height: 50px !important;
+                font-size: 1.2rem !important;
+            }
+            
+            /* LARGER menu items for portrait tablet */
+            .modern-item {
+                min-height: 140px !important;
+                max-height: 140px !important;
+                font-size: 1rem !important;
+                padding: 0.75rem !important;
+            }
+            
+            .modern-item .item-name {
+                font-size: 1.1rem !important;
+                margin-bottom: 0.4rem !important;
+                font-weight: 600 !important;
+            }
+            
+            .modern-item .item-price {
+                font-size: 1rem !important;
+                font-weight: 700 !important;
+            }
+            
+            /* Optimize grid spacing for portrait */
+            .row.g-2.g-md-3 {
+                gap: 0.5rem !important;
+                padding: 0.5rem !important;
+            }
+            
+            /* Reduce overall container padding */
+            .container-fluid {
+                padding: 0.25rem !important;
+            }
+            
+            /* Optimize column spacing */
+            .col-xl-4.col-lg-3.col-md-4,
+            .col-xl-8.col-lg-9.col-md-8 {
+                padding-left: 0.25rem !important;
+                padding-right: 0.25rem !important;
+            }
+        }
+        
+        /* LANDSCAPE ORIENTATION OPTIMIZATION FOR TABLETS */
+        @media (orientation: landscape) and (min-width: 768px) and (max-width: 1024px) {
+            /* Maintain larger cart height in landscape */
+            .order-items {
+                max-height: 350px !important;
+                min-height: 200px !important;
+            }
+            
+            .order-items-container {
+                max-height: 350px !important;
+                min-height: 200px !important;
+            }
+            
+            /* Optimize for landscape viewing */
+            .modern-item {
+                min-height: 130px !important;
+                max-height: 130px !important;
+            }
+        }
+    }
+    
+    .order-item-card {
+        margin-bottom: 0.25rem !important;
+        padding: 0.5rem !important;
+        font-size: 0.8rem !important;
+        border-radius: 6px !important;
+    }
+    
+    .order-summary {
+        padding: 0.5rem !important;
+        font-size: 0.85rem !important;
+    }
+    
+    /* MOBILE MENU SECTION */
     .card {
-        margin-bottom: 1rem;
+        margin: 0 !important;
+        border-radius: 8px !important;
+        width: 100% !important;
     }
     
-    /* Hide integrated special items on mobile */
-    .special-items-integrated {
+    .card-body {
+        padding: 0.5rem !important;
+    }
+    
+    /* HIDE DESKTOP CONTROLS ON MOBILE */
+    .d-flex.justify-content-between.align-items-center.mb-2,
+    .d-flex.gap-2.align-items-center {
         display: none !important;
     }
     
-    /* Mobile special items chevron animation */
-    .special-requests-mobile [data-bs-toggle="collapse"] .bi-chevron-down {
-        transition: transform 0.3s ease;
+    /* CATEGORY TABS - HORIZONTAL SCROLL */
+    .d-flex.justify-content-between.align-items-center.mb-3 {
+        display: block !important;
+        margin-bottom: 0.5rem !important;
     }
     
-    .special-requests-mobile [data-bs-toggle="collapse"][aria-expanded="true"] .bi-chevron-down {
-        transform: rotate(180deg);
+    .nav.nav-tabs {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+        border-bottom: 1px solid #dee2e6 !important;
+        margin-bottom: 0.5rem !important;
+        padding: 0 !important;
+        width: 100% !important;
     }
     
-    /* Mobile optimizations */
+    .nav.nav-tabs::-webkit-scrollbar {
+        display: none !important;
+    }
+    
+    .nav.nav-tabs .nav-item {
+        flex: 0 0 auto !important;
+        white-space: nowrap !important;
+        margin: 0 !important;
+    }
+    
+    .nav.nav-tabs .nav-link {
+        white-space: nowrap !important;
+        padding: 0.4rem 0.6rem !important;
+        font-size: 0.75rem !important;
+        min-width: max-content !important;
+        border-radius: 4px 4px 0 0 !important;
+        margin-right: 2px !important;
+    }
+    
+    /* MENU ITEMS - RESPONSIVE 3-COLUMN GRID WITH MAXIMUM WIDTH */
+    .tab-content {
+        width: 100% !important;
+        padding: 0 !important;
+    }
+    
+    .tab-pane {
+        width: 100% !important;
+    }
+    
+    /* Grid Container Enhancement - FIX OVERFLOW ISSUES */
+    .row.g-2.g-md-3 {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 0.4rem !important;
+        margin: 0 !important;
+        padding: 0.4rem !important;
+        width: 100% !important;
+        max-width: calc(100% - 0.8rem) !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        /* Override Bootstrap row properties */
+        --bs-gutter-x: 0 !important;
+        --bs-gutter-y: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    
+    .pos-item-col.dyn-width {
+        grid-column: span 1 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        /* Ensure each column takes exactly 1/3 of available width */
+        flex: 1 1 0 !important;
+    }
+    
+    /* OVERRIDE BOOTSTRAP COLUMNS - FORCE GRID LAYOUT ON MOBILE */
+    .row.g-2.g-md-3 .col-4.col-sm-4.col-md-4.col-lg-3.pos-item-col.dyn-width {
+        /* Reset Bootstrap column properties */
+        flex: none !important;
+        width: auto !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin: 0 !important;
+        /* Force grid behavior */
+        grid-column: span 1 !important;
+        display: block !important;
+    }
+    
+    /* Ensure the card inside takes full width */
+    .row.g-2.g-md-3 .col-4.col-sm-4.col-md-4.col-lg-3.pos-item-col.dyn-width .modern-item {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 100% !important;
+    }
+    
+    /* NUCLEAR OPTION - FORCE MAXIMUM WIDTH WITH HIGHEST SPECIFICITY AND FIX CONTAINER OVERFLOW */
+    @media (max-width: 1024px) {
+        .tab-content .tab-pane .row.g-2.g-md-3 {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            width: 100% !important;
+            max-width: calc(100vw - 1rem) !important;
+            margin: 0 !important;
+            padding: 0.25rem !important;
+            gap: 0.25rem !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+        }
+        
+        .tab-content .tab-pane .row.g-2.g-md-3 > * {
+            width: auto !important;
+            max-width: 100% !important;
+            flex: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+        }
+        
+        .tab-content .tab-pane .row.g-2.g-md-3 .modern-item {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+        }
+    }
+    
+    /* HIDE CALCULATOR ON MOBILE PHONES ONLY */
+    .calculator-section {
+        display: none !important;
+    }
+    
+    /* SHOW CALCULATOR UNDER CART ON TABLET PORTRAIT */
+    @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+        .calculator-section {
+            display: block !important;
+            order: 0 !important; /* Show after cart but before menu */
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .calculator-section .card {
+            margin-bottom: 0 !important;
+        }
+        
+        .calculator-section .card-body {
+            padding: 0.75rem !important;
+            min-height: auto !important;
+            max-height: none !important;
+            height: auto !important;
+            overflow: visible !important;
+        }
+        
+        /* Fix calculator to take full width and proper height */
+        .calculator-section {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        
+        .calculator-section .card {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: visible !important;
+        }
+        
+        /* Optimize calculator buttons for tablet portrait - LARGER */
+        .calc-btn {
+            min-height: 60px !important;
+            font-size: 1.4rem !important;
+            margin: 0.2rem !important;
+            font-weight: 600 !important;
+        }
+        
+        .calculator-display {
+            font-size: 1.6rem !important;
+            padding: 1rem !important;
+            min-height: 65px !important;
+        }
+        
+        .calculator-display input {
+            font-size: 1.6rem !important;
+            font-weight: 700 !important;
+        }
+        
+        /* LARGER calculator mode buttons */
+        .calculator-modes .btn {
+            font-size: 1.1rem !important;
+            padding: 0.75rem !important;
+            min-height: 50px !important;
+            font-weight: 600 !important;
+        }
+        
+        /* LARGER calculator display elements */
+        .calculator-display .input-group-text {
+            font-size: 1.2rem !important;
+            padding: 0.75rem !important;
+        }
+        
+        .calculator-display small {
+            font-size: 0.9rem !important;
+        }
+        
+        /* Category tabs larger for tablet */
+        .nav-tabs .nav-link {
+            font-size: 1.1rem !important;
+            padding: 0.75rem 1rem !important;
+            min-height: 50px !important;
+            font-weight: 600 !important;
+        }
+    }
+    
+    /* MOBILE ITEM CARDS - MAXIMUM WIDTH WITH 3 COLUMNS */
     .modern-item {
-        min-height: 120px !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 160px !important;
+        max-height: 160px !important;
+        margin: 0 !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        border: 2px solid transparent !important;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15) !important;
+        box-sizing: border-box !important;
+        /* Force maximum width utilization within grid cell */
+        min-width: 100% !important;
+        max-width: 100% !important;
+        flex: 1 1 100% !important;
     }
     
-    .special-item-customizable {
-        min-height: 48px !important;
-        font-size: 12px !important;
-        padding: 10px 8px !important;
-    }
-    
-    /* Touch-friendly buttons */
-    .btn {
-        min-height: 44px;
-        padding: 8px 12px;
-    }
-    
-    /* Larger tap targets for touch */
-    .nav-link {
-        min-height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    /* Make category tabs scrollable on mobile */
-    #categoryTabs {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    #categoryTabs .nav-item {
-        flex: 0 0 auto;
-    }
-    
-    #categoryTabs .nav-link {
-        white-space: nowrap;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.875rem;
-    }
-    
-    /* Adjust item cards for mobile */
-    .modern-item {
-        margin-bottom: 0.75rem;
-        min-height: 140px;
+    .modern-item:active {
+        transform: scale(0.98) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
     }
     
     .modern-item .item-thumb {
-        height: 70px;
+        height: 80px !important;
+        width: 100% !important;
+        flex: 0 0 80px !important;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
     }
     
     .modern-item .item-thumb img {
-        height: 70px;
+        height: 80px !important;
+        width: 100% !important;
+        object-fit: cover !important;
     }
     
     .modern-item .thumb-placeholder {
-        height: 70px;
-        font-size: 18px;
+        height: 80px !important;
+        width: 100% !important;
+        font-size: 20px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+        color: #6c757d !important;
+    }
+    
+    .modern-item .item-body {
+        flex: 1 1 auto !important;
+        padding: 1rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        min-height: 80px !important;
+        background: white !important;
+    }
+    
+    .modern-item .item-content {
+        flex: 1 1 auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
     }
     
     .modern-item .item-name {
-        font-size: 0.9rem !important;
-        min-height: 2.4em;
+        font-size: 1rem !important;
+        line-height: 1.4 !important;
+        margin: 0 0 0.5rem 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        text-align: center !important;
+        font-weight: 600 !important;
+        color: #2c3e50 !important;
     }
     
     .modern-item .price-tag {
-        font-size: 0.8rem;
-        padding: 3px 6px;
+        font-size: 0.95rem !important;
+        padding: 6px 12px !important;
+        margin: 0 auto !important;
+        border-radius: 16px !important;
+        flex: 0 0 auto !important;
+        align-self: center !important;
+        background: linear-gradient(135deg, #28a745, #20c997) !important;
+        color: white !important;
+        font-weight: 700 !important;
+        min-width: 70px !important;
+        text-align: center !important;
     }
     
-    /* Special requests chips - smaller on mobile */
-    .chip {
-        font-size: 11px;
-        padding: 4px 8px;
+    /* HIDE BADGES AND CONTROLS ON MOBILE - EXCEPT CUSTOM PRICE BADGES */
+    .modern-item .position-absolute,
+    .modern-item .edit-mode-controls {
+        display: none !important;
     }
     
-    /* Order section adjustments */
-    .order-items {
-        max-height: 300px;
-        overflow-y: auto;
+    /* Hide regular visual badges but show custom price badges */
+    .modern-item .visual-badges .badge:not(.falafel-hab-badge):not(.special-order-badge) {
+        display: none !important;
     }
     
-    /* Table buttons on mobile */
+    /* Ensure custom price badges are visible and properly positioned on mobile */
+    .modern-item .visual-badges .falafel-hab-badge,
+    .modern-item .visual-badges .special-order-badge {
+        display: inline-block !important;
+        position: absolute !important;
+        top: 4px !important;
+        right: 4px !important;
+        z-index: 10 !important;
+        font-size: 0.6rem !important;
+        padding: 2px 6px !important;
+    }
+    
+    /* SPECIAL ITEMS - HIDE ALL VERSIONS ON MOBILE */
+    .special-items-integrated,
+    .special-requests-mobile {
+        display: none !important;
+    }
+    
+    /* RESPONSIVE BUTTONS */
+    .btn {
+        min-height: 40px !important;
+        padding: 6px 8px !important;
+        font-size: 0.75rem !important;
+        border-radius: 6px !important;
+    }
+    
+    .btn-sm {
+        min-height: 32px !important;
+        padding: 4px 6px !important;
+        font-size: 0.7rem !important;
+    }
+    
+    .btn-lg {
+        min-height: 48px !important;
+        padding: 8px 12px !important;
+        font-size: 0.85rem !important;
+    }
+    
+    /* TABLE SELECTION BUTTONS */
     .table-buttons-grid {
-        grid-template-columns: repeat(4, 1fr);
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 0.25rem !important;
+        width: 100% !important;
     }
     
     .table-btn {
-        min-height: 50px;
-        padding: 8px 4px;
+        min-height: 40px !important;
+        padding: 4px !important;
+        font-size: 0.65rem !important;
+        border-radius: 4px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
     
     .table-btn i {
-        font-size: 14px;
+        font-size: 10px !important;
+        margin-bottom: 2px !important;
     }
     
     .table-btn .table-number {
-        font-size: 10px;
+        font-size: 0.6rem !important;
+        line-height: 1 !important;
+    }
+    
+    /* CHIPS AND TAGS */
+    .chip {
+        font-size: 0.6rem !important;
+        padding: 1px 4px !important;
+        margin: 1px !important;
+        border-radius: 3px !important;
+    }
+    
+    /* FORM CONTROLS */
+    .form-control, .form-select {
+        padding: 0.375rem 0.5rem !important;
+        font-size: 0.8rem !important;
+        min-height: 40px !important;
+    }
+    
+    /* MODALS */
+    .modal-dialog {
+        margin: 0.25rem !important;
+        max-width: calc(100vw - 0.5rem) !important;
+        width: calc(100vw - 0.5rem) !important;
+    }
+    
+    .modal-content {
+        border-radius: 8px !important;
+    }
+    
+    /* ALERTS */
+    .alert {
+        padding: 0.5rem !important;
+        font-size: 0.75rem !important;
+        margin-bottom: 0.5rem !important;
+        border-radius: 6px !important;
+    }
+    
+    /* PREVENT ZOOM ON INPUT FOCUS (iOS) */
+    input[type="text"], input[type="number"], input[type="email"], 
+    input[type="password"], input[type="search"], textarea, select {
+        font-size: 16px !important;
+    }
+    
+    /* ENSURE NO OVERFLOW */
+    * {
+        box-sizing: border-box !important;
+    }
+    
+    .container-fluid > * {
+        max-width: 100% !important;
     }
 }
 
@@ -2495,15 +3481,15 @@
 
 .order-summary strong {
     font-size: 16px;
-    color: #333;
+    color: white !important;
 }
 
 .order-summary .d-flex {
     margin-bottom: 15px;
 }
 
-/* Responsive Calculator */
-@media (max-width: 767.98px) {
+/* Responsive Calculator - INCLUDES TABLETS */
+@media (max-width: 1024px) {
     .calc-btn {
         min-height: 60px;
         font-size: 1.3rem;
@@ -2662,6 +3648,166 @@
         padding: 1.2rem;
     }
 }
+
+/* MOBILE AND TABLET SPECIAL ITEMS MODAL */
+@media (max-width: 1024px) {
+    .mobile-special-modal .modal-dialog {
+        margin: 0.5rem !important;
+        max-width: calc(100vw - 1rem) !important;
+        width: calc(100vw - 1rem) !important;
+    }
+    
+    .mobile-special-modal .modal-content {
+        border-radius: 12px !important;
+        border: none !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+    }
+    
+    .mobile-special-modal .modal-header {
+        background: linear-gradient(135deg, #667eea, #764ba2) !important;
+        color: white !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1rem !important;
+    }
+    
+    .mobile-special-modal .modal-title {
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+    }
+    
+    .mobile-special-modal .btn-close {
+        filter: invert(1) !important;
+    }
+    
+    .mobile-special-modal .modal-body {
+        padding: 1rem !important;
+        max-height: 60vh !important;
+        overflow-y: auto !important;
+    }
+    
+    .mobile-special-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.75rem !important;
+        width: 100% !important;
+    }
+    
+    .mobile-special-item {
+        background: white !important;
+        border: 2px solid #e9ecef !important;
+        border-radius: 8px !important;
+        padding: 0.75rem !important;
+        text-align: center !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        min-height: 80px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    
+    .mobile-special-item:hover {
+        border-color: #667eea !important;
+        background: #f8f9ff !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2) !important;
+    }
+    
+    .mobile-special-item.selected {
+        border-color: #28a745 !important;
+        background: #d4edda !important;
+        color: #155724 !important;
+    }
+    
+    .mobile-special-item .item-name {
+        font-size: 0.8rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.25rem !important;
+        line-height: 1.2 !important;
+    }
+    
+    .mobile-special-item .item-price {
+        font-size: 0.7rem !important;
+        color: #28a745 !important;
+        font-weight: 500 !important;
+    }
+    
+    .mobile-special-modal .modal-footer {
+        padding: 1rem !important;
+        border-top: 1px solid #e9ecef !important;
+    }
+    
+    .mobile-special-modal .btn {
+        min-height: 44px !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        padding: 0.75rem 1.5rem !important;
+    }
+    
+    /* DARK THEME FOR MOBILE SPECIAL MODAL */
+    .mobile-special-modal .modal-content {
+        background: #2c3e50 !important;
+        color: #ecf0f1 !important;
+    }
+    
+    .mobile-special-modal .modal-body .text-muted {
+        color: #bdc3c7 !important;
+    }
+    
+    .mobile-special-item {
+        background: #34495e !important;
+        border: 2px solid #4a5f7a !important;
+        color: #ecf0f1 !important;
+    }
+    
+    .mobile-special-item:hover {
+        border-color: #667eea !important;
+        background: #3d566e !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+    }
+    
+    .mobile-special-item.selected {
+        border-color: #28a745 !important;
+        background: #27ae60 !important;
+        color: white !important;
+    }
+    
+    .mobile-special-item .item-price {
+        color: #2ecc71 !important;
+    }
+    
+    .mobile-special-modal .modal-footer {
+        border-top: 1px solid #4a5f7a !important;
+        background: #34495e !important;
+    }
+    
+    .mobile-special-modal .btn-secondary {
+        background: #6c757d !important;
+        border-color: #6c757d !important;
+        color: white !important;
+    }
+    
+    .mobile-special-modal .btn-secondary:hover {
+        background: #5a6268 !important;
+        border-color: #545b62 !important;
+    }
+    
+    .mobile-special-modal .btn-primary {
+        background: linear-gradient(135deg, #667eea, #764ba2) !important;
+        border: none !important;
+        color: white !important;
+    }
+    
+    .mobile-special-modal .btn-primary:hover {
+        background: linear-gradient(135deg, #5a6fd8, #6a4190) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+    }
+}
+
 </style>
 {% endblock %}
 
@@ -2669,6 +3815,95 @@
 
 {% block scripts %}
 <script>
+// GLOBAL SOUND FUNCTIONALITY - Accessible to all calculator functions
+let audioContext;
+
+function initializeAudioContext() {
+    if (!audioContext) {
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.log('Web Audio API not supported');
+            return false;
+        }
+    }
+    return true;
+}
+
+function playClickSound() {
+    if (!initializeAudioContext()) return;
+    
+    try {
+        // Resume audio context if suspended (required for mobile browsers)
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+        
+        // Create oscillator for POS register sound
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        // Connect nodes
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Configure sound - classic cash register "beep" sound
+        oscillator.type = 'square'; // Square wave for more digital/electronic sound
+        oscillator.frequency.setValueAtTime(1200, audioContext.currentTime); // Higher pitch for crisp beep
+        oscillator.frequency.setValueAtTime(1200, audioContext.currentTime + 0.05); // Hold frequency
+        
+        // Configure volume envelope - sharp attack, quick decay (like cash register)
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.25, audioContext.currentTime + 0.005); // Very quick attack
+        gainNode.gain.linearRampToValueAtTime(0.25, audioContext.currentTime + 0.04); // Hold volume
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.08); // Quick fade
+        
+        // Play sound for 80ms - short and crisp like POS systems
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.08);
+        
+    } catch (e) {
+        console.log('Error playing POS click sound:', e);
+    }
+}
+
+function playCalculatorSound() {
+    if (!initializeAudioContext()) return;
+    
+    try {
+        // Resume audio context if suspended (required for mobile browsers)
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+        
+        // Create oscillator for calculator button sound
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        // Connect nodes
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Configure sound - calculator-style "click" sound
+        oscillator.type = 'sine'; // Sine wave for smoother calculator sound
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // Lower pitch than POS beep
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.03); // Hold frequency
+        
+        // Configure volume envelope - softer than POS sound
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.01); // Softer attack
+        gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.03); // Hold volume
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.06); // Gentle fade
+        
+        // Play sound for 60ms - shorter and softer than POS beep
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.06);
+        
+    } catch (e) {
+        console.log('Error playing calculator sound:', e);
+    }
+}
+
 // Advanced POS Customization System
 let isEditMode = false;
 let draggedElement = null;
@@ -3601,9 +4836,12 @@ document.addEventListener('DOMContentLoaded', function() {
     window.lastSelectedRegularItemIndex = null;
     window.selectedOrderItemIndex = null;
 
-    // Add item to order (regular menu items)
-    document.querySelectorAll('.item-card').forEach(card => {
+    // Add item to order (regular menu items only, exclude special items)
+    document.querySelectorAll('.item-card:not(.special-item-customizable)').forEach(card => {
         card.addEventListener('click', function() {
+            // Play click sound for regular menu items
+            playClickSound();
+            
             // Skip if in edit mode to prevent accidental item addition during customization
             if (window.isEditMode) {
                 return;
@@ -3778,6 +5016,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add special item to order
     document.querySelectorAll('.special-item-customizable').forEach(btn => {
         btn.addEventListener('click', function() {
+            // Play click sound for special items
+            playClickSound();
+            
             const itemId = this.getAttribute('data-item-id');
             const itemName = this.getAttribute('data-item-name');
             const itemPrice = parseFloat(this.getAttribute('data-item-price'));
@@ -3964,15 +5205,17 @@ function addSpecialItemAsModifier(itemId, itemName, itemPrice) {
     // Check if this modifier already exists for this item
     const existingModifier = targetItem.modifiers.find(mod => mod.id === String(itemId));
     if (existingModifier) {
-        // Increase modifier quantity
+        // Increase modifier quantity and ensure price is set
         existingModifier.quantity += 1;
+        existingModifier.price = itemPrice || 0; // Ensure price is always set
         console.log(`Increased modifier quantity for ${itemName} to ${existingModifier.quantity}`);
     } else {
-        // Add new modifier to the target item
+        // Add new modifier to the target item with price
         targetItem.modifiers.push({
             id: String(itemId),
             name: itemName,
-            quantity: 1
+            quantity: 1,
+            price: itemPrice || 0
         });
         console.log(`Added modifier ${itemName} to ${targetItem.name}`);
     }
@@ -4071,22 +5314,30 @@ function updateOrderDisplay() {
         const quantityDisplay = `${item.quantity} x `;
         const unitPriceDisplay = `${item.price.toFixed(2)} QAR`;
         
-        // Build modifiers display
+        // Build modifiers display with prices
         let modifiersHtml = '';
+        let modifiersTotal = 0;
         if (item.modifiers && item.modifiers.length > 0) {
             item.modifiers.forEach((modifier, modifierIndex) => {
                 const modifierQuantity = modifier.quantity > 1 ? `${modifier.quantity}x ` : '';
+                const modifierPrice = modifier.price || 0;
+                const modifierTotal = modifierPrice * modifier.quantity;
+                modifiersTotal += modifierTotal;
+                
                 modifiersHtml += `
                     <div class="modifier-item text-muted small ms-3 d-flex justify-content-between align-items-center" style="margin-bottom: 2px;">
                         <span>+ ${modifierQuantity}${modifier.name}</span>
-                        <button class="btn btn-sm btn-outline-danger remove-modifier" 
-                                data-item-index="${index}" 
-                                data-modifier-index="${modifierIndex}"
-                                style="padding: 1px 4px; font-size: 10px; line-height: 1;"
-                                onclick="event.stopPropagation();"
-                                title="Remove modifier">
-                            <i class="bi bi-x" style="font-size: 10px;"></i>
-                        </button>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">${modifierTotal.toFixed(2)} QAR</span>
+                            <button class="btn btn-sm btn-outline-danger remove-modifier" 
+                                    data-item-index="${index}" 
+                                    data-modifier-index="${modifierIndex}"
+                                    style="padding: 1px 4px; font-size: 10px; line-height: 1;"
+                                    onclick="event.stopPropagation();"
+                                    title="Remove modifier">
+                                <i class="bi bi-x" style="font-size: 10px;"></i>
+                            </button>
+                        </div>
                     </div>
                 `;
             });
@@ -4120,7 +5371,7 @@ function updateOrderDisplay() {
                 </div>
             </div>
         `;
-        total += item.total;
+        total += item.total + modifiersTotal;
     });
     
     orderItemsContainer.innerHTML = html;
@@ -4230,10 +5481,14 @@ function printInvoice(orderId) {
                 // Create invoice HTML
                 let itemsHtml = '';
                 data.order.items.forEach(item => {
-                    // Build modifiers display
+                    // Build modifiers display with prices
                     let modifiersHtml = '';
+                    let itemTotalWithModifiers = parseFloat(item.total_price);
+                    
                     if (item.special_requests && item.special_requests.trim()) {
-                        modifiersHtml = `<br><small class="text-muted">+ ${item.special_requests}</small>`;
+                        const modifierPrice = parseFloat(item.modifiers_total_price || 0);
+                        itemTotalWithModifiers += modifierPrice;
+                        modifiersHtml = `<br><small class="text-muted">+ ${item.special_requests}${modifierPrice > 0 ? ` (${modifierPrice.toFixed(2)} QAR)` : ''}</small>`;
                     }
                     
                     itemsHtml += `
@@ -4241,7 +5496,7 @@ function printInvoice(orderId) {
                             <td>${item.menu_item_name}${modifiersHtml}</td>
                             <td>${item.quantity}</td>
                             <td>${parseFloat(item.unit_price).toFixed(2)} QAR</td>
-                            <td>${parseFloat(item.total_price).toFixed(2)} QAR</td>
+                            <td>${itemTotalWithModifiers.toFixed(2)} QAR</td>
                         </tr>
                     `;
                 });
@@ -4277,7 +5532,7 @@ function printInvoice(orderId) {
                         </div>
                         
                         <div class="text-end mb-4">
-                            <h4>Total: ${parseFloat(data.order.total_amount).toFixed(2)} QAR</h4>
+                            <h4>Total: ${parseFloat(data.order.total_amount_with_modifiers || data.order.total_amount).toFixed(2)} QAR</h4>
                         </div>
                         
                         <div class="text-center">
@@ -4446,7 +5701,7 @@ function loadRecentOrders() {
                             <div class="text-end">
                                 <span class="badge ${serviceBadge.class} mb-1">${serviceBadge.text}</span>
                                 ${order.delivery_company ? `<br><small class="text-muted">${order.delivery_company.charAt(0).toUpperCase() + order.delivery_company.slice(1)}</small>` : ''}
-                                <div class="fw-bold">${order.total_amount.toFixed(2)} QAR</div>
+                                <div class="fw-bold">${(order.total_amount_with_modifiers || order.total_amount).toFixed(2)} QAR</div>
                             </div>
                         </div>
                     </div>
@@ -4823,17 +6078,28 @@ function printOrderDirectly(orderId) {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${data.order.items.map(item => `
-                                    <tr>
-                                        <td class="item-name">${item.menu_item_name}${item.special_requests ? '<div class="item-modifiers">+ ' + item.special_requests + '</div>' : ''}</td>
-                                        <td>${item.quantity}</td>
-                                        <td>${parseFloat(item.unit_price).toFixed(2)}</td>
-                                        <td>${parseFloat(item.total_price).toFixed(2)}</td>
-                                    </tr>
-                                `).join('')}
+                                ${data.order.items.map(item => {
+                                    let modifiersHtml = '';
+                                    let itemTotalWithModifiers = parseFloat(item.total_price);
+                                    
+                                    if (item.special_requests) {
+                                        const modifierPrice = parseFloat(item.modifiers_total_price || 0);
+                                        itemTotalWithModifiers += modifierPrice;
+                                        modifiersHtml = `<div class="item-modifiers">+ ${item.special_requests}${modifierPrice > 0 ? ` (${modifierPrice.toFixed(2)} QAR)` : ''}</div>`;
+                                    }
+                                    
+                                    return `
+                                        <tr>
+                                            <td class="item-name">${item.menu_item_name}${modifiersHtml}</td>
+                                            <td>${item.quantity}</td>
+                                            <td>${parseFloat(item.unit_price).toFixed(2)}</td>
+                                            <td>${itemTotalWithModifiers.toFixed(2)}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
                                 <tr class="total-row">
                                     <td colspan="3"><strong>TOTAL</strong></td>
-                                    <td><strong>${parseFloat(data.order.total_amount).toFixed(2)} QAR</strong></td>
+                                    <td><strong>${parseFloat(data.order.total_amount_with_modifiers || data.order.total_amount).toFixed(2)} QAR</strong></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -5051,10 +6317,13 @@ function switchCalculatorMode(mode) {
         displayIcon.className = 'bi bi-x-lg';
     }
     
-    resetCalculator();
+    resetCalculator(false); // Don't play sound when automatically switching modes
 }
 
 function appendToCalculator(value) {
+    // Play calculator sound for number input
+    playCalculatorSound();
+    
     if (calculatorValue === '0') {
         calculatorValue = value;
     } else {
@@ -5066,6 +6335,9 @@ function appendToCalculator(value) {
 function addDecimal() {
     if (calculatorMode === 'quantity') return; // No decimals in quantity mode
     
+    // Play calculator sound for decimal action
+    playCalculatorSound();
+    
     if (calculatorValue.indexOf('.') === -1) {
         calculatorValue += '.';
         updateCalculatorDisplay();
@@ -5073,6 +6345,9 @@ function addDecimal() {
 }
 
 function clearCalculator() {
+    // Play calculator sound for clear action
+    playCalculatorSound();
+    
     if (calculatorValue.length > 1) {
         calculatorValue = calculatorValue.slice(0, -1);
     } else {
@@ -5081,7 +6356,12 @@ function clearCalculator() {
     updateCalculatorDisplay();
 }
 
-function resetCalculator() {
+function resetCalculator(playSound = true) {
+    // Play calculator sound for reset action only if explicitly requested
+    if (playSound) {
+        playCalculatorSound();
+    }
+    
     calculatorValue = '0';
     updateCalculatorDisplay();
 }
@@ -5161,6 +6441,9 @@ function selectOrderItemForCalculator(orderItemElement) {
 }
 
 function applyCalculatorValue() {
+    // Play calculator sound for apply action
+    playCalculatorSound();
+    
     if (!selectedOrderItem) {
         alert('Please select an order item first');
         return;
@@ -5838,6 +7121,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Calculator button handlers
     document.querySelectorAll('.calc-btn').forEach(btn => {
         btn.addEventListener('click', function() {
+            // Play calculator sound for number and decimal buttons
+            playCalculatorSound();
+            
             const value = this.getAttribute('data-value');
             
             if (value === '.') {
@@ -5858,12 +7144,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Clear button
     document.getElementById('calcClear').addEventListener('click', function() {
+        // Play calculator sound for clear button
+        playCalculatorSound();
+        
         falafelHabCurrentPrice = '';
         updateFalafelHabPriceDisplay();
     });
     
     // Backspace button
     document.getElementById('calcBackspace').addEventListener('click', function() {
+        // Play calculator sound for backspace button
+        playCalculatorSound();
+        
         falafelHabCurrentPrice = falafelHabCurrentPrice.slice(0, -1);
         updateFalafelHabPriceDisplay();
     });
@@ -5889,6 +7181,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Special Order Calculator button handlers
     document.querySelectorAll('.special-calc-btn').forEach(btn => {
         btn.addEventListener('click', function() {
+            // Play calculator sound for special order calculator buttons
+            playCalculatorSound();
+            
             const value = this.getAttribute('data-value');
             
             if (value === '.') {
@@ -5909,12 +7204,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Special Order Clear button
     document.getElementById('specialCalcClear').addEventListener('click', function() {
+        // Play calculator sound for special order clear button
+        playCalculatorSound();
+        
         specialOrderCurrentPrice = '';
         updateSpecialOrderPriceDisplay();
     });
     
     // Special Order Backspace button
     document.getElementById('specialCalcBackspace').addEventListener('click', function() {
+        // Play calculator sound for special order backspace button
+        playCalculatorSound();
+        
         specialOrderCurrentPrice = specialOrderCurrentPrice.slice(0, -1);
         updateSpecialOrderPriceDisplay();
     });
@@ -6281,6 +7582,305 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endif %}
 
 // Note: changeTable() function removed since Change Table button is no longer available for pre-selected tables
+
+// MOBILE SPECIAL ITEMS MODAL FUNCTIONALITY
+let selectedOrderItemForSpecials = null;
+let selectedSpecialItems = [];
+
+// Simple toast function if it doesn't exist
+function showToast(message, type = 'info') {
+    // Check if there's a global showToast function that's different from this one
+    if (typeof window.showToast === 'function' && window.showToast !== showToast) {
+        window.showToast(message, type);
+    } else {
+        // Fallback to console log and alert
+        console.log(`Toast (${type}):`, message);
+        alert(message);
+    }
+}
+
+// Initialize mobile special items modal functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Only initialize on mobile devices and tablets
+    if (window.innerWidth <= 1024) {
+        initializeMobileSpecialModal();
+    }
+});
+
+function initializeMobileSpecialModal() {
+    const modal = document.getElementById('mobileSpecialModal');
+    const addButton = document.getElementById('addSelectedSpecialItems');
+    
+    if (!modal || !addButton) return;
+    
+    // Handle special item selection
+    document.querySelectorAll('.mobile-special-item').forEach(item => {
+        item.addEventListener('click', function() {
+            // Play click sound for mobile special items
+            playClickSound();
+            
+            this.classList.toggle('selected');
+            updateSelectedSpecialItems();
+        });
+    });
+    
+    // Handle add selected items button
+    addButton.addEventListener('click', function() {
+        if (selectedOrderItemForSpecials && selectedSpecialItems.length > 0) {
+            addSpecialItemsToOrderItem();
+            closeMobileSpecialModal();
+        }
+    });
+    
+    // Handle modal close - reset selections
+    modal.addEventListener('hidden.bs.modal', function() {
+        resetSpecialItemsSelection();
+    });
+}
+
+function updateSelectedSpecialItems() {
+    selectedSpecialItems = [];
+    document.querySelectorAll('.mobile-special-item.selected').forEach(item => {
+        selectedSpecialItems.push({
+            id: item.dataset.itemId,
+            name: item.dataset.itemName,
+            price: parseFloat(item.dataset.itemPrice) || 0
+        });
+    });
+    
+    // Update add button state
+    const addButton = document.getElementById('addSelectedSpecialItems');
+    if (addButton) {
+        addButton.disabled = selectedSpecialItems.length === 0;
+        addButton.innerHTML = selectedSpecialItems.length > 0 
+            ? `<i class="bi bi-plus-circle me-2"></i>Add ${selectedSpecialItems.length} Item${selectedSpecialItems.length > 1 ? 's' : ''}`
+            : '<i class="bi bi-plus-circle me-2"></i>Add Selected Items';
+    }
+}
+
+function openMobileSpecialModal(orderItemElement) {
+    console.log('openMobileSpecialModal called with:', orderItemElement);
+    console.log('Window width:', window.innerWidth);
+    
+    // Debug: Check available global variables
+    console.log('Available global variables:');
+    console.log('- orderItems:', typeof orderItems, orderItems);
+    console.log('- window.orderItems:', typeof window.orderItems, window.orderItems);
+    
+    // Only open on mobile and tablets
+    if (window.innerWidth > 1024) {
+        console.log('Not on mobile/tablet, skipping modal');
+        return;
+    }
+    
+    if (!orderItemElement) {
+        console.error('No order item element provided to openMobileSpecialModal');
+        return;
+    }
+    
+    console.log('Opening mobile special modal for:', orderItemElement);
+    console.log('Order item classes:', orderItemElement.className);
+    console.log('Order item dataset:', orderItemElement.dataset);
+    
+    selectedOrderItemForSpecials = orderItemElement;
+    const itemName = orderItemElement.querySelector('.item-name')?.textContent || 'Unknown Item';
+    
+    console.log('Selected item name:', itemName);
+    
+    // Update modal title with selected item name
+    const selectedItemNameElement = document.getElementById('selectedItemName');
+    if (selectedItemNameElement) {
+        selectedItemNameElement.textContent = itemName;
+        console.log('Updated modal title with item name:', itemName);
+    } else {
+        console.error('selectedItemName element not found');
+    }
+    
+    // Reset selections
+    resetSpecialItemsSelection();
+    
+    // Show modal
+    const modalElement = document.getElementById('mobileSpecialModal');
+    console.log('Modal element found:', modalElement);
+    
+    if (modalElement) {
+        try {
+            const modal = new bootstrap.Modal(modalElement);
+            console.log('Bootstrap modal created:', modal);
+            modal.show();
+            console.log('Modal show() called');
+        } catch (error) {
+            console.error('Error creating or showing modal:', error);
+        }
+    } else {
+        console.error('Mobile special modal element not found');
+    }
+}
+
+function resetSpecialItemsSelection() {
+    selectedSpecialItems = [];
+    document.querySelectorAll('.mobile-special-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    updateSelectedSpecialItems();
+}
+
+function addSpecialItemsToOrderItem() {
+    if (!selectedOrderItemForSpecials || selectedSpecialItems.length === 0) {
+        console.log('No order item selected or no special items selected');
+        return;
+    }
+    
+    const orderItem = selectedOrderItemForSpecials;
+    
+    // Try to get item index from data attribute
+    let itemIndex = orderItem.dataset.itemIndex;
+    
+    // If no data-item-index, try to find it by position in the DOM
+    if (itemIndex === undefined) {
+        const allOrderItems = document.querySelectorAll('.order-item-card:not(.special-item)');
+        itemIndex = Array.from(allOrderItems).indexOf(orderItem);
+    }
+    
+    // Convert to number and validate
+    itemIndex = parseInt(itemIndex);
+    
+    console.log('Item index:', itemIndex);
+    console.log('orderItems array:', orderItems);
+    console.log('orderItems length:', orderItems ? orderItems.length : 'orderItems is undefined');
+    
+    // Use window.orderItems if local orderItems is empty
+    let currentOrderItems = orderItems;
+    if (!currentOrderItems || currentOrderItems.length === 0) {
+        currentOrderItems = window.orderItems;
+        console.log('Using window.orderItems instead:', currentOrderItems);
+    }
+    
+    // Check if orderItems exists and is an array
+    if (!currentOrderItems || !Array.isArray(currentOrderItems)) {
+        console.error('No order items data available');
+        showToast('Error: Order data not available', 'error');
+        return;
+    }
+    
+    if (isNaN(itemIndex) || itemIndex < 0 || itemIndex >= currentOrderItems.length) {
+        console.error('Invalid item index:', itemIndex, 'currentOrderItems length:', currentOrderItems.length);
+        showToast('Error: Could not find the selected item', 'error');
+        return;
+    }
+    
+    const orderItemData = currentOrderItems[itemIndex];
+    console.log('Order item data:', orderItemData);
+    
+    // Initialize modifiers array if it doesn't exist (this is what updateOrderDisplay expects)
+    if (!orderItemData.modifiers) {
+        orderItemData.modifiers = [];
+    }
+    
+    // Also initialize special_items for backward compatibility
+    if (!orderItemData.special_items) {
+        orderItemData.special_items = [];
+    }
+    
+    // Add selected special items to both modifiers and special_items
+    selectedSpecialItems.forEach(specialItem => {
+        const modifierItem = {
+            name: specialItem.name,
+            price: parseFloat(specialItem.price) || 0,
+            quantity: 1
+        };
+        
+        // Add to modifiers array (for display)
+        orderItemData.modifiers.push(modifierItem);
+        
+        // Add to special_items array (for backend compatibility)
+        orderItemData.special_items.push(modifierItem);
+    });
+    
+    // Update modifiers total price
+    orderItemData.modifiers_total_price = orderItemData.modifiers.reduce((total, item) => {
+        return total + (parseFloat(item.price) * parseInt(item.quantity));
+    }, 0);
+    
+    // Update item total to include modifiers
+    orderItemData.total = (parseFloat(orderItemData.price) * parseInt(orderItemData.quantity)) + orderItemData.modifiers_total_price;
+    
+    // Update special requests display
+    const specialRequestsArray = orderItemData.special_items.map(specialItem => {
+        const price = parseFloat(specialItem.price) || 0;
+        return specialItem.name + (price > 0 ? ` (+${price.toFixed(2)} QAR)` : '');
+    });
+    orderItemData.special_requests = specialRequestsArray.join(', ');
+    
+    // Update both local and window orderItems if they're different
+    if (currentOrderItems === window.orderItems && orderItems !== window.orderItems) {
+        // If we used window.orderItems, also update the local orderItems
+        if (orderItems && Array.isArray(orderItems) && orderItems.length > itemIndex) {
+            orderItems[itemIndex] = orderItemData;
+        }
+    }
+    
+    console.log('Special items added to order item data:', orderItemData);
+    console.log('Updated modifiers:', orderItemData.modifiers);
+    console.log('Updated special_items:', orderItemData.special_items);
+    console.log('Updated special_requests:', orderItemData.special_requests);
+    console.log('Updated modifiers_total_price:', orderItemData.modifiers_total_price);
+    console.log('Updated item total:', orderItemData.total);
+    
+    // Call the display update function
+    console.log('Calling updateOrderDisplay() to refresh the display');
+    updateOrderDisplay();
+    
+    // Success feedback removed per user request
+}
+
+function closeMobileSpecialModal() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('mobileSpecialModal'));
+    if (modal) {
+        modal.hide();
+    }
+}
+
+// Override existing order item click events on mobile and tablets
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.innerWidth <= 1024) {
+        console.log('Setting up mobile order item click handlers');
+        console.log('Window width is:', window.innerWidth);
+        
+        // Add click handlers to order items for mobile special items modal
+        document.addEventListener('click', function(event) {
+            console.log('Click event detected, target:', event.target);
+            
+            const orderItem = event.target.closest('.order-item-card');
+            console.log('Closest order item found:', orderItem);
+            
+            if (orderItem) {
+                console.log('Order item classes:', orderItem.className);
+                console.log('Has special-item class:', orderItem.classList.contains('special-item'));
+                
+                if (!orderItem.classList.contains('special-item')) {
+                    console.log('Valid order item clicked on mobile:', orderItem);
+                    
+                    // Play click sound for mobile order items
+                    playClickSound();
+                    
+                    // Prevent default behavior
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    // Directly call the modal opening function
+                    openMobileSpecialModal(orderItem);
+                } else {
+                    console.log('Special item clicked, ignoring');
+                }
+            } else {
+                console.log('No order item found for click');
+            }
+        });
+    } else {
+        console.log('Not on mobile, window width:', window.innerWidth);
+    }
+});
 
 </script>
 {% endblock %}

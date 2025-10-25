@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block title %}Kitchen Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>🍳 Kitchen Management</h2>
+                    <p class="text-muted mb-0">Manage kitchen accounts and category assignments</p>
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createKitchenModal">
+                    <i class="bi bi-plus-circle"></i> Create Kitchen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kitchen Accounts -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Kitchen Accounts</h5>
+                </div>
+                <div class="card-body">
+                    {% if kitchens %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Kitchen Name</th>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Description</th>
+                                        <th>Assigned Categories</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for kitchen in kitchens %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ kitchen.name }}</strong>
+                                        </td>
+                                        <td>{{ kitchen.kitchen_user.username }}</td>
+                                        <td>{{ kitchen.kitchen_user.email }}</td>
+                                        <td>{{ kitchen.description or '-' }}</td>
+                                        <td>
+                                            {% set assigned_categories = kitchen.get_assigned_categories() %}
+                                            {% if assigned_categories %}
+                                                {% for category in assigned_categories %}
+                                                    <span class="badge bg-secondary me-1">{{ category.name }}</span>
+                                                {% endfor %}
+                                            {% else %}
+                                                <span class="text-muted">No categories assigned</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if kitchen.is_active else 'danger' }}">
+                                                {{ 'Active' if kitchen.is_active else 'Inactive' }}
+                                            </span>
+                                        </td>
+                                        <td>{{ kitchen.created_at|local_datetime_short }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-house text-muted" style="font-size: 3rem;"></i>
+                            <h4 class="mt-3">No Kitchen Accounts</h4>
+                            <p class="text-muted">Create your first kitchen account to get started.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Assignments -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Category-Kitchen Assignments</h5>
+                </div>
+                <div class="card-body">
+                    {% if categories %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Assigned Kitchen</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for category in categories %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ category.name }}</strong>
+                                            {% if category.description %}
+                                                <br><small class="text-muted">{{ category.description }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if assignments.get(category.id) %}
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-house"></i> {{ assignments[category.id].name }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">Not assigned</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if assignments.get(category.id) %}
+                                                <button class="btn btn-outline-danger btn-sm" onclick="unassignCategory({{ category.id }})">
+                                                    <i class="bi bi-x-circle"></i> Unassign
+                                                </button>
+                                            {% else %}
+                                                <div class="dropdown">
+                                                    <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                        <i class="bi bi-plus-circle"></i> Assign Kitchen
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        {% for kitchen in kitchens %}
+                                                            {% if kitchen.is_active %}
+                                                                <li>
+                                                                    <a class="dropdown-item" href="#" onclick="assignCategory({{ category.id }}, {{ kitchen.id }})">
+                                                                        {{ kitchen.name }}
+                                                                    </a>
+                                                                </li>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                        {% if not kitchens %}
+                                                            <li><span class="dropdown-item-text text-muted">No kitchens available</span></li>
+                                                        {% endif %}
+                                                    </ul>
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-tags text-muted" style="font-size: 3rem;"></i>
+                            <h4 class="mt-3">No Categories</h4>
+                            <p class="text-muted">Create menu categories first to assign them to kitchens.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Kitchen Modal -->
+<div class="modal fade" id="createKitchenModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Kitchen Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createKitchenForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="kitchenName" class="form-label">Kitchen Name *</label>
+                            <input type="text" class="form-control" id="kitchenName" name="name" required placeholder="e.g., Hot Kitchen, Cold Kitchen">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="kitchenUsername" class="form-label">Username *</label>
+                            <input type="text" class="form-control" id="kitchenUsername" name="username" required placeholder="kitchen_username">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="kitchenFirstName" class="form-label">First Name *</label>
+                            <input type="text" class="form-control" id="kitchenFirstName" name="first_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="kitchenLastName" class="form-label">Last Name *</label>
+                            <input type="text" class="form-control" id="kitchenLastName" name="last_name" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="kitchenEmail" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="kitchenEmail" name="email" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="kitchenPassword" class="form-label">Password *</label>
+                        <input type="password" class="form-control" id="kitchenPassword" name="password" required minlength="6">
+                        <div class="form-text">Minimum 6 characters</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="kitchenDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="kitchenDescription" name="description" rows="2" placeholder="Optional description of this kitchen"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createKitchen()">Create Kitchen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function createKitchen() {
+    const form = document.getElementById('createKitchenForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Validate required fields
+    if (!data.name || !data.username || !data.email || !data.password || !data.first_name || !data.last_name) {
+        showNotification('Error', 'Please fill in all required fields', 'error');
+        return;
+    }
+    
+    fetch('/admin/create_kitchen', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Success', data.message, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('createKitchenModal')).hide();
+            form.reset();
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification('Error', data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error creating kitchen:', error);
+        showNotification('Error', 'Failed to create kitchen', 'error');
+    });
+}
+
+function assignCategory(categoryId, kitchenId) {
+    fetch('/admin/assign_category', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            category_id: categoryId,
+            kitchen_id: kitchenId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Success', data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification('Error', data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error assigning category:', error);
+        showNotification('Error', 'Failed to assign category', 'error');
+    });
+}
+
+function unassignCategory(categoryId) {
+    if (!confirm('Are you sure you want to unassign this category from its kitchen?')) {
+        return;
+    }
+    
+    fetch('/admin/unassign_category', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            category_id: categoryId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Success', data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification('Error', data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error unassigning category:', error);
+        showNotification('Error', 'Failed to unassign category', 'error');
+    });
+}
+
+function showNotification(title, message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <strong>${title}</strong> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

@@ -458,8 +458,22 @@
 {% block scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script>
+// Track current page for background refresh
+let currentPage = 1;
+
+// Prevent multiple simultaneous requests
+let isLoadingOrders = false;
+
+// Auto-refresh functionality removed per user request
+
 // Load orders with AJAX - Global function
 function loadOrders(page = 1) {
+    // Prevent multiple simultaneous requests
+    if (isLoadingOrders) {
+        return;
+    }
+    isLoadingOrders = true;
+    currentPage = page;
     const formData = new FormData(document.getElementById('ordersFilterForm'));
     const params = new URLSearchParams();
     for (const [key, value] of formData) {
@@ -577,14 +591,25 @@ function loadOrders(page = 1) {
                     `;
                 }
                 
+                // Update creator badge for proper display
+                if (order.creator_role === 'waiter' || order.is_waiter_order) {
+                    creatorBadge = `<span class="badge bg-info">Waiter</span><br><small class="text-muted">${order.creator_name}</small>`;
+                } else {
+                    creatorBadge = `<span class="badge bg-primary">Cashier</span><br><small class="text-muted">${order.creator_name}</small>`;
+                }
+                
                 row.innerHTML = `
                     <td>${order.order_number}</td>
-                    <td>${order.created_at}</td>
-                    <td>${creatorBadge}</td>
+                    <td>
+                        ${order.order_counter ? `<span class="badge bg-secondary">#${order.order_counter}</span>` : '<span class="text-muted">-</span>'}
+                    </td>
                     <td>${order.table_number !== 'N/A' ? 'Table ' + order.table_number : 'N/A'}</td>
-                    <td>${serviceBadge}</td>
-                    <td>${statusBadge}</td>
+                    <td>${order.regular_items_count || 0}</td>
                     <td>QAR ${parseFloat(order.total_amount).toFixed(2)}</td>
+                    <td>${serviceBadge}</td>
+                    <td>${creatorBadge}</td>
+                    <td>${statusBadge}</td>
+                    <td>${order.created_at}</td>
                     <td>
                         <div class="btn-group" role="group">
                             ${actionButtons}
@@ -597,13 +622,20 @@ function loadOrders(page = 1) {
             
             // Update pagination
             updatePagination(data.pagination);
+            
+            // Reset loading flag
+            isLoadingOrders = false;
         } else {
             showNotification('Error loading orders: ' + (data.message || 'Unknown error'), 'error');
+            // Reset loading flag on error too
+            isLoadingOrders = false;
         }
     })
     .catch(error => {
         console.error('Error loading orders:', error);
         showNotification('Error loading orders', 'error');
+        // Reset loading flag on error too
+        isLoadingOrders = false;
     });
 }
 
@@ -661,22 +693,13 @@ function updatePagination(pagination) {
     
     paginationElement.innerHTML = paginationHtml;
     
-    // Re-attach pagination event listeners
-    attachPaginationListeners();
+    // Note: Event listeners are handled via event delegation in DOMContentLoaded
+    // No need to reattach here as it causes multiple listeners and DOM node warnings
 }
 
-// Function to attach pagination event listeners
-function attachPaginationListeners() {
-    const paginationElement = document.getElementById('ordersPagination');
-    if (paginationElement) {
-        paginationElement.addEventListener('click', function(e) {
-            if (e.target.tagName === 'A' && e.target.dataset.page) {
-                e.preventDefault();
-                loadOrders(parseInt(e.target.dataset.page));
-            }
-        });
-    }
-}
+// Function to attach pagination event listeners - REMOVED
+// This was causing multiple event listeners and DOM node warnings
+// Event delegation is handled in DOMContentLoaded instead
 
 document.addEventListener('DOMContentLoaded', function() {
     // Check for edit parameter from waiter_requests redirect
@@ -746,7 +769,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('ordersPagination').addEventListener('click', function(e) {
         if (e.target.tagName === 'A' && e.target.dataset.page) {
             e.preventDefault();
-            loadOrders(parseInt(e.target.dataset.page));
+            if (!isLoadingOrders) {
+                loadOrders(parseInt(e.target.dataset.page));
+            }
         }
     });
     
@@ -865,6 +890,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Load orders with AJAX
     function loadOrders(page = 1) {
+        // Prevent multiple simultaneous requests
+        if (isLoadingOrders) {
+            return;
+        }
+        isLoadingOrders = true;
+        
         const formData = new FormData(document.getElementById('ordersFilterForm'));
         const params = new URLSearchParams();
         for (const [key, value] of formData) {
@@ -993,9 +1024,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 row.innerHTML = `
                     <td>${order.order_number}</td>
-                    <td>${order.table_number}</td>
-                    <td><span class="badge bg-info">${order.regular_items_count || 0}</span></td>
-                    <td>${order.total_amount.toFixed(2)}</td>
+                    <td>
+                        ${order.order_counter ? `<span class="badge bg-secondary">#${order.order_counter}</span>` : '<span class="text-muted">-</span>'}
+                    </td>
+                    <td>${order.table_number !== 'N/A' ? 'Table ' + order.table_number : 'N/A'}</td>
+                    <td>${order.regular_items_count || 0}</td>
+                    <td>QAR ${parseFloat(order.total_amount).toFixed(2)}</td>
                     <td>${serviceBadge}</td>
                     <td>${creatorBadge}</td>
                     <td>${statusBadge}</td>
@@ -1012,9 +1046,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update pagination
             updatePagination(data.pagination);
+            
+            // Reset loading flag
+            isLoadingOrders = false;
         })
         .catch(error => {
             console.error('Error loading orders:', error);
+            // Reset loading flag on error too
+            isLoadingOrders = false;
         });
     }
     
@@ -1074,13 +1113,8 @@ document.addEventListener('DOMContentLoaded', function() {
         paginationHtml += '</ul>';
         paginationElement.innerHTML = paginationHtml;
         
-        // Reattach event listeners
-        paginationElement.addEventListener('click', function(e) {
-            if (e.target.tagName === 'A' && e.target.dataset.page) {
-                e.preventDefault();
-                loadOrders(parseInt(e.target.dataset.page));
-            }
-        });
+        // Note: Event listeners are already attached via event delegation in DOMContentLoaded
+        // No need to reattach here as it causes multiple listeners and DOM node warnings
     }
     
     // SocketIO status update functionality removed
@@ -1244,7 +1278,7 @@ function renderInvoice(orderData) {
                                 </td>
                                 <td style="border-bottom: 1px solid #000; padding: 3px 2px; ${item.is_deleted ? 'text-decoration: line-through; color: #666; background-color: #ffebee; border-left: 4px solid #f44336;' : ''} ${item.is_new ? 'background-color: #e8f5e8; border-left: 4px solid #4caf50; font-weight: bold;' : ''}">${item.quantity}</td>
                                 <td style="border-bottom: 1px solid #000; padding: 3px 2px; text-align: right; ${item.is_deleted ? 'text-decoration: line-through; color: #666; background-color: #ffebee; border-left: 4px solid #f44336;' : ''} ${item.is_new ? 'background-color: #e8f5e8; border-left: 4px solid #4caf50; font-weight: bold;' : ''}">${item.unit_price.toFixed(2)} QAR</td>
-                                <td style="border-bottom: 1px solid #000; padding: 3px 2px; text-align: right; ${item.is_deleted ? 'text-decoration: line-through; color: #666; background-color: #ffebee; border-left: 4px solid #f44336;' : ''} ${item.is_new ? 'background-color: #e8f5e8; border-left: 4px solid #4caf50; font-weight: bold;' : ''}">${item.total_price.toFixed(2)} QAR</td>
+                                <td style="border-bottom: 1px solid #000; padding: 3px 2px; text-align: right; ${item.is_deleted ? 'text-decoration: line-through; color: #666; background-color: #ffebee; border-left: 4px solid #f44336;' : ''} ${item.is_new ? 'background-color: #e8f5e8; border-left: 4px solid #4caf50; font-weight: bold;' : ''}">${(item.total_price + (item.modifiers_total_price || 0)).toFixed(2)} QAR</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -1285,9 +1319,13 @@ function viewInvoice(orderId) {
                 // Create invoice HTML
                 let itemsHtml = '';
                 data.order.items.forEach(item => {
-                    // Build modifiers display
+                    // Build modifiers display with prices
                     let modifiersHtml = '';
+                    let itemTotalWithModifiers = parseFloat(item.total_price);
+                    
                     if (item.special_requests && item.special_requests.trim()) {
+                        const modifierPrice = parseFloat(item.modifiers_total_price || 0);
+                        itemTotalWithModifiers += modifierPrice;
                         modifiersHtml = `<br><small class="text-muted">+ ${item.special_requests}</small>`;
                     }
                     
@@ -1296,7 +1334,7 @@ function viewInvoice(orderId) {
                             <td>${item.menu_item_name}${modifiersHtml}</td>
                             <td>${item.quantity}</td>
                             <td>${parseFloat(item.unit_price).toFixed(2)} QAR</td>
-                            <td>${parseFloat(item.total_price).toFixed(2)} QAR</td>
+                            <td>${itemTotalWithModifiers.toFixed(2)} QAR</td>
                         </tr>
                     `;
                 });
@@ -1438,8 +1476,8 @@ function markOrderAsPaid(orderId, button) {
             // Show success notification
             showNotification(`Order marked as paid successfully! Payment time: ${data.paid_at}`, 'success');
             
-            // Reload orders to show updated status
-            loadOrders(1);
+            // Reload orders to show updated status (preserve current page)
+            loadOrders(currentPage);
             
             // Emit socket event for real-time updates (if needed)
             if (typeof socket !== 'undefined') {
@@ -1858,31 +1896,34 @@ function showNotification(message, type = 'info') {
             targetItem.special_items = [];
         }
         
-        // Check if this special item already exists in the array
+        // Check if this special item already exists to prevent duplicates
         const existingSpecialItem = targetItem.special_items.find(si => si.name === itemName);
         if (existingSpecialItem) {
-            existingSpecialItem.quantity += 1;
-        } else {
-            targetItem.special_items.push({
-                name: itemName,
-                quantity: 1,
-                price: itemPrice
-            });
+            showNotification(`"${itemName}" is already added to "${targetItem.menu_item_name}"`, 'warning');
+            return;
         }
+        
+        // Add as a new special item
+        targetItem.special_items.push({
+            name: itemName,
+            quantity: 1,
+            price: itemPrice
+        });
 
-        // Only update special_requests if special_items array is empty (for backward compatibility)
-        // Since we're prioritizing special_items display, we don't need to duplicate in special_requests
-        if (targetItem.special_items.length === 1 && !targetItem.special_requests) {
-            // This is the first special item and no existing special_requests, so we can set it
-            const newRequest = itemName + (itemPrice > 0 ? ` (+${itemPrice.toFixed(2)} QAR)` : '');
-            targetItem.special_requests = newRequest;
-        } else if (targetItem.special_items.length > 1) {
-            // Multiple special items, clear special_requests to avoid duplication
+        // Update the modifiers_total_price to keep it in sync
+        targetItem.modifiers_total_price = (targetItem.modifiers_total_price || 0) + itemPrice;
+
+        // Update special_requests field for backward compatibility and invoice display
+        // Build the special_requests string from all special_items
+        if (targetItem.special_items.length > 0) {
+            const specialRequestsArray = targetItem.special_items.map(specialItem => {
+                const price = parseFloat(specialItem.price) || 0;
+                return specialItem.name + (price > 0 ? ` (+${price.toFixed(2)} QAR)` : '');
+            });
+            targetItem.special_requests = specialRequestsArray.join(', ');
+        } else {
             targetItem.special_requests = '';
         }
-
-        // Add the special item price to the regular item's total
-        targetItem.total_price += itemPrice;
 
         renderEditOrderItems();
         updateEditOrderSummary();
@@ -1981,9 +2022,18 @@ function showNotification(message, type = 'info') {
                                     <div class="mt-1">
                                         <small class="text-info"><i class="bi bi-plus-circle me-1"></i>Special Items:</small>
                                         <div class="ms-3">
-                                            ${item.special_items.map(specialItem => `
-                                                <small class="text-muted d-block">
-                                                    ${specialItem.quantity > 1 ? `${specialItem.quantity}x ` : ''}${specialItem.name}
+                                            ${item.special_items.map((specialItem, specialIndex) => `
+                                                <small class="text-muted d-block d-flex justify-content-between align-items-center">
+                                                    <span>${specialItem.quantity > 1 ? `${specialItem.quantity}x ` : ''}${specialItem.name}${(() => {
+                                                        const price = parseFloat(specialItem.price) || 0;
+                                                        return price > 0 ? ` (+${price.toFixed(2)} QAR)` : '';
+                                                    })()}</span>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger remove-special-item" 
+                                                            data-item-index="${editOrderItems.indexOf(item)}" 
+                                                            data-special-index="${specialIndex}"
+                                                            title="Remove this special item">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
                                                 </small>
                                             `).join('')}
                                         </div>
@@ -2001,7 +2051,18 @@ function showNotification(message, type = 'info') {
                             </div>
                             <div class="text-end">
                                 <div class="fw-bold ${isDeleted ? 'text-decoration-line-through text-muted' : ''}">
-                                    ${item.total_price.toFixed(2)} QAR
+                                    ${(() => {
+                                        const basePrice = item.total_price;
+                                        let modifierPrice = 0;
+                                        if (item.special_items && item.special_items.length > 0) {
+                                            modifierPrice = item.special_items.reduce((sum, specialItem) => {
+                                                const itemPrice = parseFloat(specialItem.price) || 0;
+                                                const itemQuantity = parseInt(specialItem.quantity) || 1;
+                                                return sum + (itemPrice * itemQuantity);
+                                            }, 0);
+                                        }
+                                        return (basePrice + modifierPrice).toFixed(2);
+                                    })()} QAR
                                 </div>
                                 ${!isDeleted ? `
                                     <button class="btn btn-sm btn-outline-danger delete-item" data-index="${index}">
@@ -2052,6 +2113,40 @@ function showNotification(message, type = 'info') {
             editOrderItems[index].is_deleted = false;
             renderEditOrderItems();
             updateEditOrderSummary();
+        } else if (e.target.closest('.remove-special-item')) {
+            const itemIndex = parseInt(e.target.closest('.remove-special-item').dataset.itemIndex);
+            const specialIndex = parseInt(e.target.closest('.remove-special-item').dataset.specialIndex);
+            
+            if (!isNaN(itemIndex) && !isNaN(specialIndex) && editOrderItems[itemIndex] && editOrderItems[itemIndex].special_items) {
+                const removedItem = editOrderItems[itemIndex].special_items[specialIndex];
+                
+                // Remove the special item from the array
+                editOrderItems[itemIndex].special_items.splice(specialIndex, 1);
+                
+                // Update the modifiers total price
+                if (removedItem && removedItem.price) {
+                    editOrderItems[itemIndex].modifiers_total_price = (editOrderItems[itemIndex].modifiers_total_price || 0) - removedItem.price;
+                    if (editOrderItems[itemIndex].modifiers_total_price < 0) {
+                        editOrderItems[itemIndex].modifiers_total_price = 0;
+                    }
+                }
+                
+                // Update special_requests field to reflect the removal
+                if (editOrderItems[itemIndex].special_items.length > 0) {
+                    const specialRequestsArray = editOrderItems[itemIndex].special_items.map(specialItem => {
+                        const price = parseFloat(specialItem.price) || 0;
+                        return specialItem.name + (price > 0 ? ` (+${price.toFixed(2)} QAR)` : '');
+                    });
+                    editOrderItems[itemIndex].special_requests = specialRequestsArray.join(', ');
+                } else {
+                    // No special items left, clear the special_requests field
+                    editOrderItems[itemIndex].special_requests = '';
+                }
+                
+                renderEditOrderItems();
+                updateEditOrderSummary();
+                showNotification(`Removed "${removedItem.name}" from "${editOrderItems[itemIndex].menu_item_name}"`, 'info');
+            }
         } else if (e.target.closest('.order-item-edit') && !e.target.closest('button')) {
             // Select order item for special item assignment (only if not clicking buttons)
             selectedEditOrderItemIndex = index;
@@ -2063,7 +2158,23 @@ function showNotification(message, type = 'info') {
     // Update order summary
     function updateEditOrderSummary() {
         const activeItems = editOrderItems.filter(item => !item.is_deleted);
-        const currentTotal = activeItems.reduce((sum, item) => sum + item.total_price, 0);
+        const currentTotal = activeItems.reduce((sum, item) => {
+            // Calculate base price
+            const basePrice = item.total_price;
+            
+            // Calculate current modifier price from special_items array (real-time)
+            let modifierPrice = 0;
+            if (item.special_items && item.special_items.length > 0) {
+                modifierPrice = item.special_items.reduce((modSum, specialItem) => {
+                    const itemPrice = parseFloat(specialItem.price) || 0;
+                    const itemQuantity = parseInt(specialItem.quantity) || 1;
+                    return modSum + (itemPrice * itemQuantity);
+                }, 0);
+            }
+            
+            const itemTotal = basePrice + modifierPrice;
+            return sum + itemTotal;
+        }, 0);
         const difference = currentTotal - originalOrderTotal;
         
         document.getElementById('editOriginalTotal').textContent = `${originalOrderTotal.toFixed(2)} QAR`;
@@ -2094,6 +2205,7 @@ function showNotification(message, type = 'info') {
             items: editOrderItems,
             original_total: originalOrderTotal
         };
+        
         
         fetch('/pos/save_order_changes', {
             method: 'POST',

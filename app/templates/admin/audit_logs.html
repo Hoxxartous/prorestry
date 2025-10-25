@@ -193,7 +193,13 @@
 // Set global variable for superuser check
 window.isSuperUser = {% if current_user.role.name == 'SUPER_USER' %}true{% else %}false{% endif %};
 
+// Prevent multiple simultaneous requests
+let isLoadingLogs = false;
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Load initial logs
+    loadLogs(1);
+
     // Handle form submission with AJAX
     document.getElementById('logsFilterForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -210,12 +216,20 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('logsPagination').addEventListener('click', function(e) {
         if (e.target.tagName === 'A' && e.target.dataset.page) {
             e.preventDefault();
-            loadLogs(parseInt(e.target.dataset.page));
+            if (!isLoadingLogs) {
+                loadLogs(parseInt(e.target.dataset.page));
+            }
         }
     });
     
     // Load logs with AJAX
     function loadLogs(page = 1) {
+        // Prevent multiple simultaneous requests
+        if (isLoadingLogs) {
+            return;
+        }
+        isLoadingLogs = true;
+        
         const formData = new FormData(document.getElementById('logsFilterForm'));
         const params = new URLSearchParams();
         for (const [key, value] of formData) {
@@ -311,9 +325,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update pagination
             updatePagination(data.pagination);
+            
+            // Reset loading flag
+            isLoadingLogs = false;
         })
         .catch(error => {
             console.error('Error loading logs:', error);
+            // Reset loading flag on error too
+            isLoadingLogs = false;
         });
     }
     
@@ -373,13 +392,8 @@ document.addEventListener('DOMContentLoaded', function() {
         paginationHtml += '</ul>';
         paginationElement.innerHTML = paginationHtml;
         
-        // Reattach event listeners
-        paginationElement.addEventListener('click', function(e) {
-            if (e.target.tagName === 'A' && e.target.dataset.page) {
-                e.preventDefault();
-                loadLogs(parseInt(e.target.dataset.page));
-            }
-        });
+        // Note: Event listeners are already attached via event delegation in DOMContentLoaded
+        // No need to reattach here as it causes multiple listeners and DOM node warnings
     }
 });
 </script>

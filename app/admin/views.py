@@ -1,7 +1,7 @@
 from flask import render_template, redirect, url_for, request, jsonify, flash
 from flask_login import login_required, current_user
 from app.admin import admin
-from app.models import User, MenuItem, Category, Order, AuditLog, Table, Customer, UserRole, OrderItem, DeliveryCompany, ServiceType, OrderStatus, TimezoneManager, AdminPinCode, WaiterCashierAssignment, OrderEditHistory, ManualCardPayment
+from app.models import User, MenuItem, Category, Order, AuditLog, Table, Customer, UserRole, OrderItem, DeliveryCompany, ServiceType, OrderStatus, TimezoneManager, AdminPinCode, WaiterCashierAssignment, OrderEditHistory, ManualCardPayment, Kitchen, CategoryKitchenAssignment, KitchenOrder, KitchenOrderStatus
 from app import db
 from app.auth.decorators import branch_admin_required, filter_by_user_branch, get_user_branch_filter
 from datetime import datetime, timedelta
@@ -115,11 +115,11 @@ def dashboard():
         func.date(Order.created_at)
     ).all()
     
-    # Top selling items (branch-filtered)
+    # Top selling items (branch-filtered) - include modifier prices
     top_items_query = db.session.query(
         MenuItem.name,
         func.sum(OrderItem.quantity).label('total_quantity'),
-        func.sum(OrderItem.total_price).label('total_revenue')
+        func.sum(OrderItem.total_price + func.coalesce(OrderItem.modifiers_total_price, 0)).label('total_revenue')
     ).join(OrderItem, MenuItem.id == OrderItem.menu_item_id)\
      .join(Order, OrderItem.order_id == Order.id)\
      .filter(Order.created_at >= start_date)
@@ -1054,10 +1054,27 @@ def orders():
                 'table_number': order.table.table_number if order.table else 'N/A',
                 'cashier_name': order.cashier.username if order.cashier else 'N/A',
                 'total_amount': float(order.total_amount),
+                'total_amount_with_modifiers': float(order.total_amount),
                 'created_at': order.created_at.strftime('%Y-%m-%d %H:%M'),
                 'service_type': order.service_type.value if order.service_type else 'on_table',
                 'delivery_company': delivery_company_info,
-                'regular_items_count': regular_items_count
+                'regular_items_count': regular_items_count,
+                'status': order.status.value if order.status else 'pending',
+                'items_count': regular_items_count,
+                # Add edit information to match static HTML
+                'edit_count': order.edit_count if order.edit_count else 0,
+                'last_edited_at': order.last_edited_at.strftime('%Y-%m-%d %H:%M') if order.last_edited_at else None,
+                # Add cashier object structure for compatibility
+                'cashier': {
+                    'username': order.cashier.username if order.cashier else None,
+                    'role': {
+                        'value': order.cashier.role.value if order.cashier and order.cashier.role else None
+                    }
+                } if order.cashier else None,
+                # Add branch information for super users
+                'branch': {
+                    'name': order.branch.name if order.branch else None
+                } if order.branch else None
             })
         
         return jsonify({
@@ -1987,8 +2004,11 @@ def get_order_details(order_id):
                 'menu_item_name': item.menu_item.name,  # Frontend expects menu_item_name
                 'name': item.menu_item.name,  # Keep for backward compatibility
                 'quantity': item.quantity,
+                'price': float(item.unit_price),  # Frontend expects price
                 'unit_price': float(item.unit_price),
                 'total_price': float(item.total_price),
+                'modifiers_total_price': float(item.modifiers_total_price or 0),
+                'total_price_with_modifiers': item.total_price_with_modifiers,
                 'special_requests': item.special_requests or item.notes,  # Include special requests
                 'modifiers': item.notes,  # Include modifiers from notes field
                 'is_new': item.is_new or False,  # Edit tracking
@@ -2006,6 +2026,7 @@ def get_order_details(order_id):
             'order_number': order.order_number,
             'order_counter': order.order_counter if order.order_counter else None,
             'total_amount': float(order.total_amount),
+            'total_amount_with_modifiers': float(order.total_amount),
             'created_at': TimezoneManager.format_local_time(order.created_at, '%Y-%m-%d %H:%M:%S'),
             'table_number': order.table.table_number if order.table else None,
             'cashier_name': order.cashier.get_full_name() if order.cashier else None,
@@ -2913,3 +2934,226 @@ def api_peak_hours():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# Kitchen Management Routes
+
+@admin.route('/kitchens')
+def kitchens():
+    """Kitchen management page"""
+    branch_filter = get_user_branch_filter()
+    
+    # Get all kitchens for the branch
+    kitchens_query = Kitchen.query.filter_by(is_active=True)
+    if branch_filter:
+        kitchens_query = kitchens_query.filter(Kitchen.branch_id == branch_filter)
+    
+    kitchens = kitchens_query.all()
+    
+    # Get all categories for assignment
+    categories_query = Category.query.filter_by(is_active=True)
+    if branch_filter:
+        categories_query = categories_query.filter(Category.branch_id == branch_filter)
+    
+    categories = categories_query.all()
+    
+    # Get category assignments
+    assignments = {}
+    for category in categories:
+        assignment = CategoryKitchenAssignment.query.filter_by(
+            category_id=category.id,
+            is_active=True
+        ).first()
+        if assignment:
+            assignments[category.id] = assignment.kitchen
+    
+    return render_template('admin/kitchens.html',
+                         kitchens=kitchens,
+                         categories=categories,
+                         assignments=assignments)
+
+@admin.route('/create_kitchen', methods=['POST'])
+def create_kitchen():
+    """Create a new kitchen account"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['name', 'username', 'email', 'password', 'first_name', 'last_name']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'success': False, 'message': f'{field} is required'})
+        
+        # Check if username or email already exists
+        existing_user = User.query.filter(
+            (User.username == data['username']) | (User.email == data['email'])
+        ).first()
+        
+        if existing_user:
+            return jsonify({'success': False, 'message': 'Username or email already exists'})
+        
+        # Get user's branch
+        user_branch_id = current_user.branch_id
+        if not user_branch_id:
+            return jsonify({'success': False, 'message': 'No branch assigned to your account'})
+        
+        # Create kitchen user account
+        kitchen_user = User(
+            username=data['username'],
+            email=data['email'],
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            role=UserRole.KITCHEN,
+            branch_id=user_branch_id,
+            is_active=True
+        )
+        kitchen_user.set_password(data['password'])
+        
+        db.session.add(kitchen_user)
+        db.session.flush()  # Get the user ID
+        
+        # Create kitchen record
+        kitchen = Kitchen(
+            name=data['name'],
+            description=data.get('description', ''),
+            branch_id=user_branch_id,
+            kitchen_user_id=kitchen_user.id,
+            is_active=True
+        )
+        
+        db.session.add(kitchen)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Kitchen "{data["name"]}" created successfully',
+            'kitchen': {
+                'id': kitchen.id,
+                'name': kitchen.name,
+                'username': kitchen_user.username,
+                'email': kitchen_user.email
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Failed to create kitchen: {str(e)}'})
+
+@admin.route('/assign_category', methods=['POST'])
+def assign_category():
+    """Assign a category to a kitchen"""
+    try:
+        data = request.get_json()
+        category_id = data.get('category_id')
+        kitchen_id = data.get('kitchen_id')
+        
+        if not category_id or not kitchen_id:
+            return jsonify({'success': False, 'message': 'Category and kitchen are required'})
+        
+        # Verify category and kitchen belong to user's branch
+        user_branch_id = current_user.branch_id
+        
+        category = Category.query.filter_by(
+            id=category_id,
+            branch_id=user_branch_id,
+            is_active=True
+        ).first()
+        
+        if not category:
+            return jsonify({'success': False, 'message': 'Category not found'})
+        
+        kitchen = Kitchen.query.filter_by(
+            id=kitchen_id,
+            branch_id=user_branch_id,
+            is_active=True
+        ).first()
+        
+        if not kitchen:
+            return jsonify({'success': False, 'message': 'Kitchen not found'})
+        
+        # Create assignment
+        assignment = CategoryKitchenAssignment.assign_category_to_kitchen(
+            category_id=category_id,
+            kitchen_id=kitchen_id,
+            created_by_id=current_user.id
+        )
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Category "{category.name}" assigned to kitchen "{kitchen.name}"',
+            'assignment': {
+                'category_id': category_id,
+                'kitchen_id': kitchen_id,
+                'category_name': category.name,
+                'kitchen_name': kitchen.name
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Failed to assign category: {str(e)}'})
+
+@admin.route('/unassign_category', methods=['POST'])
+def unassign_category():
+    """Remove category assignment from kitchen"""
+    try:
+        data = request.get_json()
+        category_id = data.get('category_id')
+        
+        if not category_id:
+            return jsonify({'success': False, 'message': 'Category ID is required'})
+        
+        # Find and deactivate assignment
+        assignment = CategoryKitchenAssignment.query.filter_by(
+            category_id=category_id,
+            is_active=True
+        ).first()
+        
+        if not assignment:
+            return jsonify({'success': False, 'message': 'Assignment not found'})
+        
+        # Verify category belongs to user's branch
+        if assignment.category.branch_id != current_user.branch_id:
+            return jsonify({'success': False, 'message': 'Unauthorized'})
+        
+        assignment.is_active = False
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Category "{assignment.category.name}" unassigned from kitchen'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Failed to unassign category: {str(e)}'})
+
+@admin.route('/kitchen_orders')
+def kitchen_orders():
+    """View all kitchen orders for the branch"""
+    branch_filter = get_user_branch_filter()
+    
+    # Get all kitchens for the branch
+    kitchens_query = Kitchen.query.filter_by(is_active=True)
+    if branch_filter:
+        kitchens_query = kitchens_query.filter(Kitchen.branch_id == branch_filter)
+    
+    kitchens = kitchens_query.all()
+    
+    # Get recent kitchen orders
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    
+    kitchen_orders_query = KitchenOrder.query.join(Kitchen).filter(Kitchen.is_active == True)
+    if branch_filter:
+        kitchen_orders_query = kitchen_orders_query.filter(Kitchen.branch_id == branch_filter)
+    
+    kitchen_orders = kitchen_orders_query.order_by(
+        KitchenOrder.received_at.desc()
+    ).paginate(page=page, per_page=per_page, error_out=False)
+    
+    return render_template('admin/kitchen_orders.html',
+                         kitchens=kitchens,
+                         kitchen_orders=kitchen_orders)

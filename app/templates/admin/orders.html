@@ -356,16 +356,26 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
+    // Prevent multiple simultaneous requests
+    let isLoadingOrders = false;
+    
     // Handle pagination clicks
     document.getElementById('ordersPagination').addEventListener('click', function(e) {
         if (e.target.tagName === 'A' && e.target.dataset.page) {
             e.preventDefault();
-            loadOrders(parseInt(e.target.dataset.page));
+            if (!isLoadingOrders) {
+                loadOrders(parseInt(e.target.dataset.page));
+            }
         }
     });
     
     // Load orders with AJAX
     function loadOrders(page = 1) {
+        // Prevent multiple simultaneous requests
+        if (isLoadingOrders) {
+            return;
+        }
+        isLoadingOrders = true;
         const formData = new FormData(document.getElementById('ordersFilterForm'));
         const params = new URLSearchParams();
         for (const [key, value] of formData) {
@@ -453,16 +463,61 @@ document.addEventListener('DOMContentLoaded', function() {
                     counterDisplay = `<span class="badge bg-dark">${order.order_counter}</span>`;
                 }
                 
+                // Format payment status badge
+                let paymentStatusBadge = '<span class="badge bg-secondary">N/A</span>';
+                if (order.status) {
+                    switch(order.status) {
+                        case 'paid':
+                            paymentStatusBadge = '<span class="badge bg-success">✅ Paid</span>';
+                            break;
+                        case 'pending':
+                            paymentStatusBadge = '<span class="badge bg-warning">⏳ Unpaid</span>';
+                            break;
+                        case 'cancelled':
+                            paymentStatusBadge = '<span class="badge bg-danger">❌ Cancelled</span>';
+                            break;
+                        default:
+                            paymentStatusBadge = `<span class="badge bg-secondary">${order.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>`;
+                    }
+                }
+
+                // Format cashier display - match static HTML structure
+                let cashierDisplay = 'N/A';
+                if (order.cashier && order.cashier.username) {
+                    cashierDisplay = order.cashier.username;
+                } else if (order.cashier_name) {
+                    cashierDisplay = order.cashier_name;
+                }
+                
+                // Format created_at display - match static HTML structure exactly
+                let createdAtDisplay = '';
+                if (order.created_at) {
+                    // Use the formatted date from backend
+                    createdAtDisplay = order.created_at;
+                    
+                    // Add edit information if exists - match static HTML structure
+                    if (order.edit_count && order.edit_count > 0) {
+                        createdAtDisplay += `<br><span class="badge bg-warning text-dark">
+                            <i class="bi bi-pencil-square me-1"></i>Edited ${order.edit_count}x
+                        </span>`;
+                        
+                        if (order.last_edited_at) {
+                            createdAtDisplay += `<br><small class="text-muted">Last: ${order.last_edited_at}</small>`;
+                        }
+                    }
+                }
+
                 row.innerHTML = `
                     <td>${order.order_number}</td>
                     <td>${counterDisplay}</td>
                     <td>${order.table_number}</td>
                     <td><span class="badge bg-info">${order.items_count || 0}</span></td>
                     <td>${order.total_amount.toFixed(2)}</td>
+                    <td>${paymentStatusBadge}</td>
                     <td>${serviceBadge}</td>
-                    <td>${order.cashier_username}</td>
+                    <td>${cashierDisplay}</td>
                     ${branchRoleColumns}
-                    <td>${order.created_at.date} ${order.created_at.time}</td>
+                    <td>${createdAtDisplay}</td>
                     <td>
                         <div class="btn-group" role="group">
                             <button class="btn btn-sm btn-outline-primary view-order" data-order-id="${order.id}">
@@ -485,9 +540,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Reattach event listeners for action buttons
             attachActionListeners();
+            
+            // Reset loading flag
+            isLoadingOrders = false;
         })
         .catch(error => {
             console.error('Error loading orders:', error);
+            // Reset loading flag on error too
+            isLoadingOrders = false;
         });
     }
     
@@ -520,21 +580,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Create items HTML with edit tracking
                     let itemsHtml = '';
                     data.items.forEach(item => {
-                        // Build modifiers display
+                        // Build modifiers display with price and gold star icon
                         let modifiersHtml = '';
-                        if (item.modifiers && Array.isArray(item.modifiers) && item.modifiers.length > 0) {
-                            modifiersHtml = '<br><small class="text-muted">Modifiers: ' + 
-                                item.modifiers.map(mod => mod.name).join(', ') + '</small>';
-                        } else if (item.modifiers && typeof item.modifiers === 'string' && item.modifiers.trim()) {
-                            // Handle case where modifiers is stored as a string
-                            modifiersHtml = '<br><small class="text-muted">Modifiers: ' + item.modifiers + '</small>';
+                        const modifierPrice = item.modifiers_total_price || 0;
+                        if (item.modifiers && typeof item.modifiers === 'string' && item.modifiers.trim()) {
+                            // Handle case where modifiers is stored as a string (current format)
+                            modifiersHtml = `<br><small class="text-muted"><i class="bi bi-star-fill text-warning"></i> ${item.modifiers}${modifierPrice > 0 ? ` (${modifierPrice.toFixed(2)} QAR)` : ''}</small>`;
+                        } else if (item.modifiers && Array.isArray(item.modifiers) && item.modifiers.length > 0) {
+                            // Handle case where modifiers is an array (future format)
+                            modifiersHtml = '<br><small class="text-muted"><i class="bi bi-star-fill text-warning"></i> ' + 
+                                item.modifiers.map(mod => mod.name).join(', ') + 
+                                (modifierPrice > 0 ? ` (${modifierPrice.toFixed(2)} QAR)` : '') + '</small>';
                         }
                         
-                        // Add special requests display
-                        let specialRequestsHtml = '';
-                        if (item.special_requests) {
-                            specialRequestsHtml = `<br><small class="text-primary"><i class="bi bi-stars"></i> ${item.special_requests}</small>`;
-                        }
+                        // Remove special_requests display to avoid duplication since it's the same as modifiers but without pricing
                         
                         // Style for deleted/new items
                         const isDeleted = item.is_deleted || false;
@@ -550,12 +609,15 @@ document.addEventListener('DOMContentLoaded', function() {
                             itemPrefix = '🆕 ';
                         }
                         
+                        // Calculate final total including modifiers
+                        const finalTotal = parseFloat(item.total_price) + parseFloat(item.modifiers_total_price || 0);
+                        
                         itemsHtml += `
                             <tr ${rowStyle}>
-                                <td>${itemPrefix}${item.menu_item_name}${modifiersHtml}${specialRequestsHtml}</td>
+                                <td>${itemPrefix}${item.menu_item_name}${modifiersHtml}</td>
                                 <td>${item.quantity}</td>
                                 <td>${parseFloat(item.unit_price).toFixed(2)} QAR</td>
-                                <td>${parseFloat(item.total_price).toFixed(2)} QAR</td>
+                                <td>${finalTotal.toFixed(2)} QAR</td>
                             </tr>
                         `;
                     });
@@ -692,9 +754,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     let itemsHtml = '';
                     data.items.forEach(item => {
                         let modifiersHtml = '';
+                        const modifierPrice = item.modifiers_total_price || 0;
                         if (item.modifiers && item.modifiers.trim()) {
-                            modifiersHtml = `<br><small>${item.modifiers}</small>`;
+                            modifiersHtml = `<br><small>★ ${item.modifiers}${modifierPrice > 0 ? ` (${modifierPrice.toFixed(2)} QAR)` : ''}</small>`;
                         }
+                        
+                        // Calculate final total including modifiers
+                        const finalTotal = parseFloat(item.total_price) + parseFloat(item.modifiers_total_price || 0);
                         
                         itemsHtml += `
                             <tr>
@@ -703,7 +769,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </td>
                                 <td style="border-bottom: 1px solid #000; padding: 3px 2px;">${item.quantity}</td>
                                 <td style="border-bottom: 1px solid #000; padding: 3px 2px; text-align: right;">${parseFloat(item.unit_price).toFixed(2)} QAR</td>
-                                <td style="border-bottom: 1px solid #000; padding: 3px 2px; text-align: right;">${parseFloat(item.total_price).toFixed(2)} QAR</td>
+                                <td style="border-bottom: 1px solid #000; padding: 3px 2px; text-align: right;">${finalTotal.toFixed(2)} QAR</td>
                             </tr>
                         `;
                     });
@@ -934,13 +1000,8 @@ document.addEventListener('DOMContentLoaded', function() {
         paginationHtml += '</ul>';
         paginationElement.innerHTML = paginationHtml;
         
-        // Reattach event listeners
-        paginationElement.addEventListener('click', function(e) {
-            if (e.target.tagName === 'A' && e.target.dataset.page) {
-                e.preventDefault();
-                loadOrders(parseInt(e.target.dataset.page));
-            }
-        });
+        // Note: Event listeners are already attached via event delegation in DOMContentLoaded
+        // No need to reattach here as it causes multiple listeners and DOM node warnings
     }
     
     function showNotification(message, type = 'info') {

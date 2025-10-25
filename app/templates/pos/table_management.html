@@ -3,6 +3,35 @@
 {% block title %}Table Management - Restaurant POS{% endblock %}
 
 {% block content %}
+<!-- Audio Activation Modal -->
+<div class="modal fade" id="audioActivationModal" tabindex="-1" aria-labelledby="audioActivationModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="audioActivationModalLabel">
+                    <i class="bi bi-volume-up me-2"></i>تفعيل الصوت
+                </h5>
+            </div>
+            <div class="modal-body text-center">
+                <div class="mb-4">
+                    <i class="bi bi-bell-fill text-warning" style="font-size: 3rem;"></i>
+                </div>
+                <h6 class="mb-3">تفعيل التنبيهات الصوتية</h6>
+                <p class="text-muted mb-4">
+                    إعادة تحميل التطبيق قد تمنع تشغيل الأصوات ما لم تقم بالتفاعل مع التطبيق أولاً.
+                    <br><br>
+                    <strong>اضغط على الزر أدناه لتفعيل التنبيهات الصوتية لتحديثات الطاولات.</strong>
+                </p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-primary btn-lg" id="activateAudioBtn">
+                    <i class="bi bi-volume-up me-2"></i>تفعيل الصوت
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container-fluid">
     <!-- Header -->
     <div class="row mb-4">
@@ -278,37 +307,132 @@
 {% block scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 <script>
-// Sound generation function for order edit notifications
+// GLOBAL SOUND FUNCTIONALITY - Enhanced with user interaction handling
+let audioContext;
+let audioInitialized = false;
+
+function initializeAudioContext() {
+    if (!audioContext) {
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            console.log('AudioContext created successfully');
+        } catch (e) {
+            console.log('Web Audio API not supported:', e);
+            return false;
+        }
+    }
+    return true;
+}
+
+// Initialize audio on first user interaction
+function initializeAudioOnUserInteraction() {
+    if (!audioInitialized) {
+        if (initializeAudioContext()) {
+            audioInitialized = true;
+            console.log('Audio system initialized after user interaction');
+            // Remove the event listeners after first initialization
+            document.removeEventListener('click', initializeAudioOnUserInteraction);
+            document.removeEventListener('keydown', initializeAudioOnUserInteraction);
+            document.removeEventListener('touchstart', initializeAudioOnUserInteraction);
+        }
+    }
+}
+
+// Sound generation function for order edit notifications - Enhanced with auto-initialization
 function playOrderEditedSound() {
-    // Create audio context
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    // Try to initialize audio if not already done
+    if (!audioInitialized) {
+        console.log('Audio not initialized yet, attempting to initialize...');
+        if (initializeAudioContext()) {
+            audioInitialized = true;
+            console.log('Audio system auto-initialized');
+        } else {
+            console.log('Audio initialization failed, skipping sound');
+            return;
+        }
+    }
     
-    // Create oscillator for edit notification sound
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+    if (!audioContext) {
+        console.log('No audio context available');
+        return;
+    }
     
-    // Connect nodes
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    // Configure sound - gentle notification tone
-    oscillator.type = 'triangle';
-    oscillator.frequency.setValueAtTime(500, audioContext.currentTime);
-    oscillator.frequency.setValueAtTime(700, audioContext.currentTime + 0.15);
-    
-    // Configure volume envelope
-    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.05);
-    gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.1);
-    gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.2);
-    gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
-    
-    // Play sound
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.3);
+    try {
+        // Resume audio context if suspended (required for mobile browsers)
+        if (audioContext.state === 'suspended') {
+            audioContext.resume().then(() => {
+                console.log('AudioContext resumed');
+                generateNotificationSound();
+            }).catch(e => {
+                console.log('Failed to resume AudioContext:', e);
+            });
+        } else {
+            generateNotificationSound();
+        }
+        
+    } catch (e) {
+        console.log('Error playing order edit notification sound:', e);
+    }
+}
+
+function generateNotificationSound() {
+    try {
+        // Create oscillator for edit notification sound
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        // Connect nodes
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Configure sound - gentle notification tone
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(500, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(700, audioContext.currentTime + 0.15);
+        
+        // Configure volume envelope
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.05);
+        gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.1);
+        gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.2);
+        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+        
+        // Play sound
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+        
+        console.log('Notification sound played successfully');
+        
+    } catch (e) {
+        console.log('Error generating notification sound:', e);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Show audio activation modal on page load
+    const audioModal = new bootstrap.Modal(document.getElementById('audioActivationModal'));
+    audioModal.show();
+    
+    // Handle audio activation button click
+    document.getElementById('activateAudioBtn').addEventListener('click', function() {
+        if (initializeAudioContext()) {
+            audioInitialized = true;
+            console.log('Audio activated by user via modal');
+            audioModal.hide();
+            
+            // Show success message
+            showNotification('تم تفعيل التنبيهات الصوتية بنجاح!', 'success');
+        } else {
+            console.log('Audio activation failed');
+            showNotification('فشل في تفعيل الصوت. يرجى المحاولة مرة أخرى.', 'error');
+        }
+    });
+    
+    // Set up audio initialization on user interaction as backup
+    document.addEventListener('click', initializeAudioOnUserInteraction);
+    document.addEventListener('keydown', initializeAudioOnUserInteraction);
+    document.addEventListener('touchstart', initializeAudioOnUserInteraction);
+    
     // Use global socket connection from base template
     // Store branch ID for JavaScript comparisons
     const currentBranchId = {{ current_user.branch_id }};
@@ -331,14 +455,31 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Join branch room for real-time updates
     socket.emit('join', {room: 'branch_{{ current_user.branch_id }}'});
+    console.log('Joined branch room: branch_{{ current_user.branch_id }}');
+    
+    // Join waiter room for notifications
+    socket.emit('join', {room: 'waiters_branch_{{ current_user.branch_id }}'});
+    console.log('Joined waiter room: waiters_branch_{{ current_user.branch_id }}');
+    
+    // Set up global order edit notifications for waiter
+    console.log('Setting up global order edit notifications for waiter');
     
     // Listen for order paid events to update table status
     socket.on('order_paid', function(data) {
+        console.log('Global: Order paid event received:', data);
         console.log('Order paid event received:', data);
         
         // Check if this affects our branch
         if (data.branch_id === currentBranchId) {
+            // Play notification sound
+            try {
+                playOrderEditedSound();
+            } catch (error) {
+                console.log('Could not play sound:', error);
+            }
+            
             updateTableStatus(data.table_id, data.table_number, 'free');
+            showNotification(`Order #${data.order_number} on Table ${data.table_number} has been paid`, 'success');
         }
     });
     
@@ -348,7 +489,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Check if this affects our branch
         if (data.branch_id === currentBranchId) {
+            // Play notification sound for new orders
+            try {
+                playOrderEditedSound();
+            } catch (error) {
+                console.log('Could not play sound:', error);
+            }
+            
             updateTableStatus(data.table_id, data.table_number, data.status);
+            
+            if (data.status === 'busy') {
+                showNotification(`New order started on Table ${data.table_number}`, 'info');
+            }
         }
     });
     
@@ -383,8 +535,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Could not play sound:', error);
             }
             
-            // Update table statuses
-            updateTableAfterTransfer(data.old_table_id, data.new_table_id, data.order_number, data.old_table_number, data.new_table_number, data.old_table_is_now_free);
+            // Update table statuses - include order_id if available
+            updateTableAfterTransfer(data.old_table_id, data.new_table_id, data.order_number, data.old_table_number, data.new_table_number, data.old_table_is_now_free, data.order_id);
             
             // Show notification
             showNotification(
@@ -394,78 +546,118 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Function to update table status (free or busy)
-    function updateTableStatus(tableId, tableNumber, status) {
+    // Function to update table status (free or busy) - Enhanced for real-time updates
+    function updateTableStatus(tableId, tableNumber, status, orderData = null) {
         if (!tableId) return;
+        
+        console.log(`Updating table ${tableNumber} (ID: ${tableId}) to status: ${status}`);
         
         // Find the table card
         const tableCard = document.querySelector(`[data-table-id="${tableId}"]`);
         if (tableCard) {
+            console.log(`Found table card for table ${tableNumber}`);
+            
             if (status === 'free') {
                 // Change from busy to free
-                if (tableCard.classList.contains('busy')) {
-                    tableCard.classList.remove('busy');
-                    tableCard.classList.add('free');
-                    
-                    // Update the card content to show as free
-                    const cardBody = tableCard.querySelector('.card-body');
-                    if (cardBody) {
-                        cardBody.innerHTML = `
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-table me-2"></i>Table ${tableNumber}
-                                </h5>
-                                <span class="badge bg-success">Free</span>
-                            </div>
-                            <p class="card-text text-muted">Available for new orders</p>
-                            <div class="table-actions mt-3">
-                                <a href="/pos/?table_id=${tableId}&return_to=table_management" 
-                                   class="btn btn-primary">
-                                    <i class="bi bi-plus-circle"></i> Take Order
-                                </a>
-                            </div>
-                        `;
-                    }
-                    
-                    // Show notification
-                    showNotification(`Table ${tableNumber} is now available for new orders!`, 'success');
+                tableCard.classList.remove('busy');
+                tableCard.classList.add('free');
+                
+                // Update the card content to show as free
+                const cardBody = tableCard.querySelector('.card-body');
+                if (cardBody) {
+                    cardBody.innerHTML = `
+                        <!-- Table Number -->
+                        <div class="table-number mb-2">
+                            <i class="fa-solid fa-utensils display-4 mb-2"></i>
+                            <h4 class="mb-0">Table ${tableNumber}</h4>
+                        </div>
+                        
+                        <!-- Table Status -->
+                        <div class="table-status mb-3">
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle-fill me-1"></i>Free
+                            </span>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="table-actions mt-3">
+                            <a href="/pos/?table_id=${tableId}&return_to=table_management&new_order=true" 
+                               class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Take Order
+                            </a>
+                        </div>
+                    `;
                 }
+                
+                console.log(`Table ${tableNumber} marked as free`);
+                
             } else if (status === 'busy') {
                 // Change from free to busy
-                if (tableCard.classList.contains('free')) {
-                    tableCard.classList.remove('free');
-                    tableCard.classList.add('busy');
-                    
-                    // Update the card content to show as busy
-                    const cardBody = tableCard.querySelector('.card-body');
-                    if (cardBody) {
-                        cardBody.innerHTML = `
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-table me-2"></i>Table ${tableNumber}
-                                </h5>
-                                <span class="badge bg-warning">Busy</span>
-                            </div>
-                            <p class="card-text text-muted">Order in progress</p>
-                            <div class="table-actions mt-3">
-                                <a href="/pos/?table_id=${tableId}&add_items=true&return_to=table_management" 
-                                   class="btn btn-outline-primary me-2">
-                                    <i class="bi bi-plus"></i> Add Items
-                                </a>
-                                ${canMarkPaid ? `<button class="btn btn-outline-success" onclick="markTablePaid(${tableId})">
-                                    <i class="bi bi-check-circle"></i> Mark Paid
-                                </button>` : ''}
+                tableCard.classList.remove('free');
+                tableCard.classList.add('busy');
+                
+                // Update the card content to show as busy
+                const cardBody = tableCard.querySelector('.card-body');
+                if (cardBody) {
+                    let orderInfoHtml = '';
+                    if (orderData) {
+                        orderInfoHtml = `
+                            <!-- Order Info -->
+                            <div class="order-info">
+                                <div class="small text-muted mb-1">Current Order</div>
+                                <div class="fw-bold">#${orderData.order_number}</div>
+                                ${orderData.order_counter ? `<div class="small"><span class="badge bg-dark">Count #${orderData.order_counter}</span></div>` : ''}
+                                <div class="small">${orderData.total_amount ? orderData.total_amount.toFixed(2) : '0.00'} QAR</div>
+                                <div class="small text-muted">${orderData.items_count || 0} items</div>
+                                <div class="small text-muted">${orderData.created_at || 'Just now'}</div>
                             </div>
                         `;
                     }
                     
-                    // Show notification
-                    showNotification(`Table ${tableNumber} now has an active order`, 'info');
+                    cardBody.innerHTML = `
+                        <!-- Table Number -->
+                        <div class="table-number mb-2">
+                            <i class="fa-solid fa-utensils display-4 mb-2"></i>
+                            <h4 class="mb-0">Table ${tableNumber}</h4>
+                        </div>
+                        
+                        <!-- Table Status -->
+                        <div class="table-status mb-3">
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-clock-fill me-1"></i>Busy
+                            </span>
+                        </div>
+                        
+                        ${orderInfoHtml}
+                        
+                        <!-- Action Buttons -->
+                        <div class="table-actions mt-3">
+                            ${orderData ? `<button class="btn btn-sm btn-outline-primary view-order-btn" 
+                                    data-order-id="${orderData.id}">
+                                <i class="bi bi-eye"></i> View Order
+                            </button>` : ''}
+                            <a href="/pos/?table_id=${tableId}&return_to=table_management&add_items=true" 
+                               class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-plus-circle"></i> Add Items
+                            </a>
+                        </div>
+                    `;
                 }
+                
+                console.log(`Table ${tableNumber} marked as busy`);
             }
             
             // Update table counts
             updateTableCounts();
+            
+            // Force a visual refresh
+            tableCard.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+                tableCard.style.transform = 'scale(1)';
+            }, 200);
+            
+        } else {
+            console.log(`Table card not found for table ${tableNumber} (ID: ${tableId})`);
         }
     }
     
@@ -522,17 +714,91 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Function to update tables after transfer
-    function updateTableAfterTransfer(oldTableId, newTableId, orderNumber, oldTableNumber, newTableNumber, oldTableIsNowFree) {
-        // Update old table status based on backend calculation
-        if (oldTableId && oldTableIsNowFree) {
+    // Function to update tables after transfer - Enhanced for reliable live updates
+    function updateTableAfterTransfer(oldTableId, newTableId, orderNumber, oldTableNumber, newTableNumber, oldTableIsNowFree, orderId = null) {
+        console.log(`Table transfer: Order #${orderNumber} from Table ${oldTableNumber} (ID: ${oldTableId}) to Table ${newTableNumber} (ID: ${newTableId})`);
+        console.log(`Old table should be free: ${oldTableIsNowFree}, Order ID: ${orderId}`);
+        
+        // Always update old table to free (unless it has other orders, but we'll trust the transfer logic)
+        if (oldTableId) {
+            console.log(`Updating old table ${oldTableNumber} to free status`);
             updateTableStatus(oldTableId, oldTableNumber, 'free');
+            
+            // Add visual indicator that order was transferred away
+            const oldTableCard = document.querySelector(`[data-table-id="${oldTableId}"]`);
+            if (oldTableCard) {
+                // Add temporary transfer notification
+                const cardBody = oldTableCard.querySelector('.card-body');
+                if (cardBody) {
+                    const transferNotification = document.createElement('div');
+                    transferNotification.className = 'alert alert-warning alert-sm mt-2 mb-0 transfer-out-notification';
+                    transferNotification.innerHTML = `
+                        <i class="bi bi-arrow-right me-1"></i>
+                        <small><strong>Order #${orderNumber}</strong> transferred to Table ${newTableNumber}</small>
+                    `;
+                    
+                    cardBody.appendChild(transferNotification);
+                    
+                    // Remove notification after 6 seconds
+                    setTimeout(() => {
+                        if (transferNotification.parentNode) {
+                            transferNotification.remove();
+                        }
+                    }, 6000);
+                }
+            }
         }
         
         // Update new table (should become busy)
+        if (newTableId) {
+            console.log(`Updating new table ${newTableNumber} to busy status`);
+            
+            // If we don't have the order ID, fetch it from the backend
+            if (!orderId) {
+                console.log(`Order ID not provided, fetching from backend for order #${orderNumber}`);
+                fetchOrderIdByNumber(orderNumber, newTableId, newTableNumber, oldTableNumber);
+            } else {
+                updateNewTableWithOrder(newTableId, newTableNumber, orderNumber, orderId, oldTableNumber);
+            }
+        }
+        
+        console.log('Table transfer update completed');
+    }
+    
+    // Helper function to fetch order ID by order number
+    function fetchOrderIdByNumber(orderNumber, newTableId, newTableNumber, oldTableNumber) {
+        fetch(`/api/get_order_by_number/${orderNumber}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.order) {
+                    console.log(`Found order ID ${data.order.id} for order #${orderNumber}`);
+                    updateNewTableWithOrder(newTableId, newTableNumber, orderNumber, data.order.id, oldTableNumber);
+                } else {
+                    console.log(`Could not find order ID for order #${orderNumber}, updating without ID`);
+                    updateNewTableWithOrder(newTableId, newTableNumber, orderNumber, null, oldTableNumber);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching order ID:', error);
+                updateNewTableWithOrder(newTableId, newTableNumber, orderNumber, null, oldTableNumber);
+            });
+    }
+    
+    // Helper function to update the new table with order information
+    function updateNewTableWithOrder(newTableId, newTableNumber, orderNumber, orderId, oldTableNumber) {
         const newTableCard = document.querySelector(`[data-table-id="${newTableId}"]`);
         if (newTableCard) {
-            updateTableStatus(newTableId, newTableNumber, 'busy');
+            // Create order data for the new table
+            const orderData = {
+                id: orderId, // Now we have the actual order ID
+                order_number: orderNumber,
+                order_counter: null,
+                total_amount: null,
+                items_count: null,
+                created_at: 'Transferred'
+            };
+            
+            updateTableStatus(newTableId, newTableNumber, 'busy', orderData);
             
             // Add transfer notification to the new table
             const cardBody = newTableCard.querySelector('.card-body');
@@ -543,7 +809,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 const notification = document.createElement('div');
-                notification.className = 'alert alert-info alert-sm mt-2 mb-0';
+                notification.className = 'alert alert-info alert-sm mt-2 mb-0 transfer-notification';
                 notification.innerHTML = `
                     <i class="bi bi-arrow-left-right me-1"></i>
                     <small><strong>Order #${orderNumber}</strong> transferred here from Table ${oldTableNumber}</small>

@@ -786,24 +786,50 @@ def orders():
         # Return JSON response for AJAX
         orders_data = []
         for order in orders.items:
+            # Count regular items (excluding special items)
+            regular_items_count = sum(1 for item in order.order_items if 'طلبات خاصة' not in item.menu_item.name)
+            
+            # Get delivery company info
+            delivery_company_info = None
+            if order.delivery_company_id and hasattr(order, 'delivery_company_info'):
+                delivery_company_info = {
+                    'name': order.delivery_company_info.name,
+                    'value': order.delivery_company_info.value,
+                    'icon': order.delivery_company_info.icon
+                }
+            
             order_data = {
                 'id': order.id,
                 'order_number': order.order_number,
                 'order_counter': order.order_counter if order.order_counter else None,
                 'table_number': order.table.table_number if order.table else 'N/A',
-                'items_count': len([item for item in order.order_items if 'طلبات خاصة' not in item.menu_item.name]),
+                'cashier_name': order.cashier.username if order.cashier else 'N/A',
                 'total_amount': float(order.total_amount),
-                'service_type': order.service_type.value if order.service_type else 'N/A',
-                'payment_status': order.status.value if order.status else 'N/A',
-                'is_paid': order.status == OrderStatus.PAID if order.status else False,
+                'total_amount_with_modifiers': float(order.total_amount),
+                'created_at': order.created_at.strftime('%Y-%m-%d %H:%M'),
+                'service_type': order.service_type.value if order.service_type else 'on_table',
+                'delivery_company': delivery_company_info,
+                'regular_items_count': regular_items_count,
+                'status': order.status.value if order.status else 'pending',
+                'items_count': regular_items_count,
+                # Add edit information to match static HTML
+                'edit_count': order.edit_count if order.edit_count else 0,
+                'last_edited_at': order.last_edited_at.strftime('%Y-%m-%d %H:%M') if order.last_edited_at else None,
+                # Add cashier object structure for compatibility
+                'cashier': {
+                    'username': order.cashier.username if order.cashier else None,
+                    'role': {
+                        'value': order.cashier.role.value if order.cashier and order.cashier.role else None
+                    }
+                } if order.cashier else None,
+                # Add branch information for super users
+                'branch': {
+                    'name': order.branch.name if order.branch else None
+                } if order.branch else None,
+                # Legacy fields for compatibility
                 'cashier_username': order.cashier.username if order.cashier else 'N/A',
                 'branch_name': order.branch.name if order.branch else 'N/A',
-                'cashier_role': order.cashier.role.value if order.cashier else 'N/A',
-                'created_at': {
-                    'date': order.created_at.strftime('%Y-%m-%d'),
-                    'time': order.created_at.strftime('%H:%M')
-                },
-                'delivery_company_name': order.delivery_company_info.name if order.delivery_company_info else None
+                'cashier_role': order.cashier.role.value if order.cashier else 'N/A'
             }
             orders_data.append(order_data)
         

@@ -72,6 +72,8 @@ def login():
                     return redirect(url_for('admin.dashboard'))
                 elif user.role == UserRole.WAITER:
                     return redirect(url_for('pos.table_management'))
+                elif user.role == UserRole.KITCHEN:
+                    return redirect(url_for('kitchen.dashboard'))
                 else:
                     return redirect(url_for('pos.index'))
             else:
