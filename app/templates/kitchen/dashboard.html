@@ -1688,9 +1688,6 @@
                         <button class="arrange-btn layout-btn" onclick="setLayout('grid')" data-layout="grid">
                             <i class="bi bi-grid-3x3 me-1"></i>Grid
                         </button>
-                        <button class="arrange-btn layout-btn" onclick="setLayout('list')" data-layout="list">
-                            <i class="bi bi-list me-1"></i>List
-                        </button>
                         <button class="arrange-btn layout-btn" onclick="setLayout('compact')" data-layout="compact">
                             <i class="bi bi-grid-1x2 me-1"></i>Compact
                         </button>
@@ -1700,40 +1697,15 @@
                 <!-- Vertical Separator -->
                 <div class="vertical-separator"></div>
 
-                <!-- Column 2: Sort Controls -->
-                <div class="filter-column">
-                    <div class="control-label">
-                        <i class="bi bi-sort-down"></i>
-                        Sort By
-                    </div>
-                    <div class="arrange-buttons">
-                        <button class="arrange-btn active" onclick="setArrangeBy('recent')" data-arrange="recent">
-                            <i class="bi bi-clock me-1"></i>Recently Added
-                        </button>
-                        <button class="arrange-btn" onclick="setArrangeBy('table')" data-arrange="table">
-                            <i class="bi bi-table me-1"></i>Table Number
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Vertical Separator -->
-                <div class="vertical-separator"></div>
-
-                <!-- Column 3: Status Filters -->
+                <!-- Column 2: Status Filters -->
                 <div class="filter-column">
                     <div class="control-label">
                         <i class="bi bi-activity"></i>
                         Order Status
                     </div>
                     <div class="status-filters">
-                        <button class="filter-btn status-filter active" onclick="toggleStatusFilter('all')" data-status="all">
-                            <i class="bi bi-grid-3x3-gap me-1"></i>All Orders
-                        </button>
-                        <button class="filter-btn status-filter" onclick="toggleStatusFilter('received')" data-status="received">
+                        <button class="filter-btn status-filter active" onclick="toggleStatusFilter('received')" data-status="received">
                             <i class="bi bi-bell me-1"></i>New Orders
-                        </button>
-                        <button class="filter-btn status-filter" onclick="toggleStatusFilter('preparing')" data-status="preparing">
-                            <i class="bi bi-hourglass-split me-1"></i>Preparing
                         </button>
                         <button class="filter-btn status-filter" onclick="toggleStatusFilter('ready')" data-status="ready">
                             <i class="bi bi-check-circle me-1"></i>Ready
@@ -1744,7 +1716,7 @@
                 <!-- Vertical Separator -->
                 <div class="vertical-separator"></div>
 
-                <!-- Column 4: Location Filters -->
+                <!-- Column 3: Location Filters -->
                 <div class="filter-column">
                     <div class="control-label">
                         <i class="bi bi-geo-alt"></i>
@@ -1760,21 +1732,24 @@
                         <button class="filter-btn table-filter" onclick="toggleTableFilter('takeaway')" data-table="takeaway">
                             <i class="bi bi-bag me-1"></i>Takeaway Orders
                         </button>
+                        <button class="filter-btn table-filter" onclick="toggleTableFilter('delivery')" data-table="delivery">
+                            <i class="bi bi-truck me-1"></i>Delivery Orders
+                        </button>
                     </div>
                 </div>
-            </div>
 
-            <!-- Active Filters Display -->
-            <div class="active-filters-section" id="activeFilters" style="display: none;">
-                <div class="section-separator"></div>
-                <div class="filter-section">
+                <!-- Vertical Separator -->
+                <div class="vertical-separator"></div>
+
+                <!-- Column 4: Active Filters -->
+                <div class="filter-column">
                     <div class="control-label">
                         <i class="bi bi-funnel-fill"></i>
                         Active Filters
                     </div>
                     <div class="active-filter-tags" id="activeFilterTags"></div>
-                    <button class="clear-filters-btn" onclick="clearAllFilters()">
-                        <i class="bi bi-x-circle me-1"></i>Clear All Filters
+                    <button class="clear-filters-btn" onclick="clearAllFilters()" style="display: none;">
+                        <i class="bi bi-x-circle me-1"></i>Clear All
                     </button>
                 </div>
             </div>
@@ -1870,9 +1845,8 @@
 <script>
 // Global variables
 let currentFilters = {
-    status: JSON.parse(localStorage.getItem('kitchenStatusFilters')) || ['all'],
+    status: JSON.parse(localStorage.getItem('kitchenStatusFilters')) || ['received'],
     table: JSON.parse(localStorage.getItem('kitchenTableFilters')) || ['all'],
-    sort: localStorage.getItem('kitchenSortBy') || 'recent',
     layout: localStorage.getItem('kitchenLayout') || 'masonry'
 };
 let dashboardData = null;
@@ -1965,9 +1939,6 @@ function loadDashboardData() {
         currentFilters.table.forEach(table => params.append('table', table));
     }
     
-    // Add sort parameter
-    params.append('sort', currentFilters.sort);
-    
     const queryString = params.toString();
     const url = `/kitchen/api/dashboard${queryString ? '?' + queryString : ''}`;
     
@@ -2037,7 +2008,18 @@ function createOrderCard(order) {
         </div>
         
         <div class="order-table">
-            <i class="bi bi-table me-2"></i>${order.table_number}
+            ${(() => {
+                // Determine service type and display appropriate icon and text
+                if (order.service_type === 'delivery' && order.delivery_company) {
+                    return `<i class="bi bi-truck me-2"></i>Delivery - ${order.delivery_company}`;
+                } else if (order.service_type === 'take_away') {
+                    return `<i class="bi bi-bag me-2"></i>Takeaway`;
+                } else if (order.table_number && order.table_number !== 'N/A') {
+                    return `<i class="bi bi-table me-2"></i>Table ${order.table_number}`;
+                } else {
+                    return `<i class="bi bi-house me-2"></i>Dine-in`;
+                }
+            })()}
         </div>
         
         <div class="order-items">
@@ -2139,19 +2121,6 @@ function updateOrderStatus(kitchenOrderId, newStatus) {
     });
 }
 
-function setArrangeBy(sortBy) {
-    currentFilters.sort = sortBy;
-    localStorage.setItem('kitchenSortBy', sortBy);
-    
-    // Update button states
-    document.querySelectorAll('.arrange-btn:not(.layout-btn)').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.querySelector(`[data-arrange="${sortBy}"]`).classList.add('active');
-    
-    // Reload data
-    loadDashboardData();
-}
 
 function setLayout(layout) {
     currentFilters.layout = layout;
@@ -2174,26 +2143,9 @@ function setLayout(layout) {
 }
 
 function toggleStatusFilter(status) {
-    if (status === 'all') {
-        currentFilters.status = ['all'];
-    } else {
-        // Remove 'all' if it exists
-        if (currentFilters.status.includes('all')) {
-            currentFilters.status = [];
-        }
-        
-        // Toggle the specific status
-        const index = currentFilters.status.indexOf(status);
-        if (index > -1) {
-            currentFilters.status.splice(index, 1);
-        } else {
-            currentFilters.status.push(status);
-        }
-        
-        // If no filters selected, default to 'all'
-        if (currentFilters.status.length === 0) {
-            currentFilters.status = ['all'];
-        }
+    // Only allow 'received' and 'ready' status filters
+    if (status === 'received' || status === 'ready') {
+        currentFilters.status = [status];
     }
     
     // Save to localStorage
@@ -2216,7 +2168,7 @@ function toggleTableFilter(table) {
             currentFilters.table = [];
         }
         
-        // Toggle the specific table type
+        // Toggle the specific table type (now includes 'delivery')
         const index = currentFilters.table.indexOf(table);
         if (index > -1) {
             currentFilters.table.splice(index, 1);
@@ -2264,16 +2216,16 @@ function updateFilterButtons() {
 }
 
 function updateActiveFilters() {
-    const activeFiltersDiv = document.getElementById('activeFilters');
     const activeFilterTags = document.getElementById('activeFilterTags');
+    const clearButton = document.querySelector('.clear-filters-btn');
     
     // Clear existing tags
     activeFilterTags.innerHTML = '';
     
     let hasActiveFilters = false;
     
-    // Add status filter tags
-    if (!currentFilters.status.includes('all')) {
+    // Add status filter tags (only show if not default 'received')
+    if (!currentFilters.status.includes('all') && !currentFilters.status.includes('received')) {
         currentFilters.status.forEach(status => {
             const tag = createFilterTag(status, 'status');
             activeFilterTags.appendChild(tag);
@@ -2281,7 +2233,7 @@ function updateActiveFilters() {
         });
     }
     
-    // Add table filter tags
+    // Add table filter tags (only show if not default 'all')
     if (!currentFilters.table.includes('all')) {
         currentFilters.table.forEach(table => {
             const tag = createFilterTag(table, 'table');
@@ -2290,8 +2242,15 @@ function updateActiveFilters() {
         });
     }
     
-    // Show/hide active filters section
-    activeFiltersDiv.style.display = hasActiveFilters ? 'block' : 'none';
+    // Show/hide clear button based on active filters
+    if (clearButton) {
+        clearButton.style.display = hasActiveFilters ? 'block' : 'none';
+    }
+    
+    // Show message if no active filters
+    if (!hasActiveFilters) {
+        activeFilterTags.innerHTML = '<span class="text-muted">No active filters</span>';
+    }
 }
 
 function createFilterTag(value, type) {
@@ -2303,7 +2262,8 @@ function createFilterTag(value, type) {
         'preparing': 'Preparing',
         'ready': 'Ready',
         'table': 'Tables',
-        'takeaway': 'Takeaways'
+        'takeaway': 'Takeaways',
+        'delivery': 'Delivery'
     };
     
     tag.innerHTML = `
@@ -2323,7 +2283,8 @@ function removeFilter(value, type) {
 }
 
 function clearAllFilters() {
-    currentFilters.status = ['all'];
+    // Reset to default state: New Orders and All Locations
+    currentFilters.status = ['received'];
     currentFilters.table = ['all'];
     
     // Save to localStorage

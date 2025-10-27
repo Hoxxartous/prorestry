@@ -3,34 +3,7 @@
 {% block title %}Table Management - Restaurant POS{% endblock %}
 
 {% block content %}
-<!-- Audio Activation Modal -->
-<div class="modal fade" id="audioActivationModal" tabindex="-1" aria-labelledby="audioActivationModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="audioActivationModalLabel">
-                    <i class="bi bi-volume-up me-2"></i>تفعيل الصوت
-                </h5>
-            </div>
-            <div class="modal-body text-center">
-                <div class="mb-4">
-                    <i class="bi bi-bell-fill text-warning" style="font-size: 3rem;"></i>
-                </div>
-                <h6 class="mb-3">تفعيل التنبيهات الصوتية</h6>
-                <p class="text-muted mb-4">
-                    إعادة تحميل التطبيق قد تمنع تشغيل الأصوات ما لم تقم بالتفاعل مع التطبيق أولاً.
-                    <br><br>
-                    <strong>اضغط على الزر أدناه لتفعيل التنبيهات الصوتية لتحديثات الطاولات.</strong>
-                </p>
-            </div>
-            <div class="modal-footer justify-content-center">
-                <button type="button" class="btn btn-primary btn-lg" id="activateAudioBtn">
-                    <i class="bi bi-volume-up me-2"></i>تفعيل الصوت
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Audio Activation Modal Removed - Sound automatically enabled -->
 
 <div class="container-fluid">
     <!-- Header -->
@@ -409,24 +382,16 @@ function generateNotificationSound() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Show audio activation modal on page load
-    const audioModal = new bootstrap.Modal(document.getElementById('audioActivationModal'));
-    audioModal.show();
+    // Auto-initialize audio system without modal
+    console.log('Auto-initializing audio system for table management');
     
-    // Handle audio activation button click
-    document.getElementById('activateAudioBtn').addEventListener('click', function() {
-        if (initializeAudioContext()) {
-            audioInitialized = true;
-            console.log('Audio activated by user via modal');
-            audioModal.hide();
-            
-            // Show success message
-            showNotification('تم تفعيل التنبيهات الصوتية بنجاح!', 'success');
-        } else {
-            console.log('Audio activation failed');
-            showNotification('فشل في تفعيل الصوت. يرجى المحاولة مرة أخرى.', 'error');
-        }
-    });
+    // Try to initialize audio immediately
+    if (initializeAudioContext()) {
+        audioInitialized = true;
+        console.log('Audio system auto-initialized successfully');
+    } else {
+        console.log('Audio initialization failed, will retry on user interaction');
+    }
     
     // Set up audio initialization on user interaction as backup
     document.addEventListener('click', initializeAudioOnUserInteraction);

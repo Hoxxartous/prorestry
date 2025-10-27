@@ -52,12 +52,98 @@ def distribute_order_to_kitchens(order):
                 category_items[category_id] = []
             category_items[category_id].append(order_item)
         
-        # For each category, find assigned kitchen and create kitchen order
+        # Handle Special Orders with custom kitchen assignments first
+        special_orders_by_kitchen = {}
+        regular_items_by_category = {}
+        
         for category_id, items in category_items.items():
-            # Skip special items category (طلبات خاصة) as they are modifiers
             category = Category.query.get(category_id)
             if category and category.name == 'طلبات خاصة':
+                continue  # Skip special items category (modifiers)
+            
+            # Separate Special Orders with kitchen assignments from regular items
+            special_orders = []
+            regular_items = []
+            
+            for item in items:
+                # Check if this is a Special Order with kitchen assignment
+                if (hasattr(item, 'special_kitchen_id') and item.special_kitchen_id) or \
+                   (item.notes and 'Kitchen Assignment:' in item.notes):
+                    # Extract kitchen ID from notes if not in attribute
+                    kitchen_id = getattr(item, 'special_kitchen_id', None)
+                    if not kitchen_id and item.notes:
+                        import re
+                        match = re.search(r'Kitchen Assignment: (\d+)', item.notes)
+                        if match:
+                            kitchen_id = int(match.group(1))
+                    
+                    if kitchen_id:
+                        if kitchen_id not in special_orders_by_kitchen:
+                            special_orders_by_kitchen[kitchen_id] = []
+                        special_orders_by_kitchen[kitchen_id].append(item)
+                        continue
+                
+                regular_items.append(item)
+            
+            # Store regular items by category for normal processing
+            if regular_items:
+                regular_items_by_category[category_id] = regular_items
+        
+        # Process Special Orders with custom kitchen assignments
+        for kitchen_id, special_items in special_orders_by_kitchen.items():
+            kitchen = Kitchen.query.get(kitchen_id)
+            if not kitchen or not kitchen.is_active:
+                print(f"DEBUG: Special Order kitchen {kitchen_id} not found or inactive, skipping")
                 continue
+            
+            print(f"DEBUG: Creating kitchen order for Special Orders - Kitchen: {kitchen.name} (ID: {kitchen.id})")
+            
+            # Create kitchen order for Special Orders
+            kitchen_order = KitchenOrder(
+                order_id=order.id,
+                kitchen_id=kitchen.id,
+                status=KitchenOrderStatus.RECEIVED,
+                received_at=datetime.utcnow()
+            )
+            
+            db.session.add(kitchen_order)
+            db.session.flush()  # Get kitchen_order.id
+            
+            # Create kitchen order items for Special Orders
+            for order_item in special_items:
+                kitchen_order_item = KitchenOrderItem(
+                    kitchen_order_id=kitchen_order.id,
+                    order_item_id=order_item.id,
+                    quantity=order_item.quantity,
+                    special_requests=order_item.notes,
+                    item_name=order_item.menu_item.name,
+                    item_name_ar=order_item.menu_item.name_ar,
+                    status=KitchenOrderStatus.RECEIVED
+                )
+                
+                db.session.add(kitchen_order_item)
+            
+            # Emit real-time notification to kitchen
+            socketio.emit('new_kitchen_order', {
+                'kitchen_order_id': kitchen_order.id,
+                'order_id': order.id,
+                'order_number': order.order_number,
+                'table_number': order.table.table_number if order.table else 'N/A',
+                'items_count': len(special_items),
+                'service_type': order.service_type.value if order.service_type else 'on_table',
+                'items': [{
+                    'name': item.menu_item.name,
+                    'name_ar': item.menu_item.name_ar,
+                    'quantity': item.quantity,
+                    'special_requests': item.notes
+                } for item in special_items]
+            }, room=f'kitchen_{kitchen.kitchen_user_id}')
+            
+            print(f"DEBUG: Sent WebSocket notification for Special Orders to kitchen user {kitchen.kitchen_user_id}")
+        
+        # Process regular items by category assignment
+        for category_id, items in regular_items_by_category.items():
+            category = Category.query.get(category_id)
             
             # Find kitchen assigned to this category
             assignment = CategoryKitchenAssignment.query.filter_by(
@@ -2637,7 +2723,7 @@ def create_order():
         
         for item_data in items:
             # Handle custom price items (like Falafel Hab and Special Order)
-            if item_data.get('id') in ['falafel_hab_custom', 'special_order_custom'] or item_data.get('isCustomPrice'):
+            if item_data.get('id') in ['falafel_hab_custom', 'special_order_custom'] or item_data.get('isCustomPrice') or item_data.get('is_special_order'):
                 # For custom price items, use the provided price instead of menu price
                 custom_price = Decimal(str(item_data.get('price', 0)))
                 quantity = item_data['quantity']
@@ -2645,8 +2731,8 @@ def create_order():
                 total_amount += item_total
                 
                 # Find the actual menu item
-                item_name = item_data.get('name', '')
-                if item_name == 'Falafel Hab':
+                item_name = item_data.get('name', '').lower()
+                if item_name == 'falafel hab':
                     menu_item = MenuItem.query.filter_by(name='Falafel Hab').first()
                     if not menu_item:
                         return jsonify({'success': False, 'message': 'Falafel Hab item not found in menu'}), 400
@@ -2705,6 +2791,16 @@ def create_order():
                 else:
                     modifiers_text = custom_price_note
                 
+                # Handle Special Order kitchen assignment
+                special_kitchen_id = item_data.get('kitchen_id')
+                if item_name == 'special order' and special_kitchen_id:
+                    # Add kitchen assignment info to notes
+                    kitchen_note = f"Kitchen Assignment: {special_kitchen_id}"
+                    if modifiers_text:
+                        modifiers_text = f"{modifiers_text}, {kitchen_note}"
+                    else:
+                        modifiers_text = kitchen_note
+                
                 order_item = OrderItem(
                     menu_item_id=menu_item.id,
                     quantity=quantity,
@@ -2713,6 +2809,10 @@ def create_order():
                     notes=modifiers_text,
                     modifiers_total_price=modifiers_total_price
                 )
+                
+                # Store kitchen assignment for Special Orders
+                if item_name == 'special order' and special_kitchen_id:
+                    order_item.special_kitchen_id = special_kitchen_id
                 order_items.append(order_item)
                 continue
             
@@ -3186,6 +3286,38 @@ def get_delivery_companies():
         return jsonify({
             'success': False,
             'message': f'Error loading delivery companies: {str(e)}'
+        }), 500
+
+@pos.route('/get_available_kitchens')
+@login_required
+@pos_access_required
+def get_available_kitchens():
+    """Get active kitchens for current user's branch for Special Order assignment"""
+    try:
+        # Filter by current user's branch and active status
+        kitchens = Kitchen.query.filter_by(
+            branch_id=current_user.branch_id,
+            is_active=True
+        ).all()
+        
+        kitchens_data = []
+        for kitchen in kitchens:
+            kitchens_data.append({
+                'id': kitchen.id,
+                'name': kitchen.name,
+                'description': kitchen.description or f'Kitchen {kitchen.name}',
+                'is_active': kitchen.is_active
+            })
+        
+        return jsonify({
+            'success': True,
+            'kitchens': kitchens_data
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error loading kitchens: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error loading kitchens: {str(e)}'
         }), 500
 
 # Order status management functions removed - orders are now simply created

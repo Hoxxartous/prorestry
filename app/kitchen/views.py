@@ -4,7 +4,7 @@ from app import db, socketio
 from app.kitchen import kitchen
 from app.models import (
     Kitchen, KitchenOrder, KitchenOrderItem, KitchenOrderStatus,
-    Order, OrderItem, Category, CategoryKitchenAssignment, User, UserRole, TimezoneManager
+    Order, OrderItem, Category, CategoryKitchenAssignment, User, UserRole, TimezoneManager, DeliveryCompany
 )
 from app.auth.decorators import login_required_with_role
 from datetime import datetime, timedelta
@@ -366,10 +366,9 @@ def api_dashboard():
         if not user_kitchen:
             return jsonify({'success': False, 'message': 'No kitchen assigned to your account'})
         
-        # Get filter and sort parameters
+        # Get filter parameters
         status_filters = request.args.getlist('status')  # Can be multiple: ['received', 'preparing']
         table_filters = request.args.getlist('table')   # Can be multiple: ['table', 'takeaway']
-        sort_by = request.args.get('sort', 'recent')    # 'recent' or 'table'
         
         # Get pending kitchen orders
         pending_kitchen_orders = KitchenOrder.query.filter_by(
@@ -396,14 +395,29 @@ def api_dashboard():
                 
                 if order_number not in grouped_orders:
                     # Create new grouped order entry
-                    table_number = kitchen_order.order.table.table_number if kitchen_order.order.table else 'Takeaway'
-                    is_takeaway = table_number == 'Takeaway'
+                    table_number = kitchen_order.order.table.table_number if kitchen_order.order.table else 'N/A'
+                    service_type = kitchen_order.order.service_type.value if kitchen_order.order.service_type else 'on_table'
+                    
+                    # Get delivery company name if it's a delivery order
+                    delivery_company = None
+                    if service_type == 'delivery' and kitchen_order.order.delivery_company_id:
+                        delivery_company_obj = DeliveryCompany.query.filter_by(
+                            id=kitchen_order.order.delivery_company_id,
+                            is_active=True
+                        ).first()
+                        if delivery_company_obj:
+                            delivery_company = delivery_company_obj.name
+                    
+                    # Determine if it's takeaway for backward compatibility
+                    is_takeaway = service_type == 'take_away'
                     
                     grouped_orders[order_number] = {
                         'id': kitchen_order.id,  # Use first kitchen_order id for actions
                         'order_id': kitchen_order.order_id,
                         'order_number': order_number,
                         'table_number': table_number,
+                        'service_type': service_type,
+                        'delivery_company': delivery_company,
                         'is_takeaway': is_takeaway,
                         'status': kitchen_order.status.value,
                         'received_at': TimezoneManager.format_local_time(kitchen_order.received_at, '%Y-%m-%d %H:%M'),
@@ -454,36 +468,24 @@ def api_dashboard():
             if status_filters and order['status'] not in status_filters:
                 continue
             
-            # Table filter
-            if table_filters:
-                if 'table' in table_filters and not order['is_takeaway']:
-                    pass  # Include table orders
-                elif 'takeaway' in table_filters and order['is_takeaway']:
-                    pass  # Include takeaway orders
-                else:
-                    continue  # Skip if doesn't match table filter
+            # Table/Location filter
+            if table_filters and 'all' not in table_filters:
+                order_matches_filter = False
+                
+                if 'table' in table_filters and order['service_type'] == 'on_table':
+                    order_matches_filter = True
+                elif 'takeaway' in table_filters and order['service_type'] == 'take_away':
+                    order_matches_filter = True
+                elif 'delivery' in table_filters and order['service_type'] == 'delivery':
+                    order_matches_filter = True
+                
+                if not order_matches_filter:
+                    continue  # Skip if doesn't match location filter
             
             filtered_orders.append(order)
         
-        # Apply sorting
-        if sort_by == 'table':
-            # Sort by table number (T01, T02, etc.) then takeaways
-            def table_sort_key(order):
-                if order['is_takeaway']:
-                    return (1, order['received_at_timestamp'])  # Takeaways come after tables
-                else:
-                    # Extract number from table (T01 -> 1, T02 -> 2, etc.)
-                    table_num = order['table_number']
-                    try:
-                        num = int(table_num[1:]) if table_num.startswith('T') else 999
-                        return (0, num, order['received_at_timestamp'])
-                    except:
-                        return (0, 999, order['received_at_timestamp'])
-            
-            filtered_orders.sort(key=table_sort_key)
-        else:  # sort_by == 'recent' (default)
-            # Sort by most recent first
-            filtered_orders.sort(key=lambda x: x['received_at_timestamp'], reverse=True)
+        # Sort by oldest first (chronological order) - default behavior
+        filtered_orders.sort(key=lambda x: x['received_at_timestamp'], reverse=False)
         
         # Separate back into pending and ready for response
         pending_orders_data = [o for o in filtered_orders if o['status'] in ['received', 'preparing']]
