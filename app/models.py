@@ -1254,3 +1254,27 @@ class KitchenOrderItem(db.Model):
         """Update individual item status"""
         self.status = new_status
         db.session.flush()
+
+class CategorySpecialItemAssignment(db.Model):
+    """Model for assigning special modifier items to specific categories"""
+    __tablename__ = 'category_special_item_assignments'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
+    special_item_id = db.Column(db.Integer, db.ForeignKey('menu_items.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    category = db.relationship('Category', backref='special_item_assignments')
+    special_item = db.relationship('MenuItem', backref='category_assignments')
+    branch = db.relationship('Branch')
+    
+    # Unique constraint to prevent duplicate assignments per branch
+    __table_args__ = (
+        db.UniqueConstraint('category_id', 'special_item_id', 'branch_id', name='unique_category_special_item_branch'),
+    )
+    
+    def __repr__(self):
+        return f'<CategorySpecialItemAssignment Category:{self.category_id} SpecialItem:{self.special_item_id}>'
