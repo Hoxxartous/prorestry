@@ -5607,7 +5607,8 @@ function updateOrderDisplay() {
         html += `
             <div class="${itemClass} mb-3 order-item-card ${selectedClass} clickable-order-item" 
                  style="border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; cursor: pointer; ${selectedStyle}" 
-                 data-item-index="${index}">
+                 data-item-index="${index}"
+                 data-menu-item-id="${item.id || ''}">
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="item-info flex-grow-1">
                         <div class="item-name fw-bold">${item.name}</div>
@@ -8409,7 +8410,109 @@ function openSpecialModal(orderItemElement) {
     // Reset selections
     resetSpecialItemsSelection();
     
-    // Show modal
+    // Get menu item ID from the order item element
+    const menuItemId = orderItemElement.dataset.menuItemId;
+    console.log('Menu item ID for filtering:', menuItemId);
+    
+    if (menuItemId) {
+        // Load filtered special items for this menu item
+        loadFilteredSpecialItems(menuItemId);
+    } else {
+        console.warn('No menu item ID found, loading all special items');
+        // Fallback to showing modal with existing items
+        showSpecialModal();
+    }
+}
+
+function loadFilteredSpecialItems(menuItemId) {
+    console.log('Loading filtered special items for menu item ID:', menuItemId);
+    
+    // Show loading state
+    const modalGrid = document.getElementById('mobileSpecialGrid');
+    if (modalGrid) {
+        modalGrid.innerHTML = `
+            <div class="col-12 text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading special items...</p>
+            </div>
+        `;
+    }
+    
+    // Show modal first
+    showSpecialModal();
+    
+    // Fetch filtered special items
+    fetch(`/pos/get_filtered_special_items/${menuItemId}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Filtered special items response:', data);
+            
+            if (data.success) {
+                displayFilteredSpecialItems(data.special_items, data.category_name);
+            } else {
+                console.error('Error loading filtered special items:', data.message);
+                displayNoSpecialItems('Error loading special items: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching filtered special items:', error);
+            displayNoSpecialItems('Failed to load special items. Please try again.');
+        });
+}
+
+function displayFilteredSpecialItems(specialItems, categoryName) {
+    const modalGrid = document.getElementById('mobileSpecialGrid');
+    const modalTitle = document.getElementById('mobileSpecialModalLabel');
+    
+    if (!modalGrid) {
+        console.error('Modal grid element not found');
+        return;
+    }
+    
+    // Update modal title to show category context
+    if (modalTitle && categoryName) {
+        modalTitle.innerHTML = `
+            <i class="bi bi-star-fill me-2"></i>Add Special Items
+            <small class="text-muted ms-2">(${categoryName} Category)</small>
+        `;
+    }
+    
+    if (specialItems && specialItems.length > 0) {
+        // Display filtered special items
+        modalGrid.innerHTML = specialItems.map(item => `
+            <div class="mobile-special-item" 
+                 data-item-id="${item.id}" 
+                 data-item-name="${item.name}" 
+                 data-item-price="${item.price}">
+                <div class="item-name">${item.name}</div>
+                <div class="item-price">+${item.price} QAR</div>
+            </div>
+        `).join('');
+        
+        // Reattach click event listeners to new items
+        attachSpecialItemClickListeners();
+        
+        console.log(`Displayed ${specialItems.length} filtered special items for category: ${categoryName}`);
+    } else {
+        displayNoSpecialItems(`No special items assigned to ${categoryName} category`);
+    }
+}
+
+function displayNoSpecialItems(message) {
+    const modalGrid = document.getElementById('mobileSpecialGrid');
+    if (modalGrid) {
+        modalGrid.innerHTML = `
+            <div class="col-12 text-center text-muted">
+                <i class="bi bi-info-circle me-2"></i>
+                ${message}
+            </div>
+        `;
+    }
+}
+
+function showSpecialModal() {
     const modalElement = document.getElementById('mobileSpecialModal');
     console.log('Modal element found:', modalElement);
     
@@ -8425,6 +8528,16 @@ function openSpecialModal(orderItemElement) {
     } else {
         console.error('Mobile special modal element not found');
     }
+}
+
+function attachSpecialItemClickListeners() {
+    // Reattach click listeners to special items
+    document.querySelectorAll('.mobile-special-item').forEach(item => {
+        item.addEventListener('click', function() {
+            this.classList.toggle('selected');
+            updateSelectedSpecialItems();
+        });
+    });
 }
 
 function resetSpecialItemsSelection() {

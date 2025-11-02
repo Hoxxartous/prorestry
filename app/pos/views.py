@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from flask_socketio import join_room, leave_room
 from app.pos import pos
 from app.models import (
-    User, MenuItem, Category, Order, AuditLog, Table, Customer, UserRole, OrderItem, DeliveryCompany, ServiceType, OrderStatus, PaymentMethod, TimezoneManager, AdminPinCode, WaiterCashierAssignment, OrderEditHistory, CashierUiPreference, CashierUiSetting, OrderCounter, CashierPin, CashierSession, ManualCardPayment, Kitchen, CategoryKitchenAssignment, KitchenOrder, KitchenOrderItem, KitchenOrderStatus
+    User, MenuItem, Category, Order, AuditLog, Table, Customer, UserRole, OrderItem, DeliveryCompany, ServiceType, OrderStatus, PaymentMethod, TimezoneManager, AdminPinCode, WaiterCashierAssignment, OrderEditHistory, CashierUiPreference, CashierUiSetting, OrderCounter, CashierPin, CashierSession, ManualCardPayment, Kitchen, CategoryKitchenAssignment, KitchenOrder, KitchenOrderItem, KitchenOrderStatus, CategorySpecialItemAssignment
 )
 from app import db, socketio
 from app.auth.decorators import cashier_or_above_required, pos_access_required, filter_by_user_branch
@@ -4024,3 +4024,56 @@ def generate_order_number():
     date_str = local_time.strftime('%Y%m%d')
     random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
     return f"ORD{date_str}{random_str}"
+
+@pos.route('/get_filtered_special_items/<int:item_id>')
+@pos_access_required
+def get_filtered_special_items(item_id):
+    """Get filtered special items for a menu item based on category assignments"""
+    try:
+        # Get the menu item
+        menu_item = MenuItem.query.filter_by(id=item_id, is_active=True).first()
+        if not menu_item:
+            return jsonify({'success': False, 'message': 'Menu item not found'})
+        
+        # For Quick Category items, use original_category_id, otherwise use category_id
+        filter_category_id = menu_item.original_category_id or menu_item.category_id
+        
+        # Get the category for debugging info
+        category = Category.query.filter_by(id=filter_category_id, is_active=True).first()
+        if not category:
+            return jsonify({'success': False, 'message': 'Category not found'})
+        
+        # Get assigned special items for this category
+        assignments = CategorySpecialItemAssignment.query.filter_by(
+            category_id=filter_category_id,
+            branch_id=current_user.branch_id,
+            is_active=True
+        ).join(MenuItem).filter(MenuItem.is_active == True).all()
+        
+        special_items = []
+        for assignment in assignments:
+            special_items.append({
+                'id': assignment.special_item.id,
+                'name': assignment.special_item.name,
+                'name_ar': assignment.special_item.name_ar,
+                'price': float(assignment.special_item.price)
+            })
+        
+        return jsonify({
+            'success': True,
+            'special_items': special_items,
+            'category_name': category.name,
+            'category_id': filter_category_id,
+            'debug_info': {
+                'menu_item_id': item_id,
+                'menu_item_name': menu_item.name,
+                'original_category_id': menu_item.original_category_id,
+                'current_category_id': menu_item.category_id,
+                'filter_category_id': filter_category_id,
+                'assignments_count': len(assignments)
+            }
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting filtered special items: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error fetching special items: {str(e)}'})

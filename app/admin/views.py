@@ -1,7 +1,7 @@
 from flask import render_template, redirect, url_for, request, jsonify, flash
 from flask_login import login_required, current_user
 from app.admin import admin
-from app.models import User, MenuItem, Category, Order, AuditLog, Table, Customer, UserRole, OrderItem, DeliveryCompany, ServiceType, OrderStatus, TimezoneManager, AdminPinCode, WaiterCashierAssignment, OrderEditHistory, ManualCardPayment, Kitchen, CategoryKitchenAssignment, KitchenOrder, KitchenOrderStatus
+from app.models import User, MenuItem, Category, Order, AuditLog, Table, Customer, UserRole, OrderItem, DeliveryCompany, ServiceType, OrderStatus, TimezoneManager, AdminPinCode, WaiterCashierAssignment, OrderEditHistory, ManualCardPayment, Kitchen, CategoryKitchenAssignment, KitchenOrder, KitchenOrderStatus, CategorySpecialItemAssignment
 from app import db
 from app.auth.decorators import branch_admin_required, filter_by_user_branch, get_user_branch_filter
 from datetime import datetime, timedelta
@@ -944,24 +944,41 @@ def delete_menu_item(item_id):
 
 @admin.route('/menu')
 def menu():
-    # Get filter parameters
+    # Get filter parameters - default to showing only active items
     category_id = request.args.get('category_id', '')
-    is_active = request.args.get('is_active', '')
+    is_active = request.args.get('is_active', 'true')  # Default to active only
+    show_all_categories = request.args.get('show_all_categories', 'false')
     
     # Build query for items with branch filtering
     items_query = filter_by_user_branch(MenuItem.query, MenuItem)
     
-    # Apply filters
+    # Apply category filter
     if category_id:
         items_query = items_query.filter(MenuItem.category_id == category_id)
-    if is_active:
-        items_query = items_query.filter(MenuItem.is_active == (is_active == 'true'))
+    
+    # Apply is_active filter properly
+    if is_active == 'true':
+        items_query = items_query.filter(MenuItem.is_active == True)
+    elif is_active == 'false':
+        items_query = items_query.filter(MenuItem.is_active == False)
+    elif is_active == '':
+        # Show all statuses - no filter applied
+        pass
+    else:
+        # Default to active only for any other case
+        items_query = items_query.filter(MenuItem.is_active == True)
     
     # Get filtered items
     items = items_query.all()
     
-    # Get categories for filter with branch filtering
-    categories = filter_by_user_branch(Category.query, Category).all()
+    # Get categories for filter with branch filtering - default to active only
+    if show_all_categories == 'true':
+        categories = filter_by_user_branch(Category.query, Category).all()
+    else:
+        categories = filter_by_user_branch(
+            Category.query.filter_by(is_active=True), 
+            Category
+        ).all()
     
     # Get active categories for the add item form with branch filtering
     active_categories = filter_by_user_branch(
@@ -975,7 +992,8 @@ def menu():
                           items=items,
                           filters={
                               'category_id': category_id,
-                              'is_active': is_active
+                              'is_active': is_active,
+                              'show_all_categories': show_all_categories
                           })
 
 @admin.route('/orders')
@@ -1189,13 +1207,22 @@ def audit_logs():
 
 @admin.route('/get_delivery_companies')
 def get_delivery_companies():
-    """Get all delivery companies from the database (both active and inactive for admin)"""
+    """Get delivery companies from the database (active only by default)"""
     try:
-        # For admin, show companies from their branch only (active and inactive)
-        companies = filter_by_user_branch(
+        # Get filter parameter - default to showing only active companies
+        show_all = request.args.get('show_all', 'false').lower() == 'true'
+        
+        # Build query for companies with branch filtering
+        companies_query = filter_by_user_branch(
             DeliveryCompany.query.order_by(DeliveryCompany.name), 
             DeliveryCompany
-        ).all()
+        )
+        
+        # Apply active filter unless show_all is requested
+        if not show_all:
+            companies_query = companies_query.filter(DeliveryCompany.is_active == True)
+        
+        companies = companies_query.all()
 
         # If no companies exist yet for this branch, auto-seed defaults for first-time setup
         if not companies:
@@ -1819,9 +1846,12 @@ def get_quick_category_data():
 
 @admin.route('/get_tables_data', methods=['GET'])
 def get_tables_data():
-    """Get data for table management"""
+    """Get data for table management (active only by default)"""
     try:
         from app.models import Table
+        
+        # Get filter parameter - default to showing only active tables
+        show_all = request.args.get('show_all', 'false').lower() == 'true'
         
         # Get tables from current user's branch only
         tables_query = filter_by_user_branch(
@@ -1829,8 +1859,12 @@ def get_tables_data():
             Table
         )
         
+        # Apply active filter unless show_all is requested
+        if not show_all:
+            tables_query = tables_query.filter(Table.is_active == True)
+        
         tables = []
-        for table in tables_query:
+        for table in tables_query.all():
             tables.append({
                 'id': table.id,
                 'table_number': table.table_number,
@@ -3157,3 +3191,737 @@ def kitchen_orders():
     return render_template('admin/kitchen_orders.html',
                          kitchens=kitchens,
                          kitchen_orders=kitchen_orders)
+
+@admin.route('/assign_special_item_to_category', methods=['POST'])
+def assign_special_item_to_category():
+    """Assign multiple special items to a category"""
+    try:
+        data = request.get_json()
+        category_id = data.get('category_id')
+        special_item_ids = data.get('special_item_ids', [])
+        
+        if not category_id or not special_item_ids:
+            return jsonify({'success': False, 'message': 'Category ID and special item IDs are required'})
+        
+        # Check if category exists and belongs to user's branch
+        branch_filter = get_user_branch_filter()
+        category = Category.query.filter_by(id=category_id, branch_id=branch_filter, is_active=True).first()
+        if not category:
+            return jsonify({'success': False, 'message': 'Category not found'})
+        
+        # Prevent assignments to Quick category
+        if category.name.lower() == 'quick':
+            return jsonify({'success': False, 'message': 'Cannot assign special items to Quick category'})
+        
+        assigned_count = 0
+        for special_item_id in special_item_ids:
+            # Check if special item exists and belongs to special items category
+            special_item = MenuItem.query.filter_by(id=special_item_id, branch_id=branch_filter, is_active=True).first()
+            if not special_item:
+                continue
+                
+            # Check if special item belongs to "طلبات خاصة" category
+            special_category = Category.query.filter_by(name='طلبات خاصة', branch_id=branch_filter).first()
+            if not special_category or special_item.category_id != special_category.id:
+                continue
+            
+            # Check if assignment already exists
+            existing_assignment = CategorySpecialItemAssignment.query.filter_by(
+                category_id=category_id,
+                special_item_id=special_item_id,
+                branch_id=branch_filter
+            ).first()
+            
+            if not existing_assignment:
+                # Create new assignment
+                assignment = CategorySpecialItemAssignment(
+                    category_id=category_id,
+                    special_item_id=special_item_id,
+                    branch_id=branch_filter,
+                    is_active=True
+                )
+                db.session.add(assignment)
+                assigned_count += 1
+            else:
+                # Reactivate if it was inactive
+                if not existing_assignment.is_active:
+                    existing_assignment.is_active = True
+                    assigned_count += 1
+        
+        db.session.commit()
+        return jsonify({
+            'success': True, 
+            'message': f'Successfully assigned {assigned_count} special items to category'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error assigning special items: {str(e)}'})
+
+@admin.route('/unassign_special_item_from_category', methods=['POST'])
+def unassign_special_item_from_category():
+    """Remove special item assignment from category"""
+    try:
+        data = request.get_json()
+        category_id = data.get('category_id')
+        special_item_id = data.get('special_item_id')
+        
+        if not category_id or not special_item_id:
+            return jsonify({'success': False, 'message': 'Category ID and special item ID are required'})
+        
+        branch_filter = get_user_branch_filter()
+        
+        # Find and deactivate the assignment
+        assignment = CategorySpecialItemAssignment.query.filter_by(
+            category_id=category_id,
+            special_item_id=special_item_id,
+            branch_id=branch_filter
+        ).first()
+        
+        if assignment:
+            assignment.is_active = False
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'Special item unassigned successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'Assignment not found'})
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error unassigning special item: {str(e)}'})
+
+@admin.route('/get_category_special_items/<int:category_id>')
+def get_category_special_items(category_id):
+    """Get assigned special items for a category"""
+    try:
+        branch_filter = get_user_branch_filter()
+        
+        # Get assigned special items for this category
+        assignments = CategorySpecialItemAssignment.query.filter_by(
+            category_id=category_id,
+            branch_id=branch_filter,
+            is_active=True
+        ).join(MenuItem).filter(MenuItem.is_active == True).all()
+        
+        special_items = []
+        for assignment in assignments:
+            special_items.append({
+                'id': assignment.special_item.id,
+                'name': assignment.special_item.name,
+                'name_ar': assignment.special_item.name_ar,
+                'price': float(assignment.special_item.price)
+            })
+        
+        return jsonify({'success': True, 'special_items': special_items})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error fetching special items: {str(e)}'})
+
+@admin.route('/get_available_special_items')
+def get_available_special_items():
+    """Get all available special items for assignment"""
+    try:
+        branch_filter = get_user_branch_filter()
+        
+        # Get special items category
+        special_category = Category.query.filter_by(name='طلبات خاصة', branch_id=branch_filter, is_active=True).first()
+        if not special_category:
+            return jsonify({'success': True, 'special_items': []})
+        
+        # Get all special items
+        special_items = MenuItem.query.filter_by(
+            category_id=special_category.id,
+            branch_id=branch_filter,
+            is_active=True
+        ).all()
+        
+        items_data = []
+        for item in special_items:
+            items_data.append({
+                'id': item.id,
+                'name': item.name,
+                'name_ar': item.name_ar,
+                'price': float(item.price)
+            })
+        
+        return jsonify({'success': True, 'special_items': items_data})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error fetching available special items: {str(e)}'})
+
+@admin.route('/export_menu_settings')
+@login_required
+@branch_admin_required
+def export_menu_settings():
+    """Export all menu settings data as JSON"""
+    try:
+        # Get current user's branch
+        branch_filter = get_user_branch_filter()
+        
+        export_data = {
+            'export_info': {
+                'timestamp': datetime.utcnow().isoformat(),
+                'branch_id': branch_filter,
+                'exported_by': current_user.get_full_name(),
+                'version': '1.0'
+            },
+            'categories': [],
+            'menu_items': [],
+            'tables': [],
+            'delivery_companies': [],
+            'special_item_assignments': [],
+            'quick_category_items': []
+        }
+        
+        # Export Categories
+        categories_query = filter_by_user_branch(Category.query, Category)
+        categories = categories_query.all()
+        
+        quick_category = None
+        for category in categories:
+            category_data = {
+                'id': category.id,
+                'name': category.name,
+                'description': category.description,
+                'is_active': category.is_active,
+                'order_index': category.order_index,
+                'created_at': category.created_at.isoformat() if category.created_at else None
+            }
+            export_data['categories'].append(category_data)
+            
+            # Track Quick category for later use
+            if category.name.lower() == 'quick':
+                quick_category = category
+        
+        # Export Menu Items
+        items_query = filter_by_user_branch(MenuItem.query, MenuItem)
+        items = items_query.all()
+        
+        for item in items:
+            item_data = {
+                'id': item.id,
+                'name': item.name,
+                'name_ar': item.name_ar,
+                'description': item.description,
+                'description_ar': item.description_ar,
+                'price': float(item.price) if item.price else 0.0,
+                'cost': float(item.cost) if item.cost else None,
+                'image_url': item.image_url,
+                'is_active': item.is_active,
+                'is_vegetarian': item.is_vegetarian,
+                'is_vegan': item.is_vegan,
+                'card_color': item.card_color,
+                'size_flag': item.size_flag,
+                'portion_type': item.portion_type,
+                'visual_priority': item.visual_priority,
+                'category_id': item.category_id,
+                'original_category_id': item.original_category_id,
+                'category_name': item.category.name if item.category else None,
+                'original_category_name': item.original_category.name if item.original_category else None,
+                'created_at': item.created_at.isoformat() if item.created_at else None,
+                'updated_at': item.updated_at.isoformat() if item.updated_at else None
+            }
+            export_data['menu_items'].append(item_data)
+        
+        # Export Quick Category Items (items that are in Quick category)
+        if quick_category:
+            quick_items = filter_by_user_branch(
+                MenuItem.query.filter_by(category_id=quick_category.id), 
+                MenuItem
+            ).all()
+            
+            for item in quick_items:
+                quick_item_data = {
+                    'id': item.id,
+                    'name': item.name,
+                    'original_category_id': item.original_category_id,
+                    'original_category_name': item.original_category.name if item.original_category else None
+                }
+                export_data['quick_category_items'].append(quick_item_data)
+        
+        # Export Tables
+        tables_query = filter_by_user_branch(Table.query, Table)
+        tables = tables_query.all()
+        
+        for table in tables:
+            table_data = {
+                'id': table.id,
+                'table_number': table.table_number,
+                'capacity': table.capacity,
+                'description': table.description,
+                'is_active': table.is_active,
+                'created_at': table.created_at.isoformat() if table.created_at else None
+            }
+            export_data['tables'].append(table_data)
+        
+        # Export Delivery Companies
+        companies_query = filter_by_user_branch(DeliveryCompany.query, DeliveryCompany)
+        companies = companies_query.all()
+        
+        for company in companies:
+            company_data = {
+                'id': company.id,
+                'name': company.name,
+                'value': company.value,
+                'icon': company.icon,
+                'is_active': company.is_active,
+                'created_at': company.created_at.isoformat() if company.created_at else None
+            }
+            export_data['delivery_companies'].append(company_data)
+        
+        # Export Special Item Assignments
+        assignments_query = filter_by_user_branch(
+            CategorySpecialItemAssignment.query, 
+            CategorySpecialItemAssignment
+        )
+        assignments = assignments_query.all()
+        
+        for assignment in assignments:
+            assignment_data = {
+                'id': assignment.id,
+                'category_id': assignment.category_id,
+                'special_item_id': assignment.special_item_id,
+                'category_name': assignment.category.name if assignment.category else None,
+                'special_item_name': assignment.special_item.name if assignment.special_item else None,
+                'is_active': assignment.is_active,
+                'created_at': assignment.created_at.isoformat() if assignment.created_at else None
+            }
+            export_data['special_item_assignments'].append(assignment_data)
+        
+        # Create response with JSON file download
+        from flask import make_response
+        import json
+        
+        response = make_response(json.dumps(export_data, indent=2, ensure_ascii=False))
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        response.headers['Content-Disposition'] = f'attachment; filename=menu_settings_export_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}.json'
+        
+        return response
+        
+    except Exception as e:
+        flash(f'Error exporting menu settings: {str(e)}', 'error')
+        return redirect(url_for('admin.menu'))
+
+@admin.route('/import_menu_settings', methods=['POST'])
+@login_required
+@branch_admin_required
+def import_menu_settings():
+    """Import menu settings from JSON file"""
+    try:
+        # Check if file was uploaded
+        if 'import_file' not in request.files:
+            return jsonify({'success': False, 'message': 'No file uploaded'})
+        
+        file = request.files['import_file']
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'No file selected'})
+        
+        if not file.filename.endswith('.json'):
+            return jsonify({'success': False, 'message': 'Please upload a JSON file'})
+        
+        # Parse JSON data
+        import json
+        try:
+            import_data = json.load(file)
+        except json.JSONDecodeError as e:
+            return jsonify({'success': False, 'message': f'Invalid JSON file: {str(e)}'})
+        
+        # Validate JSON structure
+        required_keys = ['categories', 'menu_items', 'tables', 'delivery_companies', 'special_item_assignments']
+        for key in required_keys:
+            if key not in import_data:
+                return jsonify({'success': False, 'message': f'Missing required data: {key}'})
+        
+        # Get current user's branch
+        branch_filter = get_user_branch_filter()
+        if not branch_filter:
+            return jsonify({'success': False, 'message': 'Branch not found'})
+        
+        import_stats = {
+            'categories_imported': 0,
+            'menu_items_imported': 0,
+            'tables_imported': 0,
+            'delivery_companies_imported': 0,
+            'special_assignments_imported': 0,
+            'quick_items_imported': 0
+        }
+        
+        # Start transaction
+        try:
+            # Add detailed error tracking
+            errors = []
+            # Import Categories
+            category_id_mapping = {}  # Old ID -> New ID mapping
+            for cat_data in import_data['categories']:
+                try:
+                    # Validate required fields
+                    if not cat_data.get('name') or not cat_data.get('id'):
+                        errors.append(f"Category missing required fields: {cat_data}")
+                        continue  # Skip categories without required fields
+                    
+                    # Check if category already exists by name
+                    existing_category = Category.query.filter_by(
+                        name=str(cat_data['name']), 
+                        branch_id=branch_filter
+                    ).first()
+                    
+                    if existing_category:
+                        # Update existing category
+                        existing_category.description = cat_data.get('description')
+                        existing_category.is_active = cat_data.get('is_active', True)
+                        existing_category.order_index = int(cat_data.get('order_index', 0))
+                        category_id_mapping[cat_data['id']] = existing_category.id
+                    else:
+                        # Create new category
+                        new_category = Category(
+                            name=str(cat_data['name']),
+                            description=cat_data.get('description'),
+                            is_active=cat_data.get('is_active', True),
+                            order_index=int(cat_data.get('order_index', 0)),
+                            branch_id=branch_filter
+                        )
+                        db.session.add(new_category)
+                        db.session.flush()  # Get the ID
+                        category_id_mapping[cat_data['id']] = new_category.id
+                    
+                    import_stats['categories_imported'] += 1
+                except Exception as e:
+                    errors.append(f"Error importing category '{cat_data.get('name', 'Unknown')}': {str(e)}")
+                    continue
+            
+            # Import Menu Items
+            item_id_mapping = {}  # Old ID -> New ID mapping
+            for item_data in import_data['menu_items']:
+                # Validate required fields
+                if not item_data.get('name') or not item_data.get('category_id'):
+                    continue  # Skip items without required fields
+                
+                # Map category IDs
+                new_category_id = category_id_mapping.get(item_data['category_id'])
+                new_original_category_id = category_id_mapping.get(item_data.get('original_category_id')) if item_data.get('original_category_id') else None
+                
+                if not new_category_id:
+                    continue  # Skip if category not found
+                
+                # Check if item already exists by name and category
+                existing_item = MenuItem.query.filter_by(
+                    name=str(item_data['name']),
+                    category_id=new_category_id,
+                    branch_id=branch_filter
+                ).first()
+                
+                if existing_item:
+                    # Update existing item
+                    existing_item.name_ar = item_data.get('name_ar')
+                    existing_item.description = item_data.get('description')
+                    existing_item.description_ar = item_data.get('description_ar')
+                    existing_item.price = float(item_data.get('price', 0))
+                    existing_item.cost = float(item_data.get('cost')) if item_data.get('cost') else None
+                    existing_item.image_url = item_data.get('image_url')
+                    existing_item.is_active = item_data.get('is_active', True)
+                    existing_item.is_vegetarian = item_data.get('is_vegetarian', False)
+                    existing_item.is_vegan = item_data.get('is_vegan', False)
+                    existing_item.card_color = item_data.get('card_color')
+                    existing_item.size_flag = item_data.get('size_flag')
+                    existing_item.portion_type = item_data.get('portion_type')
+                    existing_item.visual_priority = item_data.get('visual_priority')
+                    existing_item.original_category_id = new_original_category_id
+                    item_id_mapping[item_data['id']] = existing_item.id
+                else:
+                    # Create new item
+                    new_item = MenuItem(
+                        name=str(item_data['name']),
+                        name_ar=item_data.get('name_ar'),
+                        description=item_data.get('description'),
+                        description_ar=item_data.get('description_ar'),
+                        price=float(item_data.get('price', 0)),
+                        cost=float(item_data.get('cost')) if item_data.get('cost') else None,
+                        image_url=item_data.get('image_url'),
+                        is_active=item_data.get('is_active', True),
+                        is_vegetarian=item_data.get('is_vegetarian', False),
+                        is_vegan=item_data.get('is_vegan', False),
+                        card_color=item_data.get('card_color'),
+                        size_flag=item_data.get('size_flag'),
+                        portion_type=item_data.get('portion_type'),
+                        visual_priority=item_data.get('visual_priority'),
+                        category_id=new_category_id,
+                        original_category_id=new_original_category_id,
+                        branch_id=branch_filter
+                    )
+                    db.session.add(new_item)
+                    db.session.flush()  # Get the ID
+                    item_id_mapping[item_data['id']] = new_item.id
+                
+                import_stats['menu_items_imported'] += 1
+            
+            # Import Tables
+            for table_data in import_data['tables']:
+                try:
+                    # Validate required fields
+                    if not table_data.get('table_number'):
+                        errors.append(f"Table missing table_number: {table_data}")
+                        continue  # Skip tables without table_number
+                    
+                    # Check if table already exists by table_number
+                    existing_table = Table.query.filter_by(
+                        table_number=str(table_data['table_number']),
+                        branch_id=branch_filter
+                    ).first()
+                    
+                    if existing_table:
+                        # Update existing table
+                        existing_table.capacity = int(table_data.get('capacity', 4))
+                        existing_table.description = table_data.get('description')
+                        existing_table.is_active = table_data.get('is_active', True)
+                    else:
+                        # Create new table
+                        new_table = Table(
+                            table_number=str(table_data['table_number']),
+                            capacity=int(table_data.get('capacity', 4)),
+                            description=table_data.get('description'),
+                            is_active=table_data.get('is_active', True),
+                            branch_id=branch_filter
+                        )
+                        db.session.add(new_table)
+                    
+                    import_stats['tables_imported'] += 1
+                except Exception as e:
+                    errors.append(f"Error importing table '{table_data.get('table_number', 'Unknown')}': {str(e)}")
+                    continue
+            
+            # Import Delivery Companies
+            for company_data in import_data['delivery_companies']:
+                # Validate required fields
+                if not company_data.get('name'):
+                    continue  # Skip companies without name
+                
+                # Check if company already exists by name
+                existing_company = DeliveryCompany.query.filter_by(
+                    name=str(company_data['name']),
+                    branch_id=branch_filter
+                ).first()
+                
+                if existing_company:
+                    # Update existing company
+                    existing_company.value = company_data.get('value', company_data['name'].lower().replace(' ', '_'))
+                    existing_company.icon = company_data.get('icon', 'bi-truck')
+                    existing_company.is_active = company_data.get('is_active', True)
+                else:
+                    # Create new company
+                    new_company = DeliveryCompany(
+                        name=str(company_data['name']),
+                        value=company_data.get('value', company_data['name'].lower().replace(' ', '_')),
+                        icon=company_data.get('icon', 'bi-truck'),
+                        is_active=company_data.get('is_active', True),
+                        branch_id=branch_filter
+                    )
+                    db.session.add(new_company)
+                
+                import_stats['delivery_companies_imported'] += 1
+            
+            # Import Special Item Assignments
+            for assignment_data in import_data['special_item_assignments']:
+                # Map category and item IDs
+                new_category_id = category_id_mapping.get(assignment_data['category_id'])
+                new_special_item_id = item_id_mapping.get(assignment_data['special_item_id'])
+                
+                if not new_category_id or not new_special_item_id:
+                    continue  # Skip if category or item not found
+                
+                # Check if assignment already exists
+                existing_assignment = CategorySpecialItemAssignment.query.filter_by(
+                    category_id=new_category_id,
+                    special_item_id=new_special_item_id,
+                    branch_id=branch_filter
+                ).first()
+                
+                if existing_assignment:
+                    # Update existing assignment
+                    existing_assignment.is_active = assignment_data.get('is_active', True)
+                else:
+                    # Create new assignment
+                    new_assignment = CategorySpecialItemAssignment(
+                        category_id=new_category_id,
+                        special_item_id=new_special_item_id,
+                        branch_id=branch_filter,
+                        is_active=assignment_data.get('is_active', True)
+                    )
+                    db.session.add(new_assignment)
+                
+                import_stats['special_assignments_imported'] += 1
+            
+            # Handle Quick Category Items if present
+            if 'quick_category_items' in import_data:
+                # Find Quick category
+                quick_category = Category.query.filter_by(
+                    name='Quick',
+                    branch_id=branch_filter
+                ).first()
+                
+                if quick_category:
+                    for quick_item_data in import_data['quick_category_items']:
+                        # Find the item by name and update its category to Quick
+                        item_to_move = MenuItem.query.filter_by(
+                            name=quick_item_data['name'],
+                            branch_id=branch_filter
+                        ).first()
+                        
+                        if item_to_move:
+                            # Set original category if not already set
+                            if not item_to_move.original_category_id and quick_item_data.get('original_category_id'):
+                                mapped_original_id = category_id_mapping.get(quick_item_data['original_category_id'])
+                                if mapped_original_id:
+                                    item_to_move.original_category_id = mapped_original_id
+                            
+                            # Move to Quick category
+                            item_to_move.category_id = quick_category.id
+                            import_stats['quick_items_imported'] += 1
+            
+            # Commit all changes
+            db.session.commit()
+            
+            # Prepare response message
+            message = 'Menu settings imported successfully'
+            if errors:
+                message += f' (with {len(errors)} warnings)'
+            
+            return jsonify({
+                'success': True, 
+                'message': message,
+                'stats': import_stats,
+                'errors': errors if errors else None
+            })
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': f'Database error during import: {str(e)}'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error importing menu settings: {str(e)}'})
+
+# =====================================================
+# DEACTIVATED ELEMENTS MANAGEMENT ROUTES
+# =====================================================
+
+@admin.route('/get_deactivated_elements')
+def get_deactivated_elements():
+    """Get all deactivated elements for restore modal"""
+    try:
+        branch_filter = get_user_branch_filter()
+        
+        # Get deactivated categories
+        deactivated_categories = filter_by_user_branch(
+            Category.query.filter_by(is_active=False), 
+            Category
+        ).all()
+        
+        # Get deactivated menu items
+        deactivated_items = filter_by_user_branch(
+            MenuItem.query.filter_by(is_active=False), 
+            MenuItem
+        ).all()
+        
+        # Get deactivated tables
+        deactivated_tables = filter_by_user_branch(
+            Table.query.filter_by(is_active=False), 
+            Table
+        ).all()
+        
+        # Get deactivated delivery companies
+        deactivated_companies = filter_by_user_branch(
+            DeliveryCompany.query.filter_by(is_active=False), 
+            DeliveryCompany
+        ).all()
+        
+        return jsonify({
+            'success': True,
+            'categories': [{
+                'id': cat.id,
+                'name': cat.name,
+                'description': cat.description or ''
+            } for cat in deactivated_categories],
+            'items': [{
+                'id': item.id,
+                'name': item.name,
+                'category_name': item.category.name if item.category else 'Unknown',
+                'price': float(item.price)
+            } for item in deactivated_items],
+            'tables': [{
+                'id': table.id,
+                'table_number': table.table_number,
+                'capacity': table.capacity,
+                'description': table.description or ''
+            } for table in deactivated_tables],
+            'companies': [{
+                'id': company.id,
+                'name': company.name,
+                'value': company.value
+            } for company in deactivated_companies]
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@admin.route('/restore_elements', methods=['POST'])
+def restore_elements():
+    """Restore selected deactivated elements"""
+    try:
+        data = request.get_json()
+        element_type = data.get('type')
+        element_ids = data.get('ids', [])
+        
+        if not element_type or not element_ids:
+            return jsonify({'success': False, 'message': 'Invalid request data'}), 400
+        
+        branch_filter = get_user_branch_filter()
+        restored_count = 0
+        
+        # Restore based on element type
+        if element_type == 'categories':
+            categories = filter_by_user_branch(
+                Category.query.filter(Category.id.in_(element_ids)), 
+                Category
+            ).all()
+            for category in categories:
+                category.is_active = True
+                restored_count += 1
+                
+        elif element_type == 'items':
+            items = filter_by_user_branch(
+                MenuItem.query.filter(MenuItem.id.in_(element_ids)), 
+                MenuItem
+            ).all()
+            for item in items:
+                item.is_active = True
+                restored_count += 1
+                
+        elif element_type == 'tables':
+            tables = filter_by_user_branch(
+                Table.query.filter(Table.id.in_(element_ids)), 
+                Table
+            ).all()
+            for table in tables:
+                table.is_active = True
+                restored_count += 1
+                
+        elif element_type == 'companies':
+            companies = filter_by_user_branch(
+                DeliveryCompany.query.filter(DeliveryCompany.id.in_(element_ids)), 
+                DeliveryCompany
+            ).all()
+            for company in companies:
+                company.is_active = True
+                restored_count += 1
+        else:
+            return jsonify({'success': False, 'message': 'Invalid element type'}), 400
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Successfully restored {restored_count} {element_type}',
+            'restored_count': restored_count
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
