@@ -19,11 +19,13 @@ def get_model_columns():
         from app import create_app, db
         from config import ProductionConfig
         from app.models import (
-            Branch, User, Category, MenuItem, Table, Customer, Order, OrderItem, 
-            Payment, AuditLog, InventoryItem, Notification, CashierSession, 
-            OrderCounter, DeliveryCompany, CashierUiPreference, CashierUiSetting,
-            AppSettings, AdminPinCode, CashierPin, WaiterCashierAssignment,
-            ManualCardPayment, OrderEditHistory
+            Branch, User, UserBranchAssignment, Category, MenuItem, Table, Customer, 
+            Order, OrderItem, Payment, AuditLog, InventoryItem, Notification, 
+            CashierSession, OrderCounter, DeliveryCompany, CashierUiPreference, 
+            CashierUiSetting, AppSettings, AdminPinCode, CashierPin, 
+            WaiterCashierAssignment, ManualCardPayment, OrderEditHistory,
+            Kitchen, CategoryKitchenAssignment, KitchenOrder, KitchenOrderItem,
+            CategorySpecialItemAssignment
         )
         
         app = create_app(ProductionConfig)
@@ -31,11 +33,13 @@ def get_model_columns():
         with app.app_context():
             # Get all model classes
             models = [
-                Branch, User, Category, MenuItem, Table, Customer, Order, OrderItem,
-                Payment, AuditLog, InventoryItem, Notification, CashierSession,
-                OrderCounter, DeliveryCompany, CashierUiPreference, CashierUiSetting,
-                AppSettings, AdminPinCode, CashierPin, WaiterCashierAssignment,
-                ManualCardPayment, OrderEditHistory
+                Branch, User, UserBranchAssignment, Category, MenuItem, Table, Customer, 
+                Order, OrderItem, Payment, AuditLog, InventoryItem, Notification, 
+                CashierSession, OrderCounter, DeliveryCompany, CashierUiPreference, 
+                CashierUiSetting, AppSettings, AdminPinCode, CashierPin, 
+                WaiterCashierAssignment, ManualCardPayment, OrderEditHistory,
+                Kitchen, CategoryKitchenAssignment, KitchenOrder, KitchenOrderItem,
+                CategorySpecialItemAssignment
             ]
             
             model_schema = {}
