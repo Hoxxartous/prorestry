@@ -25,60 +25,73 @@ def login():
         current_app.logger.info(f"Login attempt for username: {username}")
         
         try:
-            # Ensure database is initialized before querying
-            from sqlalchemy import inspect
-            inspector = inspect(db.engine)
-            existing_tables = inspector.get_table_names()
+            from app.db_connection_handler import safe_db_operation, DatabaseConnectionManager
             
-            if 'users' not in existing_tables:
-                # Database not initialized, initialize it now
-                current_app.logger.info("Database not initialized, initializing now...")
-                from app.db_init import init_db_lazy
-                init_db_lazy(current_app)
-            
-            user = User.query.filter_by(username=username).first()
-            
-            # Debug logging
-            if user:
-                current_app.logger.info(f"User found: {user.username}, Active: {user.is_active}, Role: {user.role.value}")
-                password_valid = user.check_password(password)
-                current_app.logger.info(f"Password validation result: {password_valid}")
-            else:
-                current_app.logger.warning(f"User not found: {username}")
-                # Check if any users exist at all
-                user_count = User.query.count()
-                current_app.logger.info(f"Total users in database: {user_count}")
-            
-            if user and user.check_password(password) and user.is_active:
-                # Clear any existing session data before login
-                from flask import session
-                session.clear()
+            def _perform_login():
+                # Ensure database is initialized before querying
+                from sqlalchemy import inspect
+                inspector = inspect(db.engine)
+                existing_tables = inspector.get_table_names()
                 
-                # Login user with proper session management
-                login_user(user, remember=remember_me)
+                if 'users' not in existing_tables:
+                    # Database not initialized, initialize it now
+                    current_app.logger.info("Database not initialized, initializing now...")
+                    from app.db_init import init_db_lazy
+                    init_db_lazy(current_app)
                 
-                # Update last login time
-                user.last_login = datetime.utcnow()
-                db.session.commit()
+                user = User.query.filter_by(username=username).first()
                 
-                # Log the login action
-                log_audit_action(user.id, 'login', 'User logged in successfully')
-                current_app.logger.info(f"Successful login for user: {username} (Role: {user.role.value})")
-                
-                # Redirect to appropriate dashboard based on role
-                if user.role == UserRole.SUPER_USER:
-                    return redirect(url_for('superuser.dashboard'))
-                elif user.role == UserRole.BRANCH_ADMIN:
-                    return redirect(url_for('admin.dashboard'))
-                elif user.role == UserRole.WAITER:
-                    return redirect(url_for('pos.table_management'))
-                elif user.role == UserRole.KITCHEN:
-                    return redirect(url_for('kitchen.dashboard'))
+                # Debug logging
+                if user:
+                    current_app.logger.info(f"User found: {user.username}, Active: {user.is_active}, Role: {user.role.value}")
+                    password_valid = user.check_password(password)
+                    current_app.logger.info(f"Password validation result: {password_valid}")
                 else:
-                    return redirect(url_for('pos.index'))
-            else:
-                current_app.logger.warning(f"Failed login attempt for username: {username}")
-                flash('Invalid username or password', 'error')
+                    current_app.logger.warning(f"User not found: {username}")
+                    # Check if any users exist at all
+                    user_count = User.query.count()
+                    current_app.logger.info(f"Total users in database: {user_count}")
+                
+                if user and user.check_password(password) and user.is_active:
+                    # Clear any existing session data before login
+                    from flask import session
+                    session.clear()
+                    
+                    # Login user with proper session management
+                    login_user(user, remember=remember_me)
+                    
+                    # Update last login time with SSL-aware commit
+                    user.last_login = datetime.utcnow()
+                    
+                    def _commit_login():
+                        db.session.commit()
+                    
+                    safe_db_operation(_commit_login)
+                    
+                    # Log the login action
+                    log_audit_action(user.id, 'login', 'User logged in successfully')
+                    current_app.logger.info(f"Successful login for user: {username} (Role: {user.role.value})")
+                    
+                    # Redirect to appropriate dashboard based on role
+                    if user.role == UserRole.SUPER_USER:
+                        return redirect(url_for('superuser.dashboard'))
+                    elif user.role == UserRole.BRANCH_ADMIN:
+                        return redirect(url_for('admin.dashboard'))
+                    elif user.role == UserRole.WAITER:
+                        return redirect(url_for('pos.table_management'))
+                    elif user.role == UserRole.KITCHEN:
+                        return redirect(url_for('kitchen.dashboard'))
+                    else:
+                        return redirect(url_for('pos.index'))
+                else:
+                    current_app.logger.warning(f"Failed login attempt for username: {username}")
+                    flash('Invalid username or password', 'error')
+                    return None
+            
+            # Execute login with SSL error handling
+            result = safe_db_operation(_perform_login)
+            if result:
+                return result
                 
         except Exception as e:
             current_app.logger.error(f"Login error: {str(e)}")
@@ -98,25 +111,32 @@ def logout():
     return redirect(url_for('auth.login'))
 
 def log_audit_action(user_id, action, description):
-    """Helper function to log audit actions"""
+    """Helper function to log audit actions with SSL error handling"""
     try:
-        # Get client IP
-        if request.headers.get('X-Forwarded-For'):
-            ip_address = request.headers.get('X-Forwarded-For').split(',')[0]
-        else:
-            ip_address = request.environ.get('REMOTE_ADDR')
+        from app.db_connection_handler import safe_db_operation
         
-        # Create audit log entry
-        audit_log = AuditLog(
-            user_id=user_id,
-            action=action,
-            description=description,
-            ip_address=ip_address,
-            user_agent=request.headers.get('User-Agent')
-        )
+        def _create_audit_log():
+            # Get client IP
+            if request.headers.get('X-Forwarded-For'):
+                ip_address = request.headers.get('X-Forwarded-For').split(',')[0]
+            else:
+                ip_address = request.environ.get('REMOTE_ADDR')
+            
+            # Create audit log entry
+            audit_log = AuditLog(
+                user_id=user_id,
+                action=action,
+                description=description,
+                ip_address=ip_address,
+                user_agent=request.headers.get('User-Agent')
+            )
+            
+            db.session.add(audit_log)
+            db.session.commit()
         
-        db.session.add(audit_log)
-        db.session.commit()
+        # Execute with SSL error handling
+        safe_db_operation(_create_audit_log)
+        
     except Exception as e:
         # Log the error but don't break the main flow
         current_app.logger.error(f"Audit log error: {str(e)}")
