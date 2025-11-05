@@ -39,7 +39,17 @@ def create_app(config_class=Config):
     login_manager.login_message = 'Your session has expired. Please log in again.'
     login_manager.login_message_category = 'info'
     login_manager.session_protection = 'strong'  # Strong session protection
-    socketio.init_app(app, cors_allowed_origins="*")
+    
+    # Initialize security features
+    from app.security_headers import init_security, SocketIOSecurity
+    init_security(app)
+    
+    # Configure secure Socket.IO with security enhancements
+    secure_socketio_config = SocketIOSecurity.secure_socketio_config()
+    socketio.init_app(app, 
+                     cors_allowed_origins=secure_socketio_config.get('cors_allowed_origins', []),
+                     cookie=secure_socketio_config.get('cookie', False),
+                     transports=secure_socketio_config.get('transports', ['websocket']))
     
     # Initialize session manager for better session handling
     from app.session_manager import init_session_manager
