@@ -18,6 +18,9 @@ def init_multibranch_db(app):
     """Unified multi-branch database initialization with duplicate prevention"""
     with app.app_context():
         try:
+            # CRITICAL: Fix missing columns BEFORE any database operations
+            fix_missing_columns(app)
+            
             # Create all tables
             db.create_all()
             app.logger.info("Database tables created successfully")
@@ -519,30 +522,109 @@ def create_sample_users(branches):
             waiter.set_password('waiter123')
             db.session.add(waiter)
 
-def create_delivery_companies(branch_id):
-    """Create default delivery companies for branch with duplicate prevention"""
-    existing_companies = DeliveryCompany.query.filter_by(branch_id=branch_id).first()
-    if existing_companies:
-        print(f"Delivery companies already exist for branch {branch_id}, skipping...")
-        return
+def fix_missing_columns(app):
+    """Fix missing database columns before any database operations"""
+    try:
+        from sqlalchemy import text
+        app.logger.info("🔍 Checking for missing database columns...")
         
-    # Default delivery companies
-    companies_data = [
-        {'name': 'Talabat',  'value': 'talabat',   'icon': 'bi-truck'},
-        {'name': 'Delivaroo','value': 'delivaroo', 'icon': 'bi-bicycle'},
-        {'name': 'Rafiq',    'value': 'rafiq',     'icon': 'bi-car'},
-        {'name': 'Snounou',  'value': 'snounou',   'icon': 'bi-scooter'}
-    ]
-    
-    for company_data in companies_data:
-        company = DeliveryCompany(
-            name=company_data['name'],
-            value=company_data['value'],
-            icon=company_data['icon'],
-            branch_id=branch_id,
-            is_active=True
-        )
-        db.session.add(company)
+        # List of critical missing columns that need to be added
+        missing_columns = [
+            {
+                'table': 'users',
+                'column': 'theme_preference',
+                'definition': "theme_preference VARCHAR(32) DEFAULT 'dark' NOT NULL"
+            },
+            {
+                'table': 'orders',
+                'column': 'order_counter',
+                'definition': 'order_counter INTEGER'
+            },
+            {
+                'table': 'orders',
+                'column': 'last_edited_at',
+                'definition': 'last_edited_at TIMESTAMP'
+            },
+            {
+                'table': 'orders',
+                'column': 'last_edited_by',
+                'definition': 'last_edited_by INTEGER REFERENCES users(id)'
+            },
+            {
+                'table': 'orders',
+                'column': 'edit_count',
+                'definition': 'edit_count INTEGER DEFAULT 0'
+            },
+            {
+                'table': 'orders',
+                'column': 'cleared_from_waiter_requests',
+                'definition': 'cleared_from_waiter_requests BOOLEAN DEFAULT FALSE'
+            },
+            {
+                'table': 'order_items',
+                'column': 'special_requests',
+                'definition': 'special_requests TEXT'
+            },
+            {
+                'table': 'order_items',
+                'column': 'is_new',
+                'definition': 'is_new BOOLEAN DEFAULT FALSE'
+            },
+            {
+                'table': 'order_items',
+                'column': 'is_deleted',
+                'definition': 'is_deleted BOOLEAN DEFAULT FALSE'
+            },
+            {
+                'table': 'order_items',
+                'column': 'modifiers_total_price',
+                'definition': 'modifiers_total_price NUMERIC(10, 2) DEFAULT 0.00'
+            }
+        ]
+        
+        success_count = 0
+        for column_info in missing_columns:
+            try:
+                # Check if column exists
+                result = db.session.execute(text(f"""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = '{column_info['table']}' AND column_name = '{column_info['column']}'
+                """)).fetchone()
+                
+                if not result:
+                    app.logger.info(f"➕ Adding missing {column_info['column']} column to {column_info['table']} table...")
+                    db.session.execute(text(f"ALTER TABLE {column_info['table']} ADD COLUMN {column_info['definition']}"))
+                    db.session.commit()
+                    app.logger.info(f"✅ Successfully added {column_info['column']} column")
+                    success_count += 1
+                else:
+                    app.logger.info(f"✅ {column_info['column']} column already exists in {column_info['table']}")
+                    success_count += 1
+                    
+            except Exception as e:
+                app.logger.warning(f"⚠️ Could not add {column_info['column']} to {column_info['table']}: {e}")
+                db.session.rollback()
+        
+        # Create missing indexes
+        try:
+            db.session.execute(text("""
+                CREATE INDEX IF NOT EXISTS idx_orders_order_counter 
+                ON orders(order_counter)
+            """))
+            db.session.commit()
+            app.logger.info("✅ Order counter index created/verified")
+        except Exception as e:
+            app.logger.warning(f"Index creation warning: {e}")
+            db.session.rollback()
+        
+        app.logger.info(f"📊 Missing columns fix completed: {success_count}/{len(missing_columns)} processed")
+        return True
+        
+    except Exception as e:
+        app.logger.error(f"❌ Failed to fix missing columns: {e}")
+        db.session.rollback()
+        return False
 
 # Legacy function for backward compatibility
 def init_db(app):
