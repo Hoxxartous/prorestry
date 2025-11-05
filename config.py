@@ -14,11 +14,26 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     PERMANENT_SESSION_LIFETIME = timedelta(hours=1)
     
-    # Session configuration for better reliability
-    SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+    # Session configuration for better reliability and security
+    SESSION_COOKIE_SECURE = True  # Always use HTTPS in production
     SESSION_COOKIE_HTTPONLY = True  # Prevent XSS attacks
     SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF protection
     SESSION_PERMANENT = False  # Don't make sessions permanent by default
+    
+    # Additional security settings
+    WTF_CSRF_ENABLED = True
+    WTF_CSRF_TIME_LIMIT = 3600  # CSRF token valid for 1 hour
+    
+    # Security headers configuration
+    SECURITY_HEADERS = {
+        'HSTS_MAX_AGE': 31536000,  # 1 year
+        'HSTS_INCLUDE_SUBDOMAINS': True,
+        'HSTS_PRELOAD': True,
+        'FRAME_OPTIONS': 'DENY',
+        'CONTENT_TYPE_OPTIONS': 'nosniff',
+        'XSS_PROTECTION': '1; mode=block',
+        'REFERRER_POLICY': 'strict-origin-when-cross-origin'
+    }
     
     # Flask-Login configuration
     REMEMBER_COOKIE_DURATION = timedelta(days=7)  # Remember me duration
@@ -185,6 +200,11 @@ class ProductionConfig(Config):
     # Production database configuration - prioritize PostgreSQL for Render
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         'postgresql://user:pass@localhost/restaurant_pos'
+    
+    # Production security settings
+    SESSION_COOKIE_SECURE = True  # Force HTTPS for cookies
+    REMEMBER_COOKIE_SECURE = True  # Force HTTPS for remember me cookies
+    WTF_CSRF_SSL_STRICT = True  # Strict SSL for CSRF protection
     
     # Production-specific optimizations for Render FREE PLAN
     @classmethod
