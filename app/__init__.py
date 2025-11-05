@@ -100,10 +100,11 @@ def create_app(config_class=Config):
             app.logger.warning(f"Invalid user_id format in session: {user_id}")
             return None
         
-        # Add retry logic for SSL connection issues
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
+        # Use SSL-aware database connection handling
+        try:
+            from app.db_connection_handler import safe_db_operation
+            
+            def _load_user():
                 # Import User model within the function to avoid circular imports
                 from app.models import User
                 from sqlalchemy import text
@@ -121,17 +122,12 @@ def create_app(config_class=Config):
                 else:
                     app.logger.warning(f"User not found in database: {user_id}")
                     return None
-                    
-            except Exception as e:
-                error_msg = str(e).lower()
-                if attempt < max_retries - 1 and any(keyword in error_msg for keyword in ['ssl error', 'connection', 'timeout']):
-                    app.logger.warning(f"Database connection error in user loader, retrying... ({attempt + 1}/{max_retries}): {e}")
-                    import time
-                    time.sleep(0.5 * (attempt + 1))  # Exponential backoff
-                    continue
-                else:
-                    app.logger.error(f"User loader failed after {max_retries} attempts: {e}")
-                    return None
+            
+            return safe_db_operation(_load_user)
+            
+        except Exception as e:
+            app.logger.error(f"User loader failed with SSL-aware handling: {e}")
+            return None
         return None
     
     # Handle unauthorized access gracefully
