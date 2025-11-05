@@ -48,11 +48,14 @@ class Config:
                 'connect_timeout': 30,
                 'application_name': 'restaurant_pos',
                 'options': '-c default_transaction_isolation=read_committed -c timezone=UTC',
-                'sslmode': 'prefer',
+                'sslmode': 'require',  # Changed from 'prefer' to 'require' for Render
                 'sslcert': None,
                 'sslkey': None,
                 'sslrootcert': None,
-                'target_session_attrs': 'read-write'
+                'target_session_attrs': 'read-write',
+                'keepalives_idle': '600',  # Keep connection alive
+                'keepalives_interval': '30',
+                'keepalives_count': '3'
             },
             
             # Engine options for performance
@@ -202,11 +205,14 @@ class ProductionConfig(Config):
                 'connect_timeout': 30,
                 'application_name': 'restaurant_pos_prod',
                 'options': '-c default_transaction_isolation=read_committed -c timezone=UTC -c statement_timeout=60s',
-                'sslmode': 'prefer',
+                'sslmode': 'require',  # Changed from 'prefer' to 'require' for Render
                 'sslcert': None,
                 'sslkey': None,
                 'sslrootcert': None,
-                'target_session_attrs': 'read-write'
+                'target_session_attrs': 'read-write',
+                'keepalives_idle': '600',  # Keep connection alive
+                'keepalives_interval': '30',
+                'keepalives_count': '3'
             },
             
             # Engine options for performance
