@@ -3,10 +3,12 @@ from flask_login import login_user, logout_user, login_required, current_user
 from app.auth import auth
 from app.models import User, AuditLog, UserRole
 from app import db
+from app.security_headers import CSRFProtection
 from datetime import datetime
 import pytz
 
 @auth.route('/login', methods=['GET', 'POST'])
+@CSRFProtection.csrf_protect
 def login():
     # Clear any stale session data on login page access
     if not current_user.is_authenticated and request.method == 'GET':
