@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="{% if current_user.is_authenticated %}{{ current_user.theme_preference or 'dark' }}{% else %}dark{% endif %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -81,6 +81,1343 @@
             .navbar-collapse .dropdown-item {
                 text-align: left !important;
                 padding-left: 1.5rem !important;
+            }
+        }
+        
+        /* THEME SWITCHER BUTTON */
+        .theme-switcher {
+            background: linear-gradient(135deg, #f39c12, #e67e22) !important;
+            border: none !important;
+            color: white !important;
+            padding: 8px 12px !important;
+            border-radius: 8px !important;
+            font-size: 0.9rem !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3) !important;
+            margin-left: 10px !important;
+        }
+        
+        .theme-switcher:hover {
+            background: linear-gradient(135deg, #e67e22, #d35400) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4) !important;
+        }
+        
+        .theme-switcher:active {
+            transform: translateY(0) !important;
+        }
+        
+        /* MODAL THEME STYLES - Based on Restore Modal Design */
+        html[data-theme="modal"] {
+            /* Global Modal Theme Variables */
+            --modal-bg-primary: #2c3e50;
+            --modal-bg-secondary: #34495e;
+            --modal-accent: #f39c12;
+            --modal-accent-hover: #e67e22;
+            --modal-text-primary: #ecf0f1;
+            --modal-text-secondary: #bdc3c7;
+            --modal-border: #4a5f7a;
+            --modal-success: #27ae60;
+            --modal-warning: #f39c12;
+            --modal-danger: #e74c3c;
+        }
+        
+        /* MODAL THEME - OVERRIDE ALL GOLD/YELLOW COLORS */
+        html[data-theme="modal"] .navbar-dark.bg-primary,
+        html[data-theme="modal"] .bg-primary {
+            background: linear-gradient(135deg, var(--modal-bg-secondary), var(--modal-bg-primary)) !important;
+        }
+        
+        html[data-theme="modal"] .navbar-brand {
+            color: var(--modal-accent) !important;
+            font-weight: bold !important;
+        }
+        
+        html[data-theme="modal"] .navbar-nav .nav-link {
+            color: var(--modal-text-primary) !important;
+        }
+        
+        html[data-theme="modal"] .navbar-nav .nav-link:hover {
+            color: var(--modal-accent) !important;
+        }
+        
+        html[data-theme="modal"] .navbar-nav .nav-link.active {
+            color: var(--modal-accent) !important;
+        }
+        
+        /* MODAL THEME - GLOBAL STYLES */
+        html[data-theme="modal"] body {
+            background: var(--modal-bg-primary) !important;
+            color: var(--modal-text-primary) !important;
+        }
+        
+        html[data-theme="modal"] .container,
+        html[data-theme="modal"] .container-fluid {
+            background: transparent !important;
+        }
+        
+        /* MODAL THEME - CARDS AND PANELS */
+        html[data-theme="modal"] .card {
+            background: var(--modal-bg-secondary) !important;
+            border: 1px solid var(--modal-border) !important;
+            border-radius: 12px !important;
+            color: var(--modal-text-primary) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .card-header {
+            background: linear-gradient(135deg, var(--modal-accent), var(--modal-accent-hover)) !important;
+            color: white !important;
+            border-bottom: none !important;
+            border-radius: 12px 12px 0 0 !important;
+        }
+        
+        html[data-theme="modal"] .card-body {
+            background: var(--modal-bg-secondary) !important;
+            color: var(--modal-text-primary) !important;
+        }
+        
+        html[data-theme="modal"] .card-footer {
+            background: var(--modal-bg-primary) !important;
+            border-top: 1px solid var(--modal-border) !important;
+            border-radius: 0 0 12px 12px !important;
+        }
+        
+        /* MODAL THEME - BUTTONS */
+        html[data-theme="modal"] .btn-primary {
+            background: linear-gradient(135deg, var(--modal-accent), var(--modal-accent-hover)) !important;
+            border: none !important;
+            color: white !important;
+        }
+        
+        html[data-theme="modal"] .btn-primary:hover {
+            background: linear-gradient(135deg, var(--modal-accent-hover), #d35400) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4) !important;
+        }
+        
+        html[data-theme="modal"] .btn-success {
+            background: linear-gradient(135deg, var(--modal-success), #2ecc71) !important;
+            border: none !important;
+            color: white !important;
+        }
+        
+        html[data-theme="modal"] .btn-success:hover {
+            background: linear-gradient(135deg, #229954, var(--modal-success)) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4) !important;
+        }
+        
+        html[data-theme="modal"] .btn-outline-primary {
+            border-color: var(--modal-accent) !important;
+            color: var(--modal-accent) !important;
+            background: transparent !important;
+        }
+        
+        html[data-theme="modal"] .btn-outline-primary:hover {
+            background: var(--modal-accent) !important;
+            border-color: var(--modal-accent) !important;
+            color: white !important;
+        }
+        
+        html[data-theme="modal"] .btn-secondary {
+            background: #7f8c8d !important;
+            border-color: #7f8c8d !important;
+            color: white !important;
+        }
+        
+        html[data-theme="modal"] .btn-secondary:hover {
+            background: #6c7b7d !important;
+            border-color: #6c7b7d !important;
+        }
+        
+        /* MODAL THEME - FORMS */
+        html[data-theme="modal"] .form-control {
+            background: var(--modal-bg-primary) !important;
+            border: 1px solid var(--modal-border) !important;
+            color: var(--modal-text-primary) !important;
+            border-radius: 8px !important;
+        }
+        
+        html[data-theme="modal"] .form-control:focus {
+            background: var(--modal-bg-primary) !important;
+            border-color: var(--modal-accent) !important;
+            box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.25) !important;
+            color: var(--modal-text-primary) !important;
+        }
+        
+        html[data-theme="modal"] .form-select {
+            background: var(--modal-bg-primary) !important;
+            border: 1px solid var(--modal-border) !important;
+            color: var(--modal-text-primary) !important;
+        }
+        
+        html[data-theme="modal"] .form-label {
+            color: var(--modal-text-primary) !important;
+            font-weight: 600 !important;
+        }
+        
+        /* MODAL THEME - TABLES */
+        html[data-theme="modal"] .table {
+            color: var(--modal-text-primary) !important;
+        }
+        
+        html[data-theme="modal"] .table-dark {
+            background: var(--modal-bg-secondary) !important;
+            border-color: var(--modal-border) !important;
+        }
+        
+        html[data-theme="modal"] .table-dark th,
+        html[data-theme="modal"] .table-dark td {
+            border-color: var(--modal-border) !important;
+        }
+        
+        html[data-theme="modal"] .table-striped > tbody > tr:nth-of-type(odd) > td {
+            background: rgba(52, 73, 94, 0.5) !important;
+        }
+        
+        /* MODAL THEME - NAVIGATION TABS */
+        html[data-theme="modal"] .nav-tabs .nav-link {
+            background: transparent !important;
+            border: none !important;
+            border-bottom: 3px solid transparent !important;
+            color: var(--modal-text-secondary) !important;
+            padding: 12px 20px !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        html[data-theme="modal"] .nav-tabs .nav-link:hover {
+            color: var(--modal-text-primary) !important;
+            border-bottom-color: var(--modal-accent) !important;
+        }
+        
+        html[data-theme="modal"] .nav-tabs .nav-link.active {
+            color: var(--modal-accent) !important;
+            border-bottom-color: var(--modal-accent) !important;
+            background: rgba(243, 156, 18, 0.1) !important;
+        }
+        
+        /* MODAL THEME - BADGES */
+        html[data-theme="modal"] .badge {
+            background: var(--modal-border) !important;
+            color: var(--modal-text-primary) !important;
+        }
+        
+        html[data-theme="modal"] .badge.bg-primary {
+            background: var(--modal-accent) !important;
+        }
+        
+        html[data-theme="modal"] .badge.bg-success {
+            background: var(--modal-success) !important;
+        }
+        
+        html[data-theme="modal"] .badge.bg-warning {
+            background: var(--modal-warning) !important;
+        }
+        
+        html[data-theme="modal"] .badge.bg-danger {
+            background: var(--modal-danger) !important;
+        }
+        
+        /* MODAL THEME - ALERTS */
+        html[data-theme="modal"] .alert {
+            border-radius: 8px !important;
+            border: none !important;
+        }
+        
+        html[data-theme="modal"] .alert-info {
+            background: rgba(52, 152, 219, 0.2) !important;
+            color: #3498db !important;
+            border-left: 4px solid #3498db !important;
+        }
+        
+        html[data-theme="modal"] .alert-success {
+            background: rgba(39, 174, 96, 0.2) !important;
+            color: var(--modal-success) !important;
+            border-left: 4px solid var(--modal-success) !important;
+        }
+        
+        html[data-theme="modal"] .alert-warning {
+            background: rgba(243, 156, 18, 0.2) !important;
+            color: var(--modal-warning) !important;
+            border-left: 4px solid var(--modal-warning) !important;
+        }
+        
+        html[data-theme="modal"] .alert-danger {
+            background: rgba(231, 76, 60, 0.2) !important;
+            color: var(--modal-danger) !important;
+            border-left: 4px solid var(--modal-danger) !important;
+        }
+        
+        /* MODAL THEME - MODALS */
+        html[data-theme="modal"] .modal-content {
+            background: var(--modal-bg-primary) !important;
+            border: 1px solid var(--modal-border) !important;
+            border-radius: 12px !important;
+            color: var(--modal-text-primary) !important;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
+        }
+        
+        html[data-theme="modal"] .modal-header {
+            background: linear-gradient(135deg, var(--modal-accent), var(--modal-accent-hover)) !important;
+            color: white !important;
+            border-radius: 12px 12px 0 0 !important;
+            border-bottom: none !important;
+        }
+        
+        html[data-theme="modal"] .modal-body {
+            background: var(--modal-bg-primary) !important;
+            color: var(--modal-text-primary) !important;
+        }
+        
+        html[data-theme="modal"] .modal-footer {
+            background: var(--modal-bg-secondary) !important;
+            border-top: 1px solid var(--modal-border) !important;
+            border-radius: 0 0 12px 12px !important;
+        }
+        
+        /* MODAL THEME - DROPDOWN MENUS */
+        html[data-theme="modal"] .dropdown-menu {
+            background: var(--modal-bg-secondary) !important;
+            border: 1px solid var(--modal-border) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .dropdown-item {
+            color: var(--modal-text-primary) !important;
+        }
+        
+        html[data-theme="modal"] .dropdown-item:hover {
+            background: var(--modal-accent) !important;
+            color: white !important;
+        }
+        
+        html[data-theme="modal"] .dropdown-divider {
+            border-color: var(--modal-border) !important;
+        }
+        
+        /* MODAL THEME - TEXT COLORS */
+        html[data-theme="modal"] .text-muted {
+            color: var(--modal-text-secondary) !important;
+        }
+        
+        html[data-theme="modal"] .text-primary {
+            color: var(--modal-accent) !important;
+        }
+        
+        html[data-theme="modal"] .text-success {
+            color: var(--modal-success) !important;
+        }
+        
+        html[data-theme="modal"] .text-warning {
+            color: var(--modal-warning) !important;
+        }
+        
+        html[data-theme="modal"] .text-danger {
+            color: var(--modal-danger) !important;
+        }
+        
+        /* MODAL THEME - BORDERS */
+        html[data-theme="modal"] .border {
+            border-color: var(--modal-border) !important;
+        }
+        
+        html[data-theme="modal"] .border-primary {
+            border-color: var(--modal-accent) !important;
+        }
+        
+        html[data-theme="modal"] .border-success {
+            border-color: var(--modal-success) !important;
+        }
+        
+        /* MODAL THEME - PAGINATION */
+        html[data-theme="modal"] .pagination .page-link {
+            background: var(--modal-bg-secondary) !important;
+            border-color: var(--modal-border) !important;
+            color: var(--modal-text-primary) !important;
+        }
+        
+        html[data-theme="modal"] .pagination .page-link:hover {
+            background: var(--modal-accent) !important;
+            border-color: var(--modal-accent) !important;
+            color: white !important;
+        }
+        
+        html[data-theme="modal"] .pagination .page-item.active .page-link {
+            background: var(--modal-accent) !important;
+            border-color: var(--modal-accent) !important;
+        }
+        
+        /* MODAL THEME - COMPREHENSIVE OVERRIDES FOR ALL GOLD/YELLOW ELEMENTS */
+        
+        /* Override any remaining gold/yellow backgrounds */
+        html[data-theme="modal"] .bg-warning,
+        html[data-theme="modal"] .bg-gold,
+        html[data-theme="modal"] .bg-yellow,
+        html[data-theme="modal"] .alert-warning {
+            background: var(--modal-accent) !important;
+            color: white !important;
+        }
+        
+        /* Override gold/yellow text colors */
+        html[data-theme="modal"] .text-warning,
+        html[data-theme="modal"] .text-gold,
+        html[data-theme="modal"] .text-yellow {
+            color: var(--modal-accent) !important;
+        }
+        
+        /* Override gold/yellow borders */
+        html[data-theme="modal"] .border-warning,
+        html[data-theme="modal"] .border-gold,
+        html[data-theme="modal"] .border-yellow {
+            border-color: var(--modal-accent) !important;
+        }
+        
+        /* Override any card headers with gold/yellow */
+        html[data-theme="modal"] .card-header.bg-warning,
+        html[data-theme="modal"] .card-header.bg-gold,
+        html[data-theme="modal"] .card-header.bg-yellow {
+            background: linear-gradient(135deg, var(--modal-accent), var(--modal-accent-hover)) !important;
+            color: white !important;
+        }
+        
+        /* Override buttons with gold/yellow */
+        html[data-theme="modal"] .btn-warning,
+        html[data-theme="modal"] .btn-gold,
+        html[data-theme="modal"] .btn-yellow {
+            background: linear-gradient(135deg, var(--modal-accent), var(--modal-accent-hover)) !important;
+            border-color: var(--modal-accent) !important;
+            color: white !important;
+        }
+        
+        html[data-theme="modal"] .btn-warning:hover,
+        html[data-theme="modal"] .btn-gold:hover,
+        html[data-theme="modal"] .btn-yellow:hover {
+            background: linear-gradient(135deg, var(--modal-accent-hover), #d35400) !important;
+            border-color: var(--modal-accent-hover) !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4) !important;
+        }
+        
+        /* Override outline buttons */
+        html[data-theme="modal"] .btn-outline-warning,
+        html[data-theme="modal"] .btn-outline-gold,
+        html[data-theme="modal"] .btn-outline-yellow {
+            border-color: var(--modal-accent) !important;
+            color: var(--modal-accent) !important;
+            background: transparent !important;
+        }
+        
+        html[data-theme="modal"] .btn-outline-warning:hover,
+        html[data-theme="modal"] .btn-outline-gold:hover,
+        html[data-theme="modal"] .btn-outline-yellow:hover {
+            background: var(--modal-accent) !important;
+            border-color: var(--modal-accent) !important;
+            color: white !important;
+        }
+        
+        /* Override any remaining navbar gold styles */
+        html[data-theme="modal"] .navbar {
+            background: linear-gradient(135deg, var(--modal-bg-secondary), var(--modal-bg-primary)) !important;
+        }
+        
+        html[data-theme="modal"] .navbar .navbar-toggler {
+            border-color: var(--modal-accent) !important;
+        }
+        
+        html[data-theme="modal"] .navbar .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28243, 156, 18, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='m4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+        }
+        
+        /* Override dropdown menu items */
+        html[data-theme="modal"] .dropdown-item.active,
+        html[data-theme="modal"] .dropdown-item:active {
+            background: var(--modal-accent) !important;
+            color: white !important;
+        }
+        
+        /* Override any list group items */
+        html[data-theme="modal"] .list-group-item {
+            background: var(--modal-bg-secondary) !important;
+            border-color: var(--modal-border) !important;
+            color: var(--modal-text-primary) !important;
+        }
+        
+        html[data-theme="modal"] .list-group-item.active {
+            background: var(--modal-accent) !important;
+            border-color: var(--modal-accent) !important;
+            color: white !important;
+        }
+        
+        /* Override any progress bars */
+        html[data-theme="modal"] .progress {
+            background: var(--modal-bg-primary) !important;
+        }
+        
+        html[data-theme="modal"] .progress-bar {
+            background: var(--modal-accent) !important;
+        }
+        
+        /* Override any spinners or loading elements */
+        html[data-theme="modal"] .spinner-border {
+            color: var(--modal-accent) !important;
+        }
+        
+        /* Override any toast notifications */
+        html[data-theme="modal"] .toast {
+            background: var(--modal-bg-secondary) !important;
+            border: 1px solid var(--modal-border) !important;
+            color: var(--modal-text-primary) !important;
+        }
+        
+        html[data-theme="modal"] .toast-header {
+            background: var(--modal-bg-primary) !important;
+            border-bottom: 1px solid var(--modal-border) !important;
+            color: var(--modal-text-primary) !important;
+        }
+        
+        /* Override any accordion elements */
+        html[data-theme="modal"] .accordion-item {
+            background: var(--modal-bg-secondary) !important;
+            border: 1px solid var(--modal-border) !important;
+        }
+        
+        html[data-theme="modal"] .accordion-header .accordion-button {
+            background: var(--modal-bg-primary) !important;
+            color: var(--modal-text-primary) !important;
+            border: none !important;
+        }
+        
+        html[data-theme="modal"] .accordion-header .accordion-button:not(.collapsed) {
+            background: var(--modal-accent) !important;
+            color: white !important;
+        }
+        
+        html[data-theme="modal"] .accordion-body {
+            background: var(--modal-bg-secondary) !important;
+            color: var(--modal-text-primary) !important;
+        }
+        
+        /* Override any offcanvas elements */
+        html[data-theme="modal"] .offcanvas {
+            background: var(--modal-bg-primary) !important;
+            color: var(--modal-text-primary) !important;
+        }
+        
+        html[data-theme="modal"] .offcanvas-header {
+            background: var(--modal-accent) !important;
+            color: white !important;
+        }
+        
+        /* Override any carousel elements */
+        html[data-theme="modal"] .carousel-control-prev,
+        html[data-theme="modal"] .carousel-control-next {
+            color: var(--modal-accent) !important;
+        }
+        
+        html[data-theme="modal"] .carousel-indicators [data-bs-target] {
+            background-color: var(--modal-accent) !important;
+        }
+        
+        /* Override any custom gold/yellow classes that might exist */
+        html[data-theme="modal"] .gold-theme,
+        html[data-theme="modal"] .yellow-theme,
+        html[data-theme="modal"] .warning-theme {
+            background: var(--modal-accent) !important;
+            color: white !important;
+        }
+        
+        /* Override any inline styles with gold/yellow (using high specificity) */
+        html[data-theme="modal"] [style*="background-color: #f39c12"],
+        html[data-theme="modal"] [style*="background-color: #e67e22"],
+        html[data-theme="modal"] [style*="background-color: gold"],
+        html[data-theme="modal"] [style*="background-color: yellow"],
+        html[data-theme="modal"] [style*="background: #f39c12"],
+        html[data-theme="modal"] [style*="background: #e67e22"],
+        html[data-theme="modal"] [style*="background: gold"],
+        html[data-theme="modal"] [style*="background: yellow"] {
+            background: var(--modal-accent) !important;
+            color: white !important;
+        }
+        
+        /* Override any text with gold/yellow inline styles */
+        html[data-theme="modal"] [style*="color: #f39c12"],
+        html[data-theme="modal"] [style*="color: #e67e22"],
+        html[data-theme="modal"] [style*="color: gold"],
+        html[data-theme="modal"] [style*="color: yellow"] {
+            color: var(--modal-accent) !important;
+        }
+        
+        /* MODAL THEME - SPECIFIC ADMIN DASHBOARD CARDS BY POSITION */
+        
+        /* Target each stats card individually by position for unique colors */
+        
+        /* First Row Cards - Main Stats */
+        html[data-theme="modal"] .row.mb-4:nth-of-type(3) .col-md-3:nth-child(1) .card {
+            background: linear-gradient(135deg, #3498db, #2980b9) !important; /* Blue - Total Orders */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:nth-of-type(3) .col-md-3:nth-child(2) .card {
+            background: linear-gradient(135deg, #e74c3c, #c0392b) !important; /* Red - Today's Orders */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:nth-of-type(3) .col-md-3:nth-child(3) .card {
+            background: linear-gradient(135deg, #27ae60, #229954) !important; /* Green - Total Revenue */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:nth-of-type(3) .col-md-3:nth-child(4) .card {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad) !important; /* Purple - Today's Sales */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(155, 89, 182, 0.3) !important;
+        }
+        
+        /* Second Row Cards - Cash and Card */
+        html[data-theme="modal"] .row.mb-4:nth-of-type(4) .col-md-3:nth-child(1) .card {
+            background: linear-gradient(135deg, #f39c12, #e67e22) !important; /* Orange - Total Cash */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:nth-of-type(4) .col-md-3:nth-child(2) .card {
+            background: linear-gradient(135deg, #1abc9c, #16a085) !important; /* Teal - Total Card */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(26, 188, 156, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:nth-of-type(4) .col-md-3:nth-child(3) .card {
+            background: linear-gradient(135deg, #e67e22, #d35400) !important; /* Dark Orange - Today's Cash */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:nth-of-type(4) .col-md-3:nth-child(4) .card {
+            background: linear-gradient(135deg, #34495e, #2c3e50) !important; /* Dark Blue - Today's Card */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(52, 73, 94, 0.3) !important;
+        }
+        
+        /* Third Row Cards - Edited Orders */
+        html[data-theme="modal"] .row.mb-4:nth-of-type(5) .col-md-6:nth-child(1) .card {
+            background: linear-gradient(135deg, #f1c40f, #f39c12) !important; /* Yellow - Orders Edited Today */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(241, 196, 15, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:nth-of-type(5) .col-md-6:nth-child(2) .card {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d) !important; /* Gray - Total Edited Orders */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3) !important;
+        }
+        
+        /* Ensure text remains white and readable on all colored cards */
+        html[data-theme="modal"] .row.mb-4 .card.text-white,
+        html[data-theme="modal"] .row.mb-4 .card.text-white h2,
+        html[data-theme="modal"] .row.mb-4 .card.text-white h5,
+        html[data-theme="modal"] .row.mb-4 .card.text-white .card-title {
+            color: white !important;
+        }
+        
+        /* Override small text colors for better readability */
+        html[data-theme="modal"] .row.mb-4 .card.text-white small.text-dark,
+        html[data-theme="modal"] .row.mb-4 .card.text-white small.text-muted {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4 .card.text-white small.text-light {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+        
+        /* MODAL THEME - DIRECT BOOTSTRAP CLASS OVERRIDES FOR ADMIN DASHBOARD */
+        
+        /* Target the first row of stats cards directly by Bootstrap classes */
+        html[data-theme="modal"] .card.text-white.bg-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9) !important; /* Blue - Total Orders */
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .card.text-white.bg-warning {
+            background: linear-gradient(135deg, #e74c3c, #c0392b) !important; /* Red - Today's Orders */
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .card.text-white.bg-success {
+            background: linear-gradient(135deg, #27ae60, #229954) !important; /* Green - Total Revenue */
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .card.text-white.bg-info {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad) !important; /* Purple - Today's Sales */
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(155, 89, 182, 0.3) !important;
+        }
+        
+        /* More specific targeting for the exact cards by content */
+        html[data-theme="modal"] .card-title:contains("Total Orders") {
+            background: linear-gradient(135deg, #3498db, #2980b9) !important;
+        }
+        
+        /* Alternative approach - target by card position in the first stats row */
+        html[data-theme="modal"] .row.mb-4:first-of-type .col-md-3:nth-child(1) .card {
+            background: linear-gradient(135deg, #3498db, #2980b9) !important; /* Blue - Total Orders */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:first-of-type .col-md-3:nth-child(2) .card {
+            background: linear-gradient(135deg, #e74c3c, #c0392b) !important; /* Red - Today's Orders */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:first-of-type .col-md-3:nth-child(3) .card {
+            background: linear-gradient(135deg, #27ae60, #229954) !important; /* Green - Total Revenue */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:first-of-type .col-md-3:nth-child(4) .card {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad) !important; /* Purple - Today's Sales */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(155, 89, 182, 0.3) !important;
+        }
+        
+        /* Ultra-specific override with maximum CSS specificity */
+        html[data-theme="modal"] div.row.mb-4 div.col-md-3 div.card.text-white.bg-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9) !important;
+        }
+        
+        html[data-theme="modal"] div.row.mb-4 div.col-md-3 div.card.text-white.bg-warning {
+            background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+        }
+        
+        html[data-theme="modal"] div.row.mb-4 div.col-md-3 div.card.text-white.bg-success {
+            background: linear-gradient(135deg, #27ae60, #229954) !important;
+        }
+        
+        html[data-theme="modal"] div.row.mb-4 div.col-md-3 div.card.text-white.bg-info {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad) !important;
+        }
+        
+        /* MODAL THEME - ALL 10 ADMIN DASHBOARD CARDS WITH UNIQUE COLORS */
+        
+        /* ROW 1 - Main Statistics (4 cards) */
+        html[data-theme="modal"] .row.mb-4:nth-of-type(1) .col-md-3:nth-child(1) .card,
+        html[data-theme="modal"] .row.mb-4:nth-of-type(1) .col-md-3:nth-child(1) .card.bg-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9) !important; /* Blue - Total Orders */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:nth-of-type(1) .col-md-3:nth-child(2) .card,
+        html[data-theme="modal"] .row.mb-4:nth-of-type(1) .col-md-3:nth-child(2) .card.bg-warning {
+            background: linear-gradient(135deg, #e74c3c, #c0392b) !important; /* Red - Today's Orders */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:nth-of-type(1) .col-md-3:nth-child(3) .card,
+        html[data-theme="modal"] .row.mb-4:nth-of-type(1) .col-md-3:nth-child(3) .card.bg-success {
+            background: linear-gradient(135deg, #27ae60, #229954) !important; /* Green - Total Revenue */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:nth-of-type(1) .col-md-3:nth-child(4) .card,
+        html[data-theme="modal"] .row.mb-4:nth-of-type(1) .col-md-3:nth-child(4) .card.bg-info {
+            background: linear-gradient(135deg, #e91e63, #ad1457) !important; /* Pink/Magenta - Today's Sales */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3) !important;
+        }
+        
+        /* ROW 2 - Cash and Card Statistics (4 cards) */
+        html[data-theme="modal"] .row.mb-4:nth-of-type(2) .col-md-3:nth-child(1) .card,
+        html[data-theme="modal"] .row.mb-4:nth-of-type(2) .col-md-3:nth-child(1) .card.bg-primary {
+            background: linear-gradient(135deg, #f39c12, #e67e22) !important; /* Orange - Total Cash */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:nth-of-type(2) .col-md-3:nth-child(2) .card,
+        html[data-theme="modal"] .row.mb-4:nth-of-type(2) .col-md-3:nth-child(2) .card.bg-success {
+            background: linear-gradient(135deg, #1abc9c, #16a085) !important; /* Teal - Total Card */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(26, 188, 156, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:nth-of-type(2) .col-md-3:nth-child(3) .card,
+        html[data-theme="modal"] .row.mb-4:nth-of-type(2) .col-md-3:nth-child(3) .card.bg-warning {
+            background: linear-gradient(135deg, #e67e22, #d35400) !important; /* Dark Orange - Today's Cash */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(230, 126, 34, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:nth-of-type(2) .col-md-3:nth-child(4) .card,
+        html[data-theme="modal"] .row.mb-4:nth-of-type(2) .col-md-3:nth-child(4) .card.bg-info {
+            background: linear-gradient(135deg, #34495e, #2c3e50) !important; /* Dark Blue - Today's Card */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(52, 73, 94, 0.3) !important;
+        }
+        
+        /* ROW 3 - Edited Orders Statistics (2 cards) */
+        html[data-theme="modal"] .row.mb-4:nth-of-type(3) .col-md-6:nth-child(1) .card,
+        html[data-theme="modal"] .row.mb-4:nth-of-type(3) .col-md-6:nth-child(1) .card.bg-warning {
+            background: linear-gradient(135deg, #f1c40f, #f39c12) !important; /* Yellow - Orders Edited Today */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(241, 196, 15, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .row.mb-4:nth-of-type(3) .col-md-6:nth-child(2) .card,
+        html[data-theme="modal"] .row.mb-4:nth-of-type(3) .col-md-6:nth-child(2) .card.bg-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d) !important; /* Gray - Total Edited Orders */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3) !important;
+        }
+        
+        /* ADDITIONAL FALLBACK - Target by card title content for extra reliability */
+        html[data-theme="modal"] .card-title:contains("Total Orders") ~ * {
+            background: linear-gradient(135deg, #3498db, #2980b9) !important;
+        }
+        
+        html[data-theme="modal"] .card-title:contains("Today's Orders") ~ * {
+            background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+        }
+        
+        html[data-theme="modal"] .card-title:contains("Total Revenue") ~ * {
+            background: linear-gradient(135deg, #27ae60, #229954) !important;
+        }
+        
+        html[data-theme="modal"] .card-title:contains("Today's Sales") ~ * {
+            background: linear-gradient(135deg, #e91e63, #ad1457) !important;
+        }
+        
+        html[data-theme="modal"] .card-title:contains("Total Cash") ~ * {
+            background: linear-gradient(135deg, #f39c12, #e67e22) !important;
+        }
+        
+        html[data-theme="modal"] .card-title:contains("Total Card") ~ * {
+            background: linear-gradient(135deg, #1abc9c, #16a085) !important;
+        }
+        
+        html[data-theme="modal"] .card-title:contains("Today's Cash") ~ * {
+            background: linear-gradient(135deg, #e67e22, #d35400) !important;
+        }
+        
+        html[data-theme="modal"] .card-title:contains("Today's Card") ~ * {
+            background: linear-gradient(135deg, #34495e, #2c3e50) !important;
+        }
+        
+        html[data-theme="modal"] .card-title:contains("Orders Edited Today") ~ * {
+            background: linear-gradient(135deg, #f1c40f, #f39c12) !important;
+        }
+        
+        html[data-theme="modal"] .card-title:contains("Total Edited Orders") ~ * {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d) !important;
+        }
+        
+        /* MODAL THEME - PROMINENT/RAISED CARD ICONS (نافرة) */
+        
+        /* Make all card icons more prominent and raised */
+        html[data-theme="modal"] .card .bi,
+        html[data-theme="modal"] .card i[class*="bi-"],
+        html[data-theme="modal"] .card i.bi {
+            text-shadow: 
+                0 2px 4px rgba(0, 0, 0, 0.3),
+                0 4px 8px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)) !important;
+            transform: translateZ(0) !important;
+            position: relative !important;
+            z-index: 2 !important;
+            opacity: 0.9 !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        /* Enhanced prominence on hover */
+        html[data-theme="modal"] .card:hover .bi,
+        html[data-theme="modal"] .card:hover i[class*="bi-"],
+        html[data-theme="modal"] .card:hover i.bi {
+            text-shadow: 
+                0 3px 6px rgba(0, 0, 0, 0.4),
+                0 6px 12px rgba(0, 0, 0, 0.3),
+                0 0 0 2px rgba(255, 255, 255, 0.2) !important;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)) !important;
+            transform: translateZ(0) scale(1.05) !important;
+            opacity: 1 !important;
+        }
+        
+        /* Specific styling for large icons (3rem size) */
+        html[data-theme="modal"] .card i[style*="font-size: 3rem"],
+        html[data-theme="modal"] .card .bi[style*="font-size: 3rem"] {
+            text-shadow: 
+                0 3px 6px rgba(0, 0, 0, 0.4),
+                0 6px 12px rgba(0, 0, 0, 0.3),
+                0 0 0 2px rgba(255, 255, 255, 0.15) !important;
+            filter: 
+                drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4))
+                drop-shadow(0 1px 2px rgba(255, 255, 255, 0.1)) !important;
+            font-weight: 600 !important;
+            position: relative !important;
+            z-index: 3 !important;
+        }
+        
+        /* Add subtle glow effect for extra prominence */
+        html[data-theme="modal"] .card .fa-2x,
+        html[data-theme="modal"] .card i[style*="font-size: 3rem"] {
+            filter: 
+                drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4))
+                drop-shadow(0 0 8px rgba(255, 255, 255, 0.1))
+                drop-shadow(0 1px 2px rgba(255, 255, 255, 0.2)) !important;
+        }
+        
+        /* Enhanced 3D effect for card icons */
+        html[data-theme="modal"] .card-body .bi,
+        html[data-theme="modal"] .card-body i {
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.1) 0%, 
+                rgba(255, 255, 255, 0.05) 50%, 
+                rgba(0, 0, 0, 0.1) 100%) !important;
+            -webkit-background-clip: text !important;
+            background-clip: text !important;
+            text-shadow: 
+                0 2px 4px rgba(0, 0, 0, 0.3),
+                0 4px 8px rgba(0, 0, 0, 0.2),
+                1px 1px 0 rgba(255, 255, 255, 0.1),
+                -1px -1px 0 rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        /* MODAL THEME - GLASSMORPHISM UI (OPTIMIZED FOR LOW-END PCs) */
+        
+        /* Global glassmorphism variables */
+        html[data-theme="modal"] {
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --glass-backdrop: blur(10px);
+            --glass-hover-bg: rgba(255, 255, 255, 0.15);
+            --glass-active-bg: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Main container glassmorphism - EXCLUDE NAVBAR CONTAINERS */
+        html[data-theme="modal"] .container:not(.navbar .container):not(.navbar .container-fluid),
+        html[data-theme="modal"] .container-fluid:not(.navbar .container-fluid):not(.navbar .container) {
+            background: rgba(44, 62, 80, 0.8) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border-radius: 20px !important;
+            border: 1px solid var(--glass-border) !important;
+            box-shadow: var(--glass-shadow) !important;
+            margin-top: 10px !important;
+            margin-bottom: 10px !important;
+            padding: 20px !important;
+        }
+        
+        /* Ensure navbar containers have NO glassmorphism */
+        html[data-theme="modal"] .navbar .container,
+        html[data-theme="modal"] .navbar .container-fluid {
+            background: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            border-radius: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* Card glassmorphism */
+        html[data-theme="modal"] .card {
+            background: var(--glass-bg) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 16px !important;
+            box-shadow: var(--glass-shadow) !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        html[data-theme="modal"] .card:hover {
+            background: var(--glass-hover-bg) !important;
+            transform: translateY(-5px) !important;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+        }
+        
+        /* Card headers with enhanced glass effect */
+        html[data-theme="modal"] .card-header {
+            background: linear-gradient(135deg, 
+                rgba(243, 156, 18, 0.8), 
+                rgba(230, 126, 34, 0.8)) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border: none !important;
+            border-bottom: 1px solid var(--glass-border) !important;
+            border-radius: 16px 16px 0 0 !important;
+            color: white !important;
+        }
+        
+        /* Form controls with glass effect */
+        html[data-theme="modal"] .form-control,
+        html[data-theme="modal"] .form-select {
+            background: var(--glass-bg) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 12px !important;
+            color: var(--modal-text-primary) !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        html[data-theme="modal"] .form-control:focus,
+        html[data-theme="modal"] .form-select:focus {
+            background: var(--glass-hover-bg) !important;
+            border-color: var(--modal-accent) !important;
+            box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.25), 
+                        0 4px 12px rgba(0, 0, 0, 0.2) !important;
+        }
+        
+        /* Button glassmorphism */
+        html[data-theme="modal"] .btn {
+            background: var(--glass-bg) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 12px !important;
+            transition: all 0.3s ease !important;
+            font-weight: 600 !important;
+        }
+        
+        html[data-theme="modal"] .btn:hover {
+            background: var(--glass-hover-bg) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        html[data-theme="modal"] .btn:active {
+            background: var(--glass-active-bg) !important;
+            transform: translateY(0) !important;
+        }
+        
+        /* Primary button enhanced glass */
+        html[data-theme="modal"] .btn-primary {
+            background: linear-gradient(135deg, 
+                rgba(243, 156, 18, 0.8), 
+                rgba(230, 126, 34, 0.8)) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border: 1px solid rgba(243, 156, 18, 0.5) !important;
+            color: white !important;
+        }
+        
+        html[data-theme="modal"] .btn-primary:hover {
+            background: linear-gradient(135deg, 
+                rgba(243, 156, 18, 0.9), 
+                rgba(230, 126, 34, 0.9)) !important;
+            box-shadow: 0 8px 25px rgba(243, 156, 18, 0.4) !important;
+        }
+        
+        
+        /* Dropdown glassmorphism */
+        html[data-theme="modal"] .dropdown-menu {
+            background: rgba(52, 73, 94, 0.9) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+        }
+        
+        html[data-theme="modal"] .dropdown-item {
+            background: transparent !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        html[data-theme="modal"] .dropdown-item:hover {
+            background: var(--glass-hover-bg) !important;
+            border-radius: 8px !important;
+        }
+        
+        /* Modal glassmorphism */
+        html[data-theme="modal"] .modal-content {
+            background: rgba(44, 62, 80, 0.9) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 20px !important;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+        }
+        
+        html[data-theme="modal"] .modal-header {
+            background: linear-gradient(135deg, 
+                rgba(243, 156, 18, 0.8), 
+                rgba(230, 126, 34, 0.8)) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border-radius: 20px 20px 0 0 !important;
+            border-bottom: 1px solid var(--glass-border) !important;
+        }
+        
+        /* Fix modal backdrop - ensure it stays BEHIND modal content */
+        html[data-theme="modal"] .modal-backdrop {
+            background: rgba(0, 0, 0, 0.5) !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            pointer-events: none !important;
+            z-index: 1040 !important;
+            position: fixed !important;
+        }
+        
+        /* Ensure modal container is above backdrop */
+        html[data-theme="modal"] .modal {
+            z-index: 1055 !important;
+            position: fixed !important;
+        }
+        
+        /* Ensure modal dialog is above backdrop */
+        html[data-theme="modal"] .modal-dialog {
+            z-index: 1060 !important;
+            position: relative !important;
+        }
+        
+        /* Ensure modal content is above everything */
+        html[data-theme="modal"] .modal-content {
+            z-index: 1065 !important;
+            position: relative !important;
+        }
+        
+        /* Make sure modal body and footer are clickable */
+        html[data-theme="modal"] .modal-body,
+        html[data-theme="modal"] .modal-footer,
+        html[data-theme="modal"] .modal-header {
+            z-index: 1070 !important;
+            position: relative !important;
+            pointer-events: auto !important;
+        }
+        
+        /* Ensure all buttons and inputs in modals are clickable */
+        html[data-theme="modal"] .modal .btn,
+        html[data-theme="modal"] .modal .form-control,
+        html[data-theme="modal"] .modal .form-select,
+        html[data-theme="modal"] .modal input,
+        html[data-theme="modal"] .modal button,
+        html[data-theme="modal"] .modal a {
+            z-index: 1075 !important;
+            position: relative !important;
+            pointer-events: auto !important;
+        }
+        
+        /* Table glassmorphism */
+        html[data-theme="modal"] .table {
+            background: var(--glass-bg) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border-radius: 12px !important;
+            overflow: hidden !important;
+        }
+        
+        html[data-theme="modal"] .table th,
+        html[data-theme="modal"] .table td {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border-color: var(--glass-border) !important;
+        }
+        
+        html[data-theme="modal"] .table-striped > tbody > tr:nth-of-type(odd) > td {
+            background: rgba(255, 255, 255, 0.08) !important;
+        }
+        
+        /* Alert glassmorphism */
+        html[data-theme="modal"] .alert {
+            background: var(--glass-bg) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        }
+        
+        /* Badge glassmorphism */
+        html[data-theme="modal"] .badge {
+            background: var(--glass-bg) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 8px !important;
+        }
+        
+        /* Toast glassmorphism */
+        html[data-theme="modal"] .toast {
+            background: rgba(52, 73, 94, 0.9) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+        }
+        
+        /* Pagination glassmorphism */
+        html[data-theme="modal"] .pagination .page-link {
+            background: var(--glass-bg) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 8px !important;
+            margin: 0 2px !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        html[data-theme="modal"] .pagination .page-link:hover {
+            background: var(--glass-hover-bg) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        /* Accordion glassmorphism */
+        html[data-theme="modal"] .accordion-item {
+            background: var(--glass-bg) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 12px !important;
+            margin-bottom: 8px !important;
+        }
+        
+        /* Progress bar glassmorphism */
+        html[data-theme="modal"] .progress {
+            background: var(--glass-bg) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border-radius: 10px !important;
+            border: 1px solid var(--glass-border) !important;
+        }
+        
+        /* List group glassmorphism */
+        html[data-theme="modal"] .list-group-item {
+            background: var(--glass-bg) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 8px !important;
+            margin-bottom: 4px !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        html[data-theme="modal"] .list-group-item:hover {
+            background: var(--glass-hover-bg) !important;
+            transform: translateX(5px) !important;
+        }
+        
+        /* Offcanvas glassmorphism */
+        html[data-theme="modal"] .offcanvas {
+            background: rgba(44, 62, 80, 0.9) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border: 1px solid var(--glass-border) !important;
+        }
+        
+        /* Tab glassmorphism */
+        html[data-theme="modal"] .nav-tabs .nav-link {
+            background: var(--glass-bg) !important;
+            backdrop-filter: var(--glass-backdrop) !important;
+            -webkit-backdrop-filter: var(--glass-backdrop) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 12px 12px 0 0 !important;
+            margin-right: 4px !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        html[data-theme="modal"] .nav-tabs .nav-link:hover {
+            background: var(--glass-hover-bg) !important;
+            transform: translateY(-2px) !important;
+        }
+        
+        html[data-theme="modal"] .nav-tabs .nav-link.active {
+            background: var(--glass-active-bg) !important;
+            border-bottom-color: transparent !important;
+        }
+        
+        /* PERFORMANCE OPTIMIZATIONS FOR LOW-END PCs */
+        
+        /* Reduce animations on low-end devices */
+        @media (prefers-reduced-motion: reduce) {
+            html[data-theme="modal"] * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+            }
+        }
+        
+        /* Simplified glass for older browsers */
+        @supports not (backdrop-filter: blur(10px)) {
+            html[data-theme="modal"] .card,
+            html[data-theme="modal"] .modal-content,
+            html[data-theme="modal"] .dropdown-menu {
+                background: rgba(52, 73, 94, 0.95) !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+            }
+        }
+        
+        /* Mobile optimization */
+        @media (max-width: 768px) {
+            html[data-theme="modal"] {
+                --glass-backdrop: blur(5px);
+            }
+            
+            html[data-theme="modal"] .container,
+            html[data-theme="modal"] .container-fluid {
+                border-radius: 12px !important;
+                margin: 5px !important;
+                padding: 15px !important;
+            }
+            
+            html[data-theme="modal"] .card {
+                border-radius: 12px !important;
+            }
+        }
+        
+        /* Low-end PC optimization */
+        @media (max-resolution: 1dppx) {
+            html[data-theme="modal"] {
+                --glass-backdrop: blur(5px);
+                --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             }
         }
     </style>
@@ -229,6 +1566,13 @@
                 </ul>
                 
                 <ul class="navbar-nav">
+                    <!-- Theme Switcher -->
+                    <li class="nav-item">
+                        <button class="btn theme-switcher" onclick="toggleTheme()" id="themeToggle">
+                            <i class="bi bi-palette"></i> 
+                            <span id="themeText">{% if current_user.theme_preference == 'modal' %}Modal{% else %}Dark{% endif %}</span>
+                        </button>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle"></i> {{ current_user.username }}
@@ -1108,6 +2452,51 @@
             });
         }
     });
+    
+    // Theme Toggle Function
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'modal' : 'dark';
+        const themeText = document.getElementById('themeText');
+        const themeButton = document.getElementById('themeToggle');
+        
+        // Show loading state
+        themeButton.disabled = true;
+        themeText.textContent = 'Switching...';
+        
+        // Make API call to update theme preference
+        fetch('{{ url_for("main.switch_theme") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ theme: newTheme })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the theme immediately
+                document.documentElement.setAttribute('data-theme', newTheme);
+                themeText.textContent = newTheme === 'modal' ? 'Modal' : 'Dark';
+                
+                // Show success message
+                showToast(`Theme switched to ${newTheme} mode`, 'success');
+            } else {
+                // Show error message
+                showToast('Failed to switch theme: ' + (data.error || 'Unknown error'), 'danger');
+                themeText.textContent = currentTheme === 'modal' ? 'Modal' : 'Dark';
+            }
+        })
+        .catch(error => {
+            console.error('Theme switch error:', error);
+            showToast('Failed to switch theme. Please try again.', 'danger');
+            themeText.textContent = currentTheme === 'modal' ? 'Modal' : 'Dark';
+        })
+        .finally(() => {
+            // Re-enable button
+            themeButton.disabled = false;
+        });
+    }
     </script>
     
     {% block scripts %}{% endblock %}

@@ -213,6 +213,204 @@ def distribute_order_to_kitchens(order):
         print(f"Error distributing order to kitchens: {str(e)}")
         db.session.rollback()
 
+def update_kitchen_orders_on_edit(order):
+    """Update kitchen orders when an order is edited by cashier"""
+    try:
+        print(f"DEBUG: Updating kitchen orders for edited order #{order.order_number}")
+        
+        # STEP 1: Clear all existing kitchen order items for this order
+        # This prevents duplicates and ensures clean state
+        existing_kitchen_orders = KitchenOrder.query.filter_by(order_id=order.id).all()
+        
+        print(f"DEBUG: Found {len(existing_kitchen_orders)} existing kitchen orders to clean up")
+        
+        # Delete all existing kitchen order items
+        for kitchen_order in existing_kitchen_orders:
+            for kitchen_item in kitchen_order.kitchen_items:
+                db.session.delete(kitchen_item)
+                print(f"DEBUG: Deleted existing kitchen item {kitchen_item.item_name}")
+        
+        # Delete existing kitchen orders
+        for kitchen_order in existing_kitchen_orders:
+            db.session.delete(kitchen_order)
+            print(f"DEBUG: Deleted existing kitchen order for kitchen {kitchen_order.kitchen.name}")
+        
+        db.session.flush()  # Ensure deletions are committed before creating new ones
+        
+        # STEP 2: Recreate kitchen orders based on current order items
+        # Get current order items (including new, edited, and deleted)
+        current_order_items = list(order.order_items)
+        
+        # Group current order items by category for kitchen assignment
+        category_items = {}
+        special_orders_by_kitchen = {}
+        
+        for order_item in current_order_items:
+            # Include all items (deleted items will be marked as deleted in kitchen)
+                
+            # Use original_category_id if available (for Quick category items), otherwise use category_id
+            category_id = order_item.menu_item.original_category_id or order_item.menu_item.category_id
+            
+            # Handle Special Orders with custom kitchen assignments
+            if (hasattr(order_item, 'special_kitchen_id') and order_item.special_kitchen_id) or \
+               (order_item.notes and 'Kitchen Assignment:' in order_item.notes):
+                # Extract kitchen ID from notes if not in attribute
+                kitchen_id = getattr(order_item, 'special_kitchen_id', None)
+                if not kitchen_id and order_item.notes:
+                    import re
+                    match = re.search(r'Kitchen Assignment: (\d+)', order_item.notes)
+                    if match:
+                        kitchen_id = int(match.group(1))
+                
+                if kitchen_id:
+                    if kitchen_id not in special_orders_by_kitchen:
+                        special_orders_by_kitchen[kitchen_id] = []
+                    special_orders_by_kitchen[kitchen_id].append(order_item)
+                    continue
+            
+            # Skip special items category (modifiers)
+            category = Category.query.get(category_id)
+            if category and category.name == 'طلبات خاصة':
+                continue
+                
+            if category_id not in category_items:
+                category_items[category_id] = []
+            category_items[category_id].append(order_item)
+        
+        # Track which kitchen orders are created
+        created_kitchen_orders = []
+        
+        # Process Special Orders with custom kitchen assignments
+        for kitchen_id, special_items in special_orders_by_kitchen.items():
+            kitchen = Kitchen.query.get(kitchen_id)
+            if not kitchen or not kitchen.is_active:
+                continue
+                
+            # Create new kitchen order
+            kitchen_order = KitchenOrder(
+                order_id=order.id,
+                kitchen_id=kitchen.id,
+                status=KitchenOrderStatus.RECEIVED,
+                received_at=datetime.utcnow()
+            )
+            db.session.add(kitchen_order)
+            db.session.flush()
+            created_kitchen_orders.append(kitchen_order)
+            
+            # Create kitchen order items for special orders
+            for order_item in special_items:
+                kitchen_order_item = KitchenOrderItem(
+                    kitchen_order_id=kitchen_order.id,
+                    order_item_id=order_item.id,
+                    quantity=order_item.quantity,
+                    special_requests=order_item.notes,
+                    item_name=order_item.menu_item.name,
+                    item_name_ar=order_item.menu_item.name_ar,
+                    status=KitchenOrderStatus.RECEIVED,
+                    is_new=order_item.is_new,
+                    is_deleted=order_item.is_deleted,  # Include deleted status
+                    is_edited=not order_item.is_new and not order_item.is_deleted  # If not new and not deleted, then it's edited
+                )
+                db.session.add(kitchen_order_item)
+                print(f"DEBUG: Created kitchen item {kitchen_order_item.item_name} in kitchen {kitchen.name}")
+        
+        # Process regular items by category assignment
+        for category_id, items in category_items.items():
+            # Find kitchen assigned to this category
+            assignment = CategoryKitchenAssignment.query.filter_by(
+                category_id=category_id,
+                is_active=True
+            ).first()
+            
+            if not assignment:
+                print(f"DEBUG: No kitchen assigned to category {category_id}")
+                continue
+            
+            kitchen = assignment.kitchen
+            if not kitchen.is_active:
+                continue
+            
+            # Create new kitchen order
+            kitchen_order = KitchenOrder(
+                order_id=order.id,
+                kitchen_id=kitchen.id,
+                status=KitchenOrderStatus.RECEIVED,
+                received_at=datetime.utcnow()
+            )
+            db.session.add(kitchen_order)
+            db.session.flush()
+            created_kitchen_orders.append(kitchen_order)
+            
+            # Create kitchen order items
+            for order_item in items:
+                kitchen_order_item = KitchenOrderItem(
+                    kitchen_order_id=kitchen_order.id,
+                    order_item_id=order_item.id,
+                    quantity=order_item.quantity,
+                    special_requests=order_item.notes,
+                    item_name=order_item.menu_item.name,
+                    item_name_ar=order_item.menu_item.name_ar,
+                    status=KitchenOrderStatus.RECEIVED,
+                    is_new=order_item.is_new,
+                    is_deleted=order_item.is_deleted,  # Include deleted status
+                    is_edited=not order_item.is_new and not order_item.is_deleted  # If not new and not deleted, then it's edited
+                )
+                db.session.add(kitchen_order_item)
+                print(f"DEBUG: Created kitchen item {kitchen_order_item.item_name} in kitchen {kitchen.name}")
+        
+        # Send WebSocket notifications to affected kitchens
+        for kitchen_order in created_kitchen_orders:
+            _send_kitchen_edit_notification(kitchen_order)
+        
+        db.session.commit()
+        print(f"DEBUG: Successfully updated kitchen orders for order #{order.order_number}")
+        
+    except Exception as e:
+        print(f"ERROR: Failed to update kitchen orders on edit: {str(e)}")
+        db.session.rollback()
+        raise
+
+
+def _send_kitchen_edit_notification(kitchen_order):
+    """Send WebSocket notification to kitchen about order edit"""
+    try:
+        # Get all kitchen items (including deleted ones for display)
+        all_items = list(kitchen_order.kitchen_items)
+        active_items = [item for item in all_items if not item.is_deleted]
+        new_items = [item for item in all_items if item.is_new and not item.is_deleted]
+        edited_items = [item for item in all_items if item.is_edited and not item.is_new and not item.is_deleted]
+        deleted_items = [item for item in all_items if item.is_deleted]
+        
+        socketio.emit('kitchen_order_edited', {
+            'kitchen_order_id': kitchen_order.id,
+            'order_id': kitchen_order.order_id,
+            'order_number': kitchen_order.order.order_number,
+            'table_number': kitchen_order.order.table.table_number if kitchen_order.order.table else 'N/A',
+            'service_type': kitchen_order.order.service_type.value if kitchen_order.order.service_type else 'on_table',
+            'edit_summary': {
+                'new_items_count': len(new_items),
+                'edited_items_count': len(edited_items),
+                'deleted_items_count': len(deleted_items),
+                'total_active_items': len(active_items)
+            },
+            'items': [{
+                'id': item.id,
+                'name': item.item_name,
+                'name_ar': item.item_name_ar,
+                'quantity': item.quantity,
+                'special_requests': item.special_requests,
+                'is_new': item.is_new,
+                'is_edited': item.is_edited,
+                'is_deleted': item.is_deleted
+            } for item in kitchen_order.kitchen_items],
+            'timestamp': datetime.utcnow().isoformat()
+        }, room=f'kitchen_{kitchen_order.kitchen.kitchen_user_id}')
+        
+        print(f"DEBUG: Sent kitchen edit notification to kitchen user {kitchen_order.kitchen.kitchen_user_id}")
+        
+    except Exception as e:
+        print(f"ERROR: Failed to send kitchen edit notification: {str(e)}")
+
 # WebSocket event handlers
 @socketio.on('join')
 def on_join(data):
@@ -2352,6 +2550,13 @@ def save_order_changes():
         db.session.add(audit_log)
         
         db.session.commit()
+        
+        # Update kitchen orders to reflect the edit
+        try:
+            update_kitchen_orders_on_edit(order)
+        except Exception as e:
+            print(f"WARNING: Failed to update kitchen orders on edit: {str(e)}")
+            # Don't fail the entire edit operation if kitchen update fails
         
         # Emit socket event to notify waiters about order edit
         if order.table_id and current_user.role == UserRole.CASHIER:

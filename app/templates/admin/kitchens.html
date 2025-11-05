@@ -12,9 +12,14 @@
                     <h2>🍳 Kitchen Management</h2>
                     <p class="text-muted mb-0">Manage kitchen accounts and category assignments</p>
                 </div>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createKitchenModal">
-                    <i class="bi bi-plus-circle"></i> Create Kitchen
-                </button>
+                <div>
+                    <button class="btn btn-outline-warning me-2" data-bs-toggle="modal" data-bs-target="#restoreKitchensModal">
+                        <i class="bi bi-arrow-clockwise"></i> Restore Deactivated
+                    </button>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createKitchenModal">
+                        <i class="bi bi-plus-circle"></i> Create Kitchen
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -39,6 +44,7 @@
                                         <th>Assigned Categories</th>
                                         <th>Status</th>
                                         <th>Created</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -66,6 +72,18 @@
                                             </span>
                                         </td>
                                         <td>{{ kitchen.created_at|local_datetime_short }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary me-1" 
+                                                    onclick="editKitchen({{ kitchen.id }})" 
+                                                    title="Edit Kitchen">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-{{ 'danger' if kitchen.is_active else 'success' }}" 
+                                                    onclick="toggleKitchenStatus({{ kitchen.id }}, {{ kitchen.is_active|lower }})" 
+                                                    title="{{ 'Deactivate' if kitchen.is_active else 'Activate' }} Kitchen">
+                                                <i class="bi bi-{{ 'x-circle' if kitchen.is_active else 'check-circle' }}"></i>
+                                            </button>
+                                        </td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -221,6 +239,128 @@
     </div>
 </div>
 
+<!-- Edit Kitchen Modal -->
+<div class="modal fade" id="editKitchenModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Kitchen Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editKitchenForm">
+                    <input type="hidden" id="editKitchenId" name="kitchen_id">
+                    <input type="hidden" id="editUserId" name="user_id">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editKitchenName" class="form-label">Kitchen Name *</label>
+                            <input type="text" class="form-control" id="editKitchenName" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editKitchenUsername" class="form-label">Username *</label>
+                            <input type="text" class="form-control" id="editKitchenUsername" name="username" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editKitchenFirstName" class="form-label">First Name *</label>
+                            <input type="text" class="form-control" id="editKitchenFirstName" name="first_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editKitchenLastName" class="form-label">Last Name *</label>
+                            <input type="text" class="form-control" id="editKitchenLastName" name="last_name" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editKitchenEmail" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="editKitchenEmail" name="email" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editKitchenDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="editKitchenDescription" name="description" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editKitchenActive" name="is_active">
+                            <label class="form-check-label" for="editKitchenActive">
+                                Active Kitchen
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <label for="editKitchenNewPassword" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="editKitchenNewPassword" name="new_password" minlength="6">
+                        <div class="form-text">Leave blank to keep current password. Minimum 6 characters if changing.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editKitchenConfirmPassword" class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="editKitchenConfirmPassword" name="confirm_password">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updateKitchen()">Update Kitchen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Restore Deactivated Kitchens Modal -->
+<div class="modal fade" id="restoreKitchensModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-arrow-clockwise text-warning me-2"></i>
+                    Restore Deactivated Kitchens
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="deactivatedKitchensLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading deactivated kitchens...</p>
+                </div>
+                
+                <div id="deactivatedKitchensContent" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Restore Kitchens:</strong> Select the kitchens you want to reactivate. This will also reactivate their associated user accounts.
+                    </div>
+                    
+                    <div id="deactivatedKitchensList">
+                        <!-- Deactivated kitchens will be loaded here -->
+                    </div>
+                </div>
+                
+                <div id="noDeactivatedKitchens" style="display: none;" class="text-center py-4">
+                    <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                    <h4 class="mt-3">All Kitchens Active</h4>
+                    <p class="text-muted">There are no deactivated kitchens to restore.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-warning" id="restoreSelectedBtn" onclick="restoreSelectedKitchens()" style="display: none;">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Restore Selected
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function createKitchen() {
     const form = document.getElementById('createKitchenForm');
@@ -309,6 +449,295 @@ function unassignCategory(categoryId) {
     .catch(error => {
         console.error('Error unassigning category:', error);
         showNotification('Error', 'Failed to unassign category', 'error');
+    });
+}
+
+function editKitchen(kitchenId) {
+    // Fetch kitchen details
+    fetch(`/admin/get_kitchen/${kitchenId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const kitchen = data.kitchen;
+                const user = data.user;
+                
+                // Populate the edit form
+                document.getElementById('editKitchenId').value = kitchen.id;
+                document.getElementById('editUserId').value = user.id;
+                document.getElementById('editKitchenName').value = kitchen.name;
+                document.getElementById('editKitchenUsername').value = user.username;
+                document.getElementById('editKitchenFirstName').value = user.first_name;
+                document.getElementById('editKitchenLastName').value = user.last_name;
+                document.getElementById('editKitchenEmail').value = user.email;
+                document.getElementById('editKitchenDescription').value = kitchen.description || '';
+                document.getElementById('editKitchenActive').checked = kitchen.is_active;
+                
+                // Clear password fields
+                document.getElementById('editKitchenNewPassword').value = '';
+                document.getElementById('editKitchenConfirmPassword').value = '';
+                
+                // Show the modal
+                new bootstrap.Modal(document.getElementById('editKitchenModal')).show();
+            } else {
+                showNotification('Error', data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching kitchen details:', error);
+            showNotification('Error', 'Failed to load kitchen details', 'error');
+        });
+}
+
+function updateKitchen() {
+    const form = document.getElementById('editKitchenForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Validate required fields
+    if (!data.name || !data.username || !data.email || !data.first_name || !data.last_name) {
+        showNotification('Error', 'Please fill in all required fields', 'error');
+        return;
+    }
+    
+    // Validate password confirmation if new password is provided
+    if (data.new_password) {
+        if (data.new_password !== data.confirm_password) {
+            showNotification('Error', 'New passwords do not match', 'error');
+            return;
+        }
+        if (data.new_password.length < 6) {
+            showNotification('Error', 'Password must be at least 6 characters', 'error');
+            return;
+        }
+    }
+    
+    // Convert checkbox to boolean
+    data.is_active = document.getElementById('editKitchenActive').checked;
+    
+    fetch('/admin/update_kitchen', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Success', data.message, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('editKitchenModal')).hide();
+            form.reset();
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification('Error', data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating kitchen:', error);
+        showNotification('Error', 'Failed to update kitchen', 'error');
+    });
+}
+
+function toggleKitchenStatus(kitchenId, currentStatus) {
+    const action = currentStatus ? 'deactivate' : 'activate';
+    const confirmMessage = `Are you sure you want to ${action} this kitchen?`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    fetch('/admin/toggle_kitchen_status', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            kitchen_id: kitchenId,
+            is_active: !currentStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Success', data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification('Error', data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling kitchen status:', error);
+        showNotification('Error', 'Failed to update kitchen status', 'error');
+    });
+}
+
+// Restore Kitchens Modal Functions
+document.getElementById('restoreKitchensModal').addEventListener('show.bs.modal', function() {
+    loadDeactivatedKitchens();
+});
+
+function loadDeactivatedKitchens() {
+    // Show loading state
+    document.getElementById('deactivatedKitchensLoading').style.display = 'block';
+    document.getElementById('deactivatedKitchensContent').style.display = 'none';
+    document.getElementById('noDeactivatedKitchens').style.display = 'none';
+    document.getElementById('restoreSelectedBtn').style.display = 'none';
+    
+    fetch('/admin/get_deactivated_kitchens')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('deactivatedKitchensLoading').style.display = 'none';
+            
+            if (data.success) {
+                if (data.kitchens && data.kitchens.length > 0) {
+                    displayDeactivatedKitchens(data.kitchens);
+                    document.getElementById('deactivatedKitchensContent').style.display = 'block';
+                    document.getElementById('restoreSelectedBtn').style.display = 'inline-block';
+                } else {
+                    document.getElementById('noDeactivatedKitchens').style.display = 'block';
+                }
+            } else {
+                showNotification('Error', data.message, 'error');
+                document.getElementById('noDeactivatedKitchens').style.display = 'block';
+            }
+        })
+        .catch(error => {
+            document.getElementById('deactivatedKitchensLoading').style.display = 'none';
+            console.error('Error loading deactivated kitchens:', error);
+            showNotification('Error', 'Failed to load deactivated kitchens', 'error');
+        });
+}
+
+function displayDeactivatedKitchens(kitchens) {
+    const container = document.getElementById('deactivatedKitchensList');
+    
+    let html = `
+        <div class="mb-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="selectAllKitchens" onchange="toggleAllKitchens(this)">
+                <label class="form-check-label fw-bold" for="selectAllKitchens">
+                    Select All (${kitchens.length} kitchens)
+                </label>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+    `;
+    
+    kitchens.forEach(kitchen => {
+        const deactivatedDate = new Date(kitchen.deactivated_at).toLocaleDateString();
+        html += `
+            <div class="col-md-6 mb-3">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input kitchen-checkbox" type="checkbox" 
+                                   id="kitchen_${kitchen.id}" value="${kitchen.id}" 
+                                   onchange="updateRestoreButton()">
+                            <label class="form-check-label fw-bold" for="kitchen_${kitchen.id}">
+                                ${kitchen.name}
+                            </label>
+                        </div>
+                        <div class="small text-muted">
+                            <div><strong>Username:</strong> ${kitchen.username}</div>
+                            <div><strong>Email:</strong> ${kitchen.email}</div>
+                            <div><strong>Full Name:</strong> ${kitchen.first_name} ${kitchen.last_name}</div>
+                            ${kitchen.description ? `<div><strong>Description:</strong> ${kitchen.description}</div>` : ''}
+                            <div class="text-warning mt-2">
+                                <i class="bi bi-clock me-1"></i>
+                                Deactivated: ${deactivatedDate}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function toggleAllKitchens(selectAllCheckbox) {
+    const checkboxes = document.querySelectorAll('.kitchen-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    updateRestoreButton();
+}
+
+function updateRestoreButton() {
+    const selectedKitchens = document.querySelectorAll('.kitchen-checkbox:checked');
+    const restoreBtn = document.getElementById('restoreSelectedBtn');
+    const selectAllCheckbox = document.getElementById('selectAllKitchens');
+    
+    if (selectedKitchens.length > 0) {
+        restoreBtn.innerHTML = `<i class="bi bi-arrow-clockwise me-1"></i>Restore Selected (${selectedKitchens.length})`;
+        restoreBtn.disabled = false;
+    } else {
+        restoreBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Restore Selected';
+        restoreBtn.disabled = true;
+    }
+    
+    // Update select all checkbox state
+    const allCheckboxes = document.querySelectorAll('.kitchen-checkbox');
+    if (selectedKitchens.length === 0) {
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.checked = false;
+    } else if (selectedKitchens.length === allCheckboxes.length) {
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.checked = true;
+    } else {
+        selectAllCheckbox.indeterminate = true;
+    }
+}
+
+function restoreSelectedKitchens() {
+    const selectedKitchens = Array.from(document.querySelectorAll('.kitchen-checkbox:checked'))
+                                  .map(checkbox => parseInt(checkbox.value));
+    
+    if (selectedKitchens.length === 0) {
+        showNotification('Warning', 'Please select at least one kitchen to restore', 'warning');
+        return;
+    }
+    
+    const confirmMessage = `Are you sure you want to restore ${selectedKitchens.length} kitchen(s)? This will also reactivate their user accounts.`;
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    // Disable the button during processing
+    const restoreBtn = document.getElementById('restoreSelectedBtn');
+    const originalText = restoreBtn.innerHTML;
+    restoreBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Restoring...';
+    restoreBtn.disabled = true;
+    
+    fetch('/admin/restore_kitchens', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            kitchen_ids: selectedKitchens
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Success', data.message, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('restoreKitchensModal')).hide();
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification('Error', data.message, 'error');
+            restoreBtn.innerHTML = originalText;
+            restoreBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error restoring kitchens:', error);
+        showNotification('Error', 'Failed to restore kitchens', 'error');
+        restoreBtn.innerHTML = originalText;
+        restoreBtn.disabled = false;
     });
 }
 

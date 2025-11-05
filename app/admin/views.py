@@ -3164,6 +3164,305 @@ def unassign_category():
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Failed to unassign category: {str(e)}'})
 
+@admin.route('/get_kitchen/<int:kitchen_id>')
+@login_required
+def get_kitchen(kitchen_id):
+    """Get kitchen details for editing"""
+    try:
+        branch_filter = get_user_branch_filter()
+        
+        # Get kitchen with branch filter
+        kitchen_query = Kitchen.query.filter_by(id=kitchen_id)
+        if branch_filter:
+            kitchen_query = kitchen_query.filter(Kitchen.branch_id == branch_filter)
+        
+        kitchen = kitchen_query.first()
+        if not kitchen:
+            return jsonify({'success': False, 'message': 'Kitchen not found or access denied'})
+        
+        # Get associated user
+        user = kitchen.kitchen_user
+        if not user:
+            return jsonify({'success': False, 'message': 'Kitchen user not found'})
+        
+        return jsonify({
+            'success': True,
+            'kitchen': {
+                'id': kitchen.id,
+                'name': kitchen.name,
+                'description': kitchen.description,
+                'is_active': kitchen.is_active
+            },
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Failed to get kitchen details: {str(e)}'})
+
+@admin.route('/update_kitchen', methods=['POST'])
+@login_required
+def update_kitchen():
+    """Update kitchen account details"""
+    try:
+        data = request.get_json()
+        branch_filter = get_user_branch_filter()
+        
+        kitchen_id = data.get('kitchen_id')
+        user_id = data.get('user_id')
+        
+        # Get kitchen with branch filter
+        kitchen_query = Kitchen.query.filter_by(id=kitchen_id)
+        if branch_filter:
+            kitchen_query = kitchen_query.filter(Kitchen.branch_id == branch_filter)
+        
+        kitchen = kitchen_query.first()
+        if not kitchen:
+            return jsonify({'success': False, 'message': 'Kitchen not found or access denied'})
+        
+        # Get associated user
+        user = User.query.get(user_id)
+        if not user or user.id != kitchen.kitchen_user_id:
+            return jsonify({'success': False, 'message': 'Kitchen user not found or mismatch'})
+        
+        # Validate required fields
+        name = data.get('name', '').strip()
+        username = data.get('username', '').strip()
+        email = data.get('email', '').strip()
+        first_name = data.get('first_name', '').strip()
+        last_name = data.get('last_name', '').strip()
+        
+        if not all([name, username, email, first_name, last_name]):
+            return jsonify({'success': False, 'message': 'All required fields must be filled'})
+        
+        # Check for duplicate username (excluding current user)
+        existing_user = User.query.filter(
+            User.username == username,
+            User.id != user.id
+        ).first()
+        if existing_user:
+            return jsonify({'success': False, 'message': 'Username already exists'})
+        
+        # Check for duplicate email (excluding current user)
+        existing_email = User.query.filter(
+            User.email == email,
+            User.id != user.id
+        ).first()
+        if existing_email:
+            return jsonify({'success': False, 'message': 'Email already exists'})
+        
+        # Check for duplicate kitchen name in branch (excluding current kitchen)
+        existing_kitchen = Kitchen.query.filter(
+            Kitchen.name == name,
+            Kitchen.branch_id == kitchen.branch_id,
+            Kitchen.id != kitchen.id
+        ).first()
+        if existing_kitchen:
+            return jsonify({'success': False, 'message': 'Kitchen name already exists in this branch'})
+        
+        # Update kitchen details
+        kitchen.name = name
+        kitchen.description = data.get('description', '').strip()
+        kitchen.is_active = data.get('is_active', True)
+        
+        # Update user details
+        user.username = username
+        user.email = email
+        user.first_name = first_name
+        user.last_name = last_name
+        
+        # Update password if provided
+        new_password = data.get('new_password', '').strip()
+        if new_password:
+            if len(new_password) < 6:
+                return jsonify({'success': False, 'message': 'Password must be at least 6 characters'})
+            user.set_password(new_password)
+        
+        # Create audit log
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action='KITCHEN_UPDATED',
+            description=f'Kitchen "{kitchen.name}" updated by {current_user.get_full_name()}',
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent')
+        )
+        db.session.add(audit_log)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Kitchen "{kitchen.name}" updated successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Failed to update kitchen: {str(e)}'})
+
+@admin.route('/toggle_kitchen_status', methods=['POST'])
+@login_required
+def toggle_kitchen_status():
+    """Toggle kitchen active status"""
+    try:
+        data = request.get_json()
+        branch_filter = get_user_branch_filter()
+        
+        kitchen_id = data.get('kitchen_id')
+        is_active = data.get('is_active')
+        
+        # Get kitchen with branch filter
+        kitchen_query = Kitchen.query.filter_by(id=kitchen_id)
+        if branch_filter:
+            kitchen_query = kitchen_query.filter(Kitchen.branch_id == branch_filter)
+        
+        kitchen = kitchen_query.first()
+        if not kitchen:
+            return jsonify({'success': False, 'message': 'Kitchen not found or access denied'})
+        
+        # Update status
+        kitchen.is_active = is_active
+        
+        # Also update the associated user's active status
+        if kitchen.kitchen_user:
+            kitchen.kitchen_user.is_active = is_active
+        
+        # Create audit log
+        action = 'KITCHEN_ACTIVATED' if is_active else 'KITCHEN_DEACTIVATED'
+        status_text = 'activated' if is_active else 'deactivated'
+        
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action=action,
+            description=f'Kitchen "{kitchen.name}" {status_text} by {current_user.get_full_name()}',
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent')
+        )
+        db.session.add(audit_log)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Kitchen "{kitchen.name}" {status_text} successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Failed to update kitchen status: {str(e)}'})
+
+@admin.route('/get_deactivated_kitchens')
+@login_required
+def get_deactivated_kitchens():
+    """Get all deactivated kitchens for the branch"""
+    try:
+        branch_filter = get_user_branch_filter()
+        
+        # Get deactivated kitchens with their users
+        kitchens_query = Kitchen.query.filter_by(is_active=False)
+        if branch_filter:
+            kitchens_query = kitchens_query.filter(Kitchen.branch_id == branch_filter)
+        
+        deactivated_kitchens = kitchens_query.all()
+        
+        kitchens_data = []
+        for kitchen in deactivated_kitchens:
+            user = kitchen.kitchen_user
+            if user:
+                # Try to get the last audit log for deactivation to show when it was deactivated
+                deactivation_log = AuditLog.query.filter(
+                    AuditLog.action == 'KITCHEN_DEACTIVATED',
+                    AuditLog.description.contains(f'Kitchen "{kitchen.name}"')
+                ).order_by(AuditLog.created_at.desc()).first()
+                
+                deactivated_at = deactivation_log.created_at if deactivation_log else kitchen.updated_at
+                
+                kitchens_data.append({
+                    'id': kitchen.id,
+                    'name': kitchen.name,
+                    'description': kitchen.description,
+                    'username': user.username,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'deactivated_at': deactivated_at.isoformat() if deactivated_at else None
+                })
+        
+        return jsonify({
+            'success': True,
+            'kitchens': kitchens_data
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Failed to get deactivated kitchens: {str(e)}'})
+
+@admin.route('/restore_kitchens', methods=['POST'])
+@login_required
+def restore_kitchens():
+    """Restore selected deactivated kitchens"""
+    try:
+        data = request.get_json()
+        branch_filter = get_user_branch_filter()
+        
+        kitchen_ids = data.get('kitchen_ids', [])
+        if not kitchen_ids:
+            return jsonify({'success': False, 'message': 'No kitchens selected for restoration'})
+        
+        # Get kitchens with branch filter
+        kitchens_query = Kitchen.query.filter(
+            Kitchen.id.in_(kitchen_ids),
+            Kitchen.is_active == False
+        )
+        if branch_filter:
+            kitchens_query = kitchens_query.filter(Kitchen.branch_id == branch_filter)
+        
+        kitchens_to_restore = kitchens_query.all()
+        
+        if not kitchens_to_restore:
+            return jsonify({'success': False, 'message': 'No valid kitchens found for restoration'})
+        
+        restored_kitchens = []
+        
+        for kitchen in kitchens_to_restore:
+            # Restore kitchen
+            kitchen.is_active = True
+            
+            # Restore associated user
+            if kitchen.kitchen_user:
+                kitchen.kitchen_user.is_active = True
+            
+            restored_kitchens.append(kitchen.name)
+            
+            # Create audit log for restoration
+            audit_log = AuditLog(
+                user_id=current_user.id,
+                action='KITCHEN_RESTORED',
+                description=f'Kitchen "{kitchen.name}" restored by {current_user.get_full_name()}',
+                ip_address=request.remote_addr,
+                user_agent=request.headers.get('User-Agent')
+            )
+            db.session.add(audit_log)
+        
+        db.session.commit()
+        
+        restored_count = len(restored_kitchens)
+        kitchen_names = ', '.join(restored_kitchens[:3])  # Show first 3 names
+        if restored_count > 3:
+            kitchen_names += f' and {restored_count - 3} more'
+        
+        return jsonify({
+            'success': True,
+            'message': f'Successfully restored {restored_count} kitchen(s): {kitchen_names}'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Failed to restore kitchens: {str(e)}'})
+
 @admin.route('/kitchen_orders')
 def kitchen_orders():
     """View all kitchen orders for the branch"""

@@ -48,6 +48,7 @@
                             <option value="branch_admin">Branch Admin</option>
                             <option value="cashier">Cashier</option>
                             <option value="waiter">Waiter</option>
+                            <option value="kitchen">Kitchen</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -98,7 +99,7 @@
                                 <td>{{ user.get_full_name() }}</td>
                                 <td>{{ user.email }}</td>
                                 <td>
-                                    <span class="badge bg-{{ 'danger' if user.role.name == 'SUPER_USER' else 'primary' if user.role.name == 'BRANCH_ADMIN' else 'warning' if user.role.name == 'CASHIER' else 'info' if user.role.name == 'WAITER' else 'secondary' }}">
+                                    <span class="badge bg-{{ 'danger' if user.role.name == 'SUPER_USER' else 'primary' if user.role.name == 'BRANCH_ADMIN' else 'warning' if user.role.name == 'CASHIER' else 'info' if user.role.name == 'WAITER' else 'success' if user.role.name == 'KITCHEN' else 'secondary' }}">
                                         {{ user.role.value.replace('_', ' ').title() }}
                                     </span>
                                 </td>
@@ -217,6 +218,7 @@
                                     {% endif %}
                                     <option value="cashier">Cashier</option>
                                     <option value="waiter">Waiter</option>
+                                    <option value="kitchen">Kitchen</option>
                                 </select>
                             </div>
                         </div>

@@ -329,7 +329,10 @@ def api_orders():
                     'name_ar': item.item_name_ar,
                     'quantity': item.quantity,
                     'special_requests': item.special_requests,
-                    'status': item.status.value
+                    'status': item.status.value,
+                    'is_new': getattr(item, 'is_new', False),
+                    'is_deleted': getattr(item, 'is_deleted', False),
+                    'is_edited': getattr(item, 'is_edited', False)
                 })
             
             orders_data.append(order_data)
@@ -445,7 +448,10 @@ def api_dashboard():
                         'name_ar': item.item_name_ar,
                         'quantity': item.quantity,
                         'special_requests': item.special_requests,
-                        'status': item.status.value
+                        'status': item.status.value,
+                        'is_new': getattr(item, 'is_new', False),
+                        'is_deleted': getattr(item, 'is_deleted', False),
+                        'is_edited': getattr(item, 'is_edited', False)
                     })
             
             # Convert to list and add items_count

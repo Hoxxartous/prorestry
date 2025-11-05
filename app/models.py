@@ -90,6 +90,9 @@ class User(UserMixin, db.Model):
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     can_access_multiple_branches = db.Column(db.Boolean(), default=False)
     
+    # User preferences
+    theme_preference = db.Column(db.String(32), default='dark', nullable=False)  # 'dark' or 'modal'
+    
     # Relationships
     audit_logs = db.relationship('AuditLog', backref='user', lazy='dynamic')
     
@@ -1243,6 +1246,11 @@ class KitchenOrderItem(db.Model):
     # Item details (copied for kitchen reference)
     item_name = db.Column(db.String(128), nullable=False)
     item_name_ar = db.Column(db.String(128))
+    
+    # Edit tracking fields
+    is_new = db.Column(db.Boolean, default=False)  # Track if item was added during edit
+    is_deleted = db.Column(db.Boolean, default=False)  # Track if item was deleted during edit
+    is_edited = db.Column(db.Boolean, default=False)  # Track if item was modified during edit
     
     # Relationships
     order_item = db.relationship('OrderItem', backref='kitchen_order_items')

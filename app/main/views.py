@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, jsonify
+from flask import render_template, redirect, url_for, jsonify, request
 from flask_login import login_required, current_user
 from app.main import main
 from app import db
@@ -26,3 +26,29 @@ def index():
     except Exception:
         # Database might not be initialized yet, redirect to login
         return redirect(url_for('auth.login'))
+
+@main.route('/switch_theme', methods=['POST'])
+@login_required
+def switch_theme():
+    """Switch user theme preference between dark and modal themes"""
+    try:
+        data = request.get_json()
+        theme = data.get('theme', 'dark')
+        
+        # Validate theme
+        if theme not in ['dark', 'modal']:
+            return jsonify({'success': False, 'error': 'Invalid theme'})
+        
+        # Update user theme preference
+        current_user.theme_preference = theme
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Theme switched to {theme}',
+            'theme': theme
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})

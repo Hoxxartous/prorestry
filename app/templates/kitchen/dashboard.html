@@ -588,6 +588,56 @@
         background: linear-gradient(135deg, #9c88ff, #5f27cd) !important; /* Purple gradient */
     }
     
+    /* Edit Indicators Styles */
+    .item-edit-indicators {
+        display: flex;
+        gap: 4px;
+        margin-left: 8px;
+        align-items: center;
+    }
+    
+    .edit-indicator {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .edit-indicator.new-item {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        animation: pulse-new 2s infinite;
+    }
+    
+    .edit-indicator.edited-item {
+        background: linear-gradient(135deg, #ffc107, #fd7e14);
+        color: #000;
+    }
+    
+    .item-name.deleted-item {
+        text-decoration: line-through;
+        opacity: 0.6;
+        color: #dc3545 !important;
+    }
+    
+    .item-row.deleted-item {
+        opacity: 0.7;
+        background: rgba(220, 53, 69, 0.1);
+        border-left: 4px solid #dc3545;
+    }
+    
+    @keyframes pulse-new {
+        0%, 100% { 
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(40, 167, 69, 0.7); 
+        }
+        50% { 
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 0 4px rgba(40, 167, 69, 0); 
+        }
+    }
+    
     .order-actions {
         display: flex;
         gap: 8px;
@@ -1175,6 +1225,30 @@
         background: linear-gradient(135deg, #f48fb1, #ce93d8) !important;
         color: #2c3e50 !important;
         border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    /* Light Theme Edit Indicators */
+    .white-theme .edit-indicator.new-item {
+        background: linear-gradient(135deg, #4caf50, #66bb6a) !important;
+        color: white !important;
+        border: 1px solid rgba(76, 175, 80, 0.3) !important;
+        box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3) !important;
+    }
+    
+    .white-theme .edit-indicator.edited-item {
+        background: linear-gradient(135deg, #ff9800, #ffb74d) !important;
+        color: #2c3e50 !important;
+        border: 1px solid rgba(255, 152, 0, 0.3) !important;
+        box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3) !important;
+    }
+    
+    .white-theme .item-name.deleted-item {
+        color: #d32f2f !important;
+    }
+    
+    .white-theme .item-row.deleted-item {
+        background: rgba(211, 47, 47, 0.08) !important;
+        border-left: 4px solid #d32f2f !important;
     }
     
     /* Action Buttons in Light Theme - Softer Gradients */
@@ -1915,6 +1989,35 @@ function setupKitchenListeners() {
         console.log('Kitchen order status update:', data);
         loadDashboardData();
     });
+
+    // Listen for kitchen order edits
+    socket.on('kitchen_order_edited', function(data) {
+        console.log('Kitchen order edited:', data);
+        
+        // Play notification sound for edits
+        playNotificationSound();
+        
+        // Show notification about the edit
+        const editSummary = data.edit_summary;
+        let message = `Order #${data.order_number} edited`;
+        
+        if (editSummary.new_items_count > 0) {
+            message += ` - ${editSummary.new_items_count} new item(s)`;
+        }
+        if (editSummary.edited_items_count > 0) {
+            message += ` - ${editSummary.edited_items_count} modified item(s)`;
+        }
+        if (editSummary.deleted_items_count > 0) {
+            message += ` - ${editSummary.deleted_items_count} removed item(s)`;
+        }
+        
+        showNotification('Order Edited!', message, 'warning');
+        
+        // Refresh dashboard data to show the updates
+        setTimeout(() => {
+            loadDashboardData();
+        }, 1000);
+    });
 }
 
 function loadDashboardData() {
@@ -2034,12 +2137,36 @@ function createOrderCard(order) {
                 else if (qty === 5) quantityClass = 'quantity-5';
                 else quantityClass = 'quantity-high';
                 
+                // Determine edit indicators and styling
+                let itemRowClass = 'item-row';
+                let itemNameClass = 'item-name';
+                let editIndicators = '';
+                
+                if (item.is_deleted) {
+                    itemRowClass += ' deleted-item';
+                    itemNameClass += ' deleted-item';
+                }
+                
+                // Build edit indicators
+                let indicators = [];
+                if (item.is_new) {
+                    indicators.push('<span class="edit-indicator new-item"><i class="bi bi-plus-circle me-1"></i>NEW</span>');
+                }
+                if (item.is_edited && !item.is_new) {
+                    indicators.push('<span class="edit-indicator edited-item"><i class="bi bi-pencil-square me-1"></i>EDITED</span>');
+                }
+                
+                if (indicators.length > 0) {
+                    editIndicators = `<div class="item-edit-indicators">${indicators.join('')}</div>`;
+                }
+                
                 return `
-                <div class="item-row">
-                    <div class="item-name">
+                <div class="${itemRowClass}">
+                    <div class="${itemNameClass}">
                         ${item.name}
                         ${item.name_ar ? `<br><small style="opacity: 0.7;">${item.name_ar}</small>` : ''}
                         ${item.special_requests ? `<br><small style="color: #96ceb4;"><i class="bi bi-plus-circle me-1"></i>${item.special_requests}</small>` : ''}
+                        ${editIndicators}
                     </div>
                     <div class="item-quantity ${quantityClass}">${item.quantity}x</div>
                 </div>

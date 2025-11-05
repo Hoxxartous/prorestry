@@ -9,12 +9,7 @@ from datetime import datetime
 from app import db
 from app.models import (
     User, Branch, Category, MenuItem, Table, Customer, DeliveryCompany,
-    UserRole, PaymentMethod, ServiceType, AuditLog, OrderItem, Order, OrderStatus,
-    TimezoneManager, AdminPinCode, WaiterCashierAssignment, OrderEditHistory, 
-    ManualCardPayment, Kitchen, CategoryKitchenAssignment, KitchenOrder, 
-    KitchenOrderStatus, CategorySpecialItemAssignment, UserBranchAssignment,
-    Payment, InventoryItem, Notification, CashierSession, OrderCounter,
-    CashierUiPreference, CashierUiSetting, AppSettings, KitchenOrderItem
+    UserRole, PaymentMethod, ServiceType, AuditLog
 )
 from werkzeug.security import generate_password_hash
 import logging
