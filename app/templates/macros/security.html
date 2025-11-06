@@ -1,10 +1,10 @@
-{% macro csrf_token() %}
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{% macro csrf_token_field() %}
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 {% endmacro %}
 
 {% macro secure_form_start(action="", method="POST", class="", id="") %}
     <form {% if action %}action="{{ action }}"{% endif %} method="{{ method }}" {% if class %}class="{{ class }}"{% endif %} {% if id %}id="{{ id }}"{% endif %}>
-        {{ csrf_token() }}
+        {{ csrf_token_field() }}
 {% endmacro %}
 
 {% macro secure_form_end() %}
