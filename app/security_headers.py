@@ -85,22 +85,41 @@ class SecurityHeaders:
             response.headers['Pragma'] = 'no-cache'
             response.headers['Expires'] = '0'
         
+        # Special handling for Socket.IO endpoints
+        if request.path and request.path.startswith('/socket.io/'):
+            # Ensure Socket.IO responses also get security headers
+            response.headers['X-Content-Type-Options'] = 'nosniff'
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+        
         return response
     
     def _build_csp_policy(self):
         """Build Content Security Policy based on application needs"""
-        # Allow specific trusted CDNs for Bootstrap, jQuery, etc.
+        # More restrictive CSP policy with specific trusted sources
         csp_directives = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://code.jquery.com https://cdn.socket.io",
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+            # Script sources - allow specific CDNs and nonce-based inline scripts
+            "script-src 'self' https://cdn.jsdelivr.net https://code.jquery.com https://cdn.socket.io 'unsafe-inline' 'unsafe-eval'",
+            # Style sources - allow specific CDNs and inline styles for Bootstrap compatibility
+            "style-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com 'unsafe-inline'",
+            # Font sources - specific trusted CDNs
             "font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
-            "img-src 'self' data: https:",
-            "connect-src 'self' wss: ws:",
+            # Image sources - self, data URIs, and HTTPS only
+            "img-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+            # Connection sources - WebSocket and HTTPS connections
+            "connect-src 'self' wss://prorestry.onrender.com ws://localhost:* https://prorestry.onrender.com",
+            # Frame ancestors - prevent clickjacking
             "frame-ancestors 'none'",
+            # Base URI - prevent base tag injection
             "base-uri 'self'",
+            # Form action - only allow forms to submit to same origin
             "form-action 'self'",
-            "object-src 'none'"
+            # Object sources - block all plugins
+            "object-src 'none'",
+            # Media sources - self only
+            "media-src 'self'",
+            # Worker sources - self only
+            "worker-src 'self'"
         ]
         return "; ".join(csp_directives)
     
@@ -213,6 +232,15 @@ def init_security(app):
     def get_csrf_token():
         return CSRFProtection.generate_csrf_token()
     
+    # Add Socket.IO specific security middleware
+    @app.before_request
+    def socketio_security_middleware():
+        """Apply additional security for Socket.IO endpoints"""
+        if request.path and request.path.startswith('/socket.io/'):
+            # Add security headers for Socket.IO requests
+            from flask import g
+            g.is_socketio_request = True
+    
     app.logger.info("Security features initialized successfully")
     
     return app
@@ -239,7 +267,11 @@ class SocketIOSecurity:
     def secure_socketio_config():
         """Return secure Socket.IO configuration"""
         return {
-            'cors_allowed_origins': "*",  # Allow all origins but with secure transports
+            'cors_allowed_origins': ["https://prorestry.onrender.com", "http://localhost:*"],  # Restrict to known origins
             'cookie': False,  # Disable cookies for Socket.IO to prevent URL session exposure
-            'transports': ['websocket', 'polling'],  # Allow both but prefer websocket
+            'transports': ['websocket'],  # Use websocket only to avoid session IDs in URLs
+            'engineio_logger': False,  # Disable logging to prevent session ID leakage
+            'logger': False,  # Disable Socket.IO logging
+            'ping_timeout': 20000,  # Shorter timeout for better security
+            'ping_interval': 25000,  # Regular ping to maintain connection
         }

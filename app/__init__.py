@@ -49,7 +49,11 @@ def create_app(config_class=Config):
     socketio.init_app(app, 
                      cors_allowed_origins=secure_socketio_config.get('cors_allowed_origins', []),
                      cookie=secure_socketio_config.get('cookie', False),
-                     transports=secure_socketio_config.get('transports', ['websocket']))
+                     transports=secure_socketio_config.get('transports', ['websocket']),
+                     engineio_logger=secure_socketio_config.get('engineio_logger', False),
+                     logger=secure_socketio_config.get('logger', False),
+                     ping_timeout=secure_socketio_config.get('ping_timeout', 20000),
+                     ping_interval=secure_socketio_config.get('ping_interval', 25000))
     
     # Initialize session manager for better session handling
     from app.session_manager import init_session_manager
