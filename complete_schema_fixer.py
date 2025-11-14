@@ -374,6 +374,16 @@ def fix_userrole_enum():
                                 logger.warning(f"⚠️ Could not add '{value}' to UserRole enum: {e}")
                 
                 # Fix users with invalid role values
+                # First, check what invalid roles exist
+                cursor.execute("""
+                    SELECT DISTINCT role FROM users 
+                    WHERE role NOT IN ('super_user', 'it_admin', 'branch_admin', 'manager', 'cashier', 'waiter', 'kitchen');
+                """)
+                
+                invalid_roles = [row[0] for row in cursor.fetchall()]
+                logger.info(f"Found invalid roles in database: {invalid_roles}")
+                
+                # Map invalid roles to valid ones
                 role_mappings = {
                     'IT_ADMIN': 'it_admin',
                     'SUPER_USER': 'super_user',
@@ -384,14 +394,47 @@ def fix_userrole_enum():
                     'KITCHEN': 'kitchen'
                 }
                 
-                for old_role, new_role in role_mappings.items():
-                    cursor.execute(
-                        "UPDATE users SET role = %s WHERE role = %s;",
-                        (new_role, old_role)
-                    )
-                    if cursor.rowcount > 0:
-                        logger.info(f"✅ Fixed {cursor.rowcount} users: {old_role} -> {new_role}")
-                        connection.commit()
+                # Only try to fix roles that actually exist in the database
+                for old_role in invalid_roles:
+                    if old_role in role_mappings:
+                        new_role = role_mappings[old_role]
+                        try:
+                            # Use a more robust approach with explicit casting
+                            cursor.execute(f"""
+                                UPDATE users 
+                                SET role = '{new_role}'::userrole 
+                                WHERE role::text = '{old_role}';
+                            """)
+                            if cursor.rowcount > 0:
+                                logger.info(f"✅ Fixed {cursor.rowcount} users: {old_role} -> {new_role}")
+                                connection.commit()
+                        except Exception as e:
+                            logger.warning(f"⚠️ Could not fix role {old_role}: {e}")
+                            # Try alternative approach - set to default role
+                            try:
+                                cursor.execute(f"""
+                                    UPDATE users 
+                                    SET role = 'cashier'::userrole 
+                                    WHERE role::text = '{old_role}';
+                                """)
+                                if cursor.rowcount > 0:
+                                    logger.info(f"✅ Set {cursor.rowcount} users with role {old_role} to default 'cashier'")
+                                    connection.commit()
+                            except Exception as e2:
+                                logger.error(f"❌ Failed to fix role {old_role}: {e2}")
+                    else:
+                        # Unknown role - set to default
+                        try:
+                            cursor.execute(f"""
+                                UPDATE users 
+                                SET role = 'cashier'::userrole 
+                                WHERE role::text = '{old_role}';
+                            """)
+                            if cursor.rowcount > 0:
+                                logger.info(f"✅ Set {cursor.rowcount} users with unknown role {old_role} to 'cashier'")
+                                connection.commit()
+                        except Exception as e:
+                            logger.error(f"❌ Failed to fix unknown role {old_role}: {e}")
                 
                 # Check for any remaining invalid roles
                 cursor.execute("""
