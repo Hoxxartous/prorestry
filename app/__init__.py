@@ -21,12 +21,14 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_socketio import SocketIO
+from flask_mail import Mail
 from config import Config
 
 # Initialize extensions
 db = SQLAlchemy()
 login_manager = LoginManager()
 socketio = SocketIO()
+mail = Mail()
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -39,21 +41,8 @@ def create_app(config_class=Config):
     login_manager.login_message = 'Your session has expired. Please log in again.'
     login_manager.login_message_category = 'info'
     login_manager.session_protection = 'strong'  # Strong session protection
-    
-    # Initialize security features
-    from app.security_headers import init_security, SocketIOSecurity
-    init_security(app)
-    
-    # Configure secure Socket.IO with security enhancements
-    secure_socketio_config = SocketIOSecurity.secure_socketio_config()
-    socketio.init_app(app, 
-                     cors_allowed_origins=secure_socketio_config.get('cors_allowed_origins', []),
-                     cookie=secure_socketio_config.get('cookie', False),
-                     transports=secure_socketio_config.get('transports', ['websocket']),
-                     engineio_logger=secure_socketio_config.get('engineio_logger', False),
-                     logger=secure_socketio_config.get('logger', False),
-                     ping_timeout=secure_socketio_config.get('ping_timeout', 20000),
-                     ping_interval=secure_socketio_config.get('ping_interval', 25000))
+    socketio.init_app(app, cors_allowed_origins="*")
+    mail.init_app(app)
     
     # Initialize session manager for better session handling
     from app.session_manager import init_session_manager
@@ -96,6 +85,9 @@ def create_app(config_class=Config):
     
     from app.kitchen import kitchen as kitchen_blueprint
     app.register_blueprint(kitchen_blueprint, url_prefix='/kitchen')
+    
+    from app.it import it as it_blueprint
+    app.register_blueprint(it_blueprint, url_prefix='/it')
     
     # Register debug blueprint (for troubleshooting)
     from app.debug_routes import debug_bp
@@ -310,11 +302,44 @@ def create_app(config_class=Config):
     with app.app_context():
         try:
             init_db()
+            # Load email configuration from database
+            load_email_config_from_db(app)
         except Exception as e:
             app.logger.error(f"Startup database initialization failed: {str(e)}")
             print(f"Startup initialization failed: {str(e)}")
     
     return app
+
+def load_email_config_from_db(app):
+    """Load email configuration from database and update Flask config"""
+    try:
+        from app.models import EmailConfiguration
+        
+        # Get active email configuration
+        email_config = EmailConfiguration.get_active_config()
+        
+        if email_config:
+            # Update Flask app config with database values
+            app.config['MAIL_SERVER'] = email_config.mail_server
+            app.config['MAIL_PORT'] = email_config.mail_port
+            app.config['MAIL_USE_TLS'] = email_config.mail_use_tls
+            app.config['MAIL_USE_SSL'] = email_config.mail_use_ssl
+            app.config['MAIL_USERNAME'] = email_config.mail_username
+            app.config['MAIL_PASSWORD'] = email_config.mail_password
+            app.config['MAIL_DEFAULT_SENDER'] = email_config.mail_default_sender
+            
+            # Reinitialize mail with new config
+            mail.init_app(app)
+            
+            app.logger.info(f"✅ Email configuration loaded from database: {email_config.mail_server}:{email_config.mail_port}")
+            print(f"✅ Email configuration loaded: {email_config.mail_server}:{email_config.mail_port}")
+        else:
+            app.logger.info("ℹ️ No email configuration found in database - using environment variables")
+            print("ℹ️ No email configuration found in database - using environment variables")
+            
+    except Exception as e:
+        app.logger.error(f"❌ Failed to load email configuration from database: {str(e)}")
+        print(f"❌ Failed to load email configuration from database: {str(e)}")
 
 def configure_logging(app):
     """Configure application logging"""

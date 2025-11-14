@@ -12,11 +12,12 @@ from flask import current_app
 # Enhanced user roles for multi-branch system
 class UserRole(Enum):
     SUPER_USER = 'super_user'      # Can manage all branches and users
+    IT_ADMIN = 'it_admin'          # Can configure system settings and manage all users
     BRANCH_ADMIN = 'branch_admin'  # Can manage specific branch
     MANAGER = 'manager'            # Branch manager
-    CASHIER = 'cashier'           # Cashier for specific branch
-    WAITER = 'waiter'             # Waiter for specific branch
-    KITCHEN = 'kitchen'           # Kitchen staff for specific branch
+    CASHIER = 'cashier'            # Can process orders and payments
+    WAITER = 'waiter'              # Can take orders and assign to cashiers
+    KITCHEN = 'kitchen'            # Can view and manage kitchen orderstaff for specific branch
 
 # Enum for payment methods
 class PaymentMethod(Enum):
@@ -1286,3 +1287,111 @@ class CategorySpecialItemAssignment(db.Model):
     
     def __repr__(self):
         return f'<CategorySpecialItemAssignment Category:{self.category_id} SpecialItem:{self.special_item_id}>'
+
+class EmailConfiguration(db.Model):
+    """Model for storing email configuration settings"""
+    __tablename__ = 'email_configurations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    mail_server = db.Column(db.String(255), nullable=False)
+    mail_port = db.Column(db.Integer, nullable=False, default=587)
+    mail_username = db.Column(db.String(255), nullable=False)
+    mail_password = db.Column(db.Text, nullable=False)  # Will be encrypted
+    mail_default_sender = db.Column(db.String(255), nullable=False)
+    mail_use_tls = db.Column(db.Boolean, default=True, nullable=False)
+    mail_use_ssl = db.Column(db.Boolean, default=False, nullable=False)
+    
+    # Metadata
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    
+    # Relationships
+    creator = db.relationship('User', backref='email_configurations')
+    
+    def __repr__(self):
+        return f'<EmailConfiguration {self.mail_server}:{self.mail_port}>'
+    
+    @classmethod
+    def get_active_config(cls):
+        """Get the currently active email configuration"""
+        return cls.query.filter_by(is_active=True).first()
+    
+    def activate(self):
+        """Set this configuration as active and deactivate others"""
+        # Deactivate all other configurations
+        EmailConfiguration.query.update({'is_active': False})
+        # Activate this one
+        self.is_active = True
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+    
+    def to_dict(self):
+        """Convert to dictionary for JSON serialization (excluding password)"""
+        return {
+            'id': self.id,
+            'mail_server': self.mail_server,
+            'mail_port': self.mail_port,
+            'mail_username': self.mail_username,
+            'mail_default_sender': self.mail_default_sender,
+            'mail_use_tls': self.mail_use_tls,
+            'mail_use_ssl': self.mail_use_ssl,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+            'is_active': self.is_active
+        }
+
+class AdminNotification(db.Model):
+    """Model for storing admin notifications with persistence"""
+    __tablename__ = 'admin_notifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.String(50), nullable=False)  # 'cashier_logout', 'system_alert', etc.
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    
+    # Cashier logout specific fields
+    cashier_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    cashier_name = db.Column(db.String(100), nullable=True)
+    branch_name = db.Column(db.String(100), nullable=True)
+    logout_time = db.Column(db.DateTime, nullable=True)
+    
+    # Daily stats (stored as JSON-like text)
+    daily_stats = db.Column(db.Text, nullable=True)  # JSON string of stats
+    
+    # Notification metadata
+    recipient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Admin who should see this
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    read_at = db.Column(db.DateTime, nullable=True)
+    
+    # Relationships
+    cashier = db.relationship('User', foreign_keys=[cashier_id], backref='logout_notifications')
+    recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_notifications')
+    
+    def __repr__(self):
+        return f'<AdminNotification {self.type}: {self.title}>'
+    
+    def mark_as_read(self):
+        """Mark notification as read"""
+        self.is_read = True
+        self.read_at = datetime.utcnow()
+        db.session.commit()
+    
+    def to_dict(self):
+        """Convert notification to dictionary for JSON serialization"""
+        import json
+        return {
+            'id': self.id,
+            'type': self.type,
+            'title': self.title,
+            'message': self.message,
+            'cashier_name': self.cashier_name,
+            'branch_name': self.branch_name,
+            'logout_time': self.logout_time.isoformat() if self.logout_time else None,
+            'daily_stats': json.loads(self.daily_stats) if self.daily_stats else None,
+            'is_read': self.is_read,
+            'created_at': self.created_at.isoformat(),
+            'read_at': self.read_at.isoformat() if self.read_at else None
+        }
