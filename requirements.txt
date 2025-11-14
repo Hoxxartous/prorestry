@@ -6,6 +6,7 @@ Flask-SocketIO==5.3.6
 Flask-Migrate==4.0.5
 Flask-WTF==1.1.1
 Werkzeug==2.3.6
+Flask-Mail==0.9.1
 
 # WebSocket support
 python-socketio==5.11.0
