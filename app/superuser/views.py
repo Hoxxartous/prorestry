@@ -925,9 +925,21 @@ def audit_logs():
     
     # Check if this is an AJAX request
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Get timezone from settings (default to Qatar)
+        import pytz
+        app_timezone = AppSettings.get_value('app_timezone', 'Asia/Qatar')
+        try:
+            tz = pytz.timezone(app_timezone)
+        except pytz.UnknownTimeZoneError:
+            tz = pytz.timezone('Asia/Qatar')  # Fallback to Qatar
+        
         # Return JSON response for AJAX
         logs_data = []
         for log in logs.items:
+            # Convert UTC to user's timezone
+            utc_time = pytz.utc.localize(log.created_at) if log.created_at.tzinfo is None else log.created_at
+            local_time = utc_time.astimezone(tz)
+            
             log_data = {
                 'id': log.id,
                 'user': {
@@ -940,8 +952,8 @@ def audit_logs():
                 'description': log.description or '',
                 'ip_address': log.ip_address or 'N/A',
                 'created_at': {
-                    'date': log.created_at.strftime('%Y-%m-%d'),
-                    'time': log.created_at.strftime('%H:%M:%S')
+                    'date': local_time.strftime('%m/%d/%Y'),
+                    'time': local_time.strftime('%I:%M:%S %p')
                 }
             }
             logs_data.append(log_data)
@@ -1685,3 +1697,354 @@ def api_peak_hours():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@superuser.route('/items_insights')
+def items_insights():
+    """Items selling insights - comprehensive analysis of item sales across all branches"""
+    from datetime import timedelta
+    
+    # Get filter parameters
+    branch_id = request.args.get('branch_id', type=int)
+    days = request.args.get('days', default='30')  # Keep as string to handle 'all' value
+    
+    # Calculate date range
+    if days == 'all':
+        start_date = None
+    else:
+        try:
+            days_int = int(days)
+            start_date = datetime.utcnow() - timedelta(days=days_int)
+        except ValueError:
+            # If days can't be converted to int, default to 30 days
+            days = 30
+            start_date = datetime.utcnow() - timedelta(days=30)
+    
+    # Build base query for items analysis - only from PAID orders
+    items_query = db.session.query(
+        MenuItem.id,
+        MenuItem.name,
+        MenuItem.name_ar,
+        Branch.name.label('branch_name'),
+        func.sum(OrderItem.quantity).label('total_quantity'),
+        func.sum(OrderItem.total_price).label('total_revenue'),
+        func.avg(OrderItem.unit_price).label('avg_price')
+    ).join(OrderItem, MenuItem.id == OrderItem.menu_item_id)\
+     .join(Order, OrderItem.order_id == Order.id)\
+     .join(Branch, MenuItem.branch_id == Branch.id)\
+     .filter(
+         Order.status == OrderStatus.PAID,
+         OrderItem.is_deleted == False
+     )
+    
+    # Apply date filter if specified
+    if start_date:
+        items_query = items_query.filter(Order.created_at >= start_date)
+    
+    # Apply branch filter if specified
+    if branch_id:
+        items_query = items_query.filter(Order.branch_id == branch_id)
+    
+    # Group by item and branch, order by total quantity sold (descending)
+    items_data = items_query.group_by(
+        MenuItem.id, MenuItem.name, MenuItem.name_ar, Branch.name
+    ).order_by(
+        func.sum(OrderItem.quantity).desc()
+    ).all()
+    
+    # Calculate summary statistics
+    total_items_sold = sum(item.total_quantity for item in items_data)
+    total_items_revenue = sum(float(item.total_revenue) for item in items_data)
+    unique_items_count = len(items_data)
+    avg_item_price = (total_items_revenue / total_items_sold) if total_items_sold > 0 else 0
+    
+    # Find max quantity for progress bar calculation
+    max_quantity = max([item.total_quantity for item in items_data]) if items_data else 1
+    
+    # Convert items_data to a format with float values for template compatibility
+    items_data_formatted = []
+    for item in items_data:
+        items_data_formatted.append({
+            'id': item.id,
+            'name': item.name,
+            'name_ar': item.name_ar,
+            'branch_name': item.branch_name,
+            'total_quantity': item.total_quantity,
+            'total_revenue': float(item.total_revenue),
+            'avg_price': float(item.avg_price)
+        })
+    
+    # Branch performance statistics (if multiple branches)
+    branch_stats = []
+    if not branch_id:  # Only show branch comparison if not filtering by specific branch
+        branch_stats_query = db.session.query(
+            Branch.name.label('branch_name'),
+            func.sum(OrderItem.quantity).label('total_items'),
+            func.sum(OrderItem.total_price).label('total_revenue')
+        ).join(MenuItem, Branch.id == MenuItem.branch_id)\
+         .join(OrderItem, MenuItem.id == OrderItem.menu_item_id)\
+         .join(Order, OrderItem.order_id == Order.id)\
+         .filter(
+             Order.status == OrderStatus.PAID,
+             OrderItem.is_deleted == False,
+             Branch.is_active == True
+         )
+        
+        if start_date:
+            branch_stats_query = branch_stats_query.filter(Order.created_at >= start_date)
+        
+        branch_stats_raw = branch_stats_query.group_by(Branch.id, Branch.name).all()
+        
+        # Convert branch_stats to format with float values for template compatibility
+        branch_stats = []
+        for stat in branch_stats_raw:
+            branch_stats.append({
+                'branch_name': stat.branch_name,
+                'total_items': stat.total_items,
+                'total_revenue': float(stat.total_revenue)
+            })
+    
+    # Find max branch revenue for progress bar calculation
+    max_branch_revenue = max([stat['total_revenue'] for stat in branch_stats]) if branch_stats else 1.0
+    
+    # Get branches for filter dropdown
+    branches = Branch.query.filter_by(is_active=True).all()
+    
+    return render_template('superuser/items_insights.html',
+                         items_data=items_data_formatted,
+                         total_items_sold=total_items_sold,
+                         total_items_revenue=total_items_revenue,
+                         unique_items_count=unique_items_count,
+                         avg_item_price=avg_item_price,
+                         max_quantity=max_quantity,
+                         branch_stats=branch_stats,
+                         max_branch_revenue=max_branch_revenue,
+                         branches=branches,
+                         current_branch=branch_id,
+                         current_days=days)
+
+
+@superuser.route('/active_users')
+def active_users():
+    """Get real-time active users with geolocation data"""
+    try:
+        from datetime import timedelta
+        from app.models import AuditLog
+        import pytz
+        
+        print("Starting active_users route...")
+        
+        # Get filter parameters
+        status_filter = request.args.get('status', 'all')  # all, online, offline
+        branch_filter = request.args.get('branch_id', type=int)
+        role_filter = request.args.get('role')
+        
+        # Get timezone from settings (default to Qatar)
+        app_timezone = AppSettings.get_value('app_timezone', 'Asia/Qatar')
+        try:
+            tz = pytz.timezone(app_timezone)
+        except pytz.UnknownTimeZoneError:
+            tz = pytz.timezone('Asia/Qatar')  # Fallback to Qatar
+        
+        # Consider users active if they had activity in the last 15 minutes
+        active_threshold = datetime.utcnow() - timedelta(minutes=15)
+        print(f"Active threshold: {active_threshold}")
+        
+        # Build query for users with filters
+        users_query = User.query.filter_by(is_active=True)
+        
+        # Apply branch filter
+        if branch_filter:
+            users_query = users_query.filter(User.branch_id == branch_filter)
+        
+        # Apply role filter
+        if role_filter and role_filter != 'all':
+            try:
+                role_enum = UserRole[role_filter.upper()]
+                users_query = users_query.filter(User.role == role_enum)
+            except KeyError:
+                pass  # Invalid role, ignore filter
+        
+        users = users_query.all()
+        print(f"Found {len(users)} active users")
+        
+        active_users_data = []
+        for user in users:
+            try:
+                print(f"Processing user: {user.username}")
+                
+                # Check if user has recent activity (last_login or recent audit log)
+                is_online = False
+                
+                # Check last_login field
+                if user.last_login and user.last_login >= active_threshold:
+                    is_online = True
+                    print(f"User {user.username} is online via last_login: {user.last_login}")
+                
+                # Also check recent audit logs as backup
+                if not is_online:
+                    try:
+                        recent_log = AuditLog.query.filter_by(user_id=user.id)\
+                                                  .filter(AuditLog.created_at >= active_threshold)\
+                                                  .first()
+                        if recent_log:
+                            is_online = True
+                            print(f"User {user.username} is online via recent audit log: {recent_log.created_at}")
+                    except Exception as audit_error:
+                        print(f"Error checking audit logs for user {user.username}: {audit_error}")
+                
+                if not is_online:
+                    print(f"User {user.username} is offline - last_login: {user.last_login}, threshold: {active_threshold}")
+                
+                # Get the latest IP address from audit logs
+                ip_address = '127.0.0.1'  # Default
+                try:
+                    latest_log = AuditLog.query.filter_by(user_id=user.id)\
+                                              .filter(AuditLog.ip_address.isnot(None))\
+                                              .order_by(AuditLog.created_at.desc())\
+                                              .first()
+                    if latest_log and latest_log.ip_address:
+                        ip_address = latest_log.ip_address
+                except Exception as ip_error:
+                    print(f"Error getting IP for user {user.username}: {ip_error}")
+                
+                # Safely get user details
+                try:
+                    full_name = f"{user.first_name or ''} {user.last_name or ''}".strip() or user.username
+                    role = user.role.value if user.role else 'N/A'
+                    branch_name = user.branch.name if user.branch else 'No Branch'
+                    
+                    # Convert last activity to user's timezone
+                    last_activity = None
+                    if user.last_login:
+                        # Convert UTC to user's timezone
+                        utc_time = pytz.utc.localize(user.last_login) if user.last_login.tzinfo is None else user.last_login
+                        local_time = utc_time.astimezone(tz)
+                        last_activity = local_time.strftime('%m/%d/%Y, %I:%M:%S %p')
+                        
+                except Exception as detail_error:
+                    print(f"Error getting details for user {user.username}: {detail_error}")
+                    full_name = user.username
+                    role = 'N/A'
+                    branch_name = 'No Branch'
+                    last_activity = None
+                
+                active_users_data.append({
+                    'id': user.id,
+                    'username': user.username,
+                    'full_name': full_name,
+                    'role': role,
+                    'branch_name': branch_name,
+                    'is_online': is_online,
+                    'last_activity': last_activity,
+                    'ip_address': ip_address,
+                    'location_data': None
+                })
+                
+            except Exception as user_error:
+                print(f"Error processing user {user.username}: {user_error}")
+                # Add basic user data even if there's an error
+                active_users_data.append({
+                    'id': user.id,
+                    'username': user.username,
+                    'full_name': user.username,
+                    'role': 'N/A',
+                    'branch_name': 'No Branch',
+                    'is_online': False,
+                    'last_activity': None,
+                    'ip_address': '127.0.0.1',
+                    'location_data': None
+                })
+        
+        # Apply status filter after processing all users
+        if status_filter == 'online':
+            active_users_data = [u for u in active_users_data if u['is_online']]
+        elif status_filter == 'offline':
+            active_users_data = [u for u in active_users_data if not u['is_online']]
+        
+        # Count online/offline users from original data (before status filter)
+        all_users_data = active_users_data if status_filter == 'all' else []
+        if status_filter != 'all':
+            # Recalculate for all users to show correct stats
+            all_users_query = User.query.filter_by(is_active=True)
+            if branch_filter:
+                all_users_query = all_users_query.filter(User.branch_id == branch_filter)
+            if role_filter and role_filter != 'all':
+                try:
+                    role_enum = UserRole[role_filter.upper()]
+                    all_users_query = all_users_query.filter(User.role == role_enum)
+                except KeyError:
+                    pass
+            
+            all_users = all_users_query.all()
+            online_count = 0
+            offline_count = 0
+            
+            for user in all_users:
+                is_online = False
+                if user.last_login and user.last_login >= active_threshold:
+                    is_online = True
+                if not is_online:
+                    try:
+                        recent_log = AuditLog.query.filter_by(user_id=user.id)\
+                                                  .filter(AuditLog.created_at >= active_threshold)\
+                                                  .first()
+                        if recent_log:
+                            is_online = True
+                    except:
+                        pass
+                
+                if is_online:
+                    online_count += 1
+                else:
+                    offline_count += 1
+        else:
+            online_count = len([u for u in active_users_data if u['is_online']])
+            offline_count = len([u for u in active_users_data if not u['is_online']])
+        
+        total_users = online_count + offline_count
+        
+        print(f"Returning {len(active_users_data)} users (filtered): {online_count} online, {offline_count} offline total")
+        
+        # Convert last_updated to user's timezone
+        utc_now = datetime.utcnow()
+        utc_time = pytz.utc.localize(utc_now)
+        local_time = utc_time.astimezone(tz)
+        
+        return jsonify({
+            'success': True,
+            'users': active_users_data,
+            'total_users': total_users,
+            'online_users': online_count,
+            'offline_users': offline_count,
+            'filtered_count': len(active_users_data),
+            'last_updated': local_time.strftime('%m/%d/%Y, %I:%M:%S %p'),
+            'timezone': app_timezone
+        })
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error in active_users route: {str(e)}")
+        print(f"Full traceback: {error_details}")
+        
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'error_details': error_details,
+            'users': [],
+            'total_users': 0,
+            'online_users': 0,
+            'offline_users': 0,
+            'last_updated': datetime.utcnow().isoformat()
+        }), 500
+
+
+@superuser.route('/test_route')
+def test_route():
+    """Simple test route to verify routing works"""
+    return jsonify({
+        'success': True,
+        'message': 'Test route is working!',
+        'timestamp': datetime.utcnow().isoformat()
+    })

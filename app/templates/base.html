@@ -108,357 +108,1234 @@
             transform: translateY(0) !important;
         }
         
-        /* MODAL THEME STYLES - Based on Restore Modal Design */
-        html[data-theme="modal"] {
-            /* Global Modal Theme Variables */
-            --modal-bg-primary: #2c3e50;
-            --modal-bg-secondary: #34495e;
-            --modal-accent: #f39c12;
-            --modal-accent-hover: #e67e22;
-            --modal-text-primary: #ecf0f1;
-            --modal-text-secondary: #bdc3c7;
-            --modal-border: #4a5f7a;
-            --modal-success: #27ae60;
-            --modal-warning: #f39c12;
-            --modal-danger: #e74c3c;
+        /* NEON DARK THEME STYLES - Based on Dashboard Design */
+        html[data-theme="neon-dark"] {
+            /* Global Neon Dark Theme Variables */
+            --neon-bg-primary: #0C0F0F;
+            --neon-bg-secondary: #111111;
+            --neon-bg-tertiary: #1a1a1a;
+            --neon-accent-primary: #00FFAA;
+            --neon-accent-secondary: #22CC88;
+            --neon-accent-purple: #8B5CF6;
+            --neon-accent-cyan: #06B6D4;
+            --neon-text-primary: #FFFFFF;
+            --neon-text-secondary: #A1A1AA;
+            --neon-text-muted: #71717A;
+            --neon-border: rgba(0, 255, 170, 0.2);
+            --neon-border-secondary: rgba(139, 92, 246, 0.2);
+            --neon-success: #10B981;
+            --neon-warning: #F59E0B;
+            --neon-danger: #EF4444;
+            --neon-glow: 0 0 20px rgba(0, 255, 170, 0.3);
+            --neon-glow-purple: 0 0 20px rgba(139, 92, 246, 0.3);
+            --neon-glass-bg: rgba(255, 255, 255, 0.05);
+            --neon-glass-border: rgba(255, 255, 255, 0.1);
         }
         
-        /* MODAL THEME - OVERRIDE ALL GOLD/YELLOW COLORS */
-        html[data-theme="modal"] .navbar-dark.bg-primary,
-        html[data-theme="modal"] .bg-primary {
-            background: linear-gradient(135deg, var(--modal-bg-secondary), var(--modal-bg-primary)) !important;
+        /* NEON DARK THEME - NAVBAR STYLES */
+        html[data-theme="neon-dark"] .navbar-dark.bg-primary,
+        html[data-theme="neon-dark"] .bg-primary {
+            background: linear-gradient(135deg, var(--neon-bg-secondary), var(--neon-bg-primary)) !important;
+            border-bottom: 1px solid var(--neon-border) !important;
+            box-shadow: var(--neon-glow) !important;
         }
         
-        html[data-theme="modal"] .navbar-brand {
-            color: var(--modal-accent) !important;
+        html[data-theme="neon-dark"] .navbar-brand {
+            color: var(--neon-accent-primary) !important;
             font-weight: bold !important;
+            text-shadow: var(--neon-glow) !important;
         }
         
-        html[data-theme="modal"] .navbar-nav .nav-link {
-            color: var(--modal-text-primary) !important;
-        }
-        
-        html[data-theme="modal"] .navbar-nav .nav-link:hover {
-            color: var(--modal-accent) !important;
-        }
-        
-        html[data-theme="modal"] .navbar-nav .nav-link.active {
-            color: var(--modal-accent) !important;
-        }
-        
-        /* MODAL THEME - GLOBAL STYLES */
-        html[data-theme="modal"] body {
-            background: var(--modal-bg-primary) !important;
-            color: var(--modal-text-primary) !important;
-        }
-        
-        html[data-theme="modal"] .container,
-        html[data-theme="modal"] .container-fluid {
-            background: transparent !important;
-        }
-        
-        /* MODAL THEME - CARDS AND PANELS */
-        html[data-theme="modal"] .card {
-            background: var(--modal-bg-secondary) !important;
-            border: 1px solid var(--modal-border) !important;
-            border-radius: 12px !important;
-            color: var(--modal-text-primary) !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-        }
-        
-        html[data-theme="modal"] .card-header {
-            background: linear-gradient(135deg, var(--modal-accent), var(--modal-accent-hover)) !important;
-            color: white !important;
-            border-bottom: none !important;
-            border-radius: 12px 12px 0 0 !important;
-        }
-        
-        html[data-theme="modal"] .card-body {
-            background: var(--modal-bg-secondary) !important;
-            color: var(--modal-text-primary) !important;
-        }
-        
-        html[data-theme="modal"] .card-footer {
-            background: var(--modal-bg-primary) !important;
-            border-top: 1px solid var(--modal-border) !important;
-            border-radius: 0 0 12px 12px !important;
-        }
-        
-        /* MODAL THEME - BUTTONS */
-        html[data-theme="modal"] .btn-primary {
-            background: linear-gradient(135deg, var(--modal-accent), var(--modal-accent-hover)) !important;
-            border: none !important;
-            color: white !important;
-        }
-        
-        html[data-theme="modal"] .btn-primary:hover {
-            background: linear-gradient(135deg, var(--modal-accent-hover), #d35400) !important;
-            transform: translateY(-1px) !important;
-            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4) !important;
-        }
-        
-        html[data-theme="modal"] .btn-success {
-            background: linear-gradient(135deg, var(--modal-success), #2ecc71) !important;
-            border: none !important;
-            color: white !important;
-        }
-        
-        html[data-theme="modal"] .btn-success:hover {
-            background: linear-gradient(135deg, #229954, var(--modal-success)) !important;
-            transform: translateY(-1px) !important;
-            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4) !important;
-        }
-        
-        html[data-theme="modal"] .btn-outline-primary {
-            border-color: var(--modal-accent) !important;
-            color: var(--modal-accent) !important;
-            background: transparent !important;
-        }
-        
-        html[data-theme="modal"] .btn-outline-primary:hover {
-            background: var(--modal-accent) !important;
-            border-color: var(--modal-accent) !important;
-            color: white !important;
-        }
-        
-        html[data-theme="modal"] .btn-secondary {
-            background: #7f8c8d !important;
-            border-color: #7f8c8d !important;
-            color: white !important;
-        }
-        
-        html[data-theme="modal"] .btn-secondary:hover {
-            background: #6c7b7d !important;
-            border-color: #6c7b7d !important;
-        }
-        
-        /* MODAL THEME - FORMS */
-        html[data-theme="modal"] .form-control {
-            background: var(--modal-bg-primary) !important;
-            border: 1px solid var(--modal-border) !important;
-            color: var(--modal-text-primary) !important;
-            border-radius: 8px !important;
-        }
-        
-        html[data-theme="modal"] .form-control:focus {
-            background: var(--modal-bg-primary) !important;
-            border-color: var(--modal-accent) !important;
-            box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.25) !important;
-            color: var(--modal-text-primary) !important;
-        }
-        
-        html[data-theme="modal"] .form-select {
-            background: var(--modal-bg-primary) !important;
-            border: 1px solid var(--modal-border) !important;
-            color: var(--modal-text-primary) !important;
-        }
-        
-        html[data-theme="modal"] .form-label {
-            color: var(--modal-text-primary) !important;
-            font-weight: 600 !important;
-        }
-        
-        /* MODAL THEME - TABLES */
-        html[data-theme="modal"] .table {
-            color: var(--modal-text-primary) !important;
-        }
-        
-        html[data-theme="modal"] .table-dark {
-            background: var(--modal-bg-secondary) !important;
-            border-color: var(--modal-border) !important;
-        }
-        
-        html[data-theme="modal"] .table-dark th,
-        html[data-theme="modal"] .table-dark td {
-            border-color: var(--modal-border) !important;
-        }
-        
-        html[data-theme="modal"] .table-striped > tbody > tr:nth-of-type(odd) > td {
-            background: rgba(52, 73, 94, 0.5) !important;
-        }
-        
-        /* MODAL THEME - NAVIGATION TABS */
-        html[data-theme="modal"] .nav-tabs .nav-link {
-            background: transparent !important;
-            border: none !important;
-            border-bottom: 3px solid transparent !important;
-            color: var(--modal-text-secondary) !important;
-            padding: 12px 20px !important;
+        html[data-theme="neon-dark"] .navbar-nav .nav-link {
+            color: var(--neon-text-primary) !important;
             transition: all 0.3s ease !important;
         }
         
-        html[data-theme="modal"] .nav-tabs .nav-link:hover {
-            color: var(--modal-text-primary) !important;
-            border-bottom-color: var(--modal-accent) !important;
+        html[data-theme="neon-dark"] .navbar-nav .nav-link:hover {
+            color: var(--neon-accent-primary) !important;
+            text-shadow: var(--neon-glow) !important;
+            transform: translateY(-1px) !important;
         }
         
-        html[data-theme="modal"] .nav-tabs .nav-link.active {
-            color: var(--modal-accent) !important;
-            border-bottom-color: var(--modal-accent) !important;
-            background: rgba(243, 156, 18, 0.1) !important;
+        html[data-theme="neon-dark"] .navbar-nav .nav-link.active {
+            color: var(--neon-accent-primary) !important;
+            text-shadow: var(--neon-glow) !important;
         }
         
-        /* MODAL THEME - BADGES */
-        html[data-theme="modal"] .badge {
-            background: var(--modal-border) !important;
-            color: var(--modal-text-primary) !important;
+        /* NEON DARK THEME - GLOBAL STYLES */
+        html[data-theme="neon-dark"] body {
+            background: linear-gradient(135deg, var(--neon-bg-primary), var(--neon-bg-secondary)) !important;
+            color: var(--neon-text-primary) !important;
+            min-height: 100vh !important;
         }
         
-        html[data-theme="modal"] .badge.bg-primary {
-            background: var(--modal-accent) !important;
+        html[data-theme="neon-dark"] .container,
+        html[data-theme="neon-dark"] .container-fluid {
+            background: transparent !important;
         }
         
-        html[data-theme="modal"] .badge.bg-success {
-            background: var(--modal-success) !important;
+        /* NEON DARK THEME - CARDS AND PANELS */
+        html[data-theme="neon-dark"] .card {
+            background: linear-gradient(135deg, var(--neon-glass-bg), rgba(0, 255, 170, 0.05)) !important;
+            border: 1px solid var(--neon-border) !important;
+            border-radius: 16px !important;
+            color: var(--neon-text-primary) !important;
+            box-shadow: var(--neon-glow), 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            transition: all 0.3s ease !important;
         }
         
-        html[data-theme="modal"] .badge.bg-warning {
-            background: var(--modal-warning) !important;
+        html[data-theme="neon-dark"] .card:hover {
+            transform: translateY(-5px) !important;
+            box-shadow: var(--neon-glow), 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+            border-color: var(--neon-accent-primary) !important;
         }
         
-        html[data-theme="modal"] .badge.bg-danger {
-            background: var(--modal-danger) !important;
+        html[data-theme="neon-dark"] .card-header {
+            background: linear-gradient(135deg, var(--neon-accent-primary), var(--neon-accent-secondary)) !important;
+            color: var(--neon-bg-primary) !important;
+            border-bottom: 1px solid var(--neon-border) !important;
+            border-radius: 16px 16px 0 0 !important;
+            font-weight: 600 !important;
+            text-shadow: none !important;
         }
         
-        /* MODAL THEME - ALERTS */
-        html[data-theme="modal"] .alert {
+        html[data-theme="neon-dark"] .card-body {
+            background: transparent !important;
+            color: var(--neon-text-primary) !important;
+        }
+        
+        html[data-theme="neon-dark"] .card-footer {
+            background: rgba(0, 0, 0, 0.2) !important;
+            border-top: 1px solid var(--neon-border) !important;
+            border-radius: 0 0 16px 16px !important;
+        }
+        
+        /* NEON DARK THEME - BUTTONS */
+        html[data-theme="neon-dark"] .btn-primary {
+            background: linear-gradient(135deg, var(--neon-accent-primary), var(--neon-accent-secondary)) !important;
+            border: 1px solid var(--neon-accent-primary) !important;
+            color: var(--neon-bg-primary) !important;
+            font-weight: 600 !important;
+            border-radius: 12px !important;
+            box-shadow: var(--neon-glow) !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        html[data-theme="neon-dark"] .btn-primary:hover {
+            background: linear-gradient(135deg, var(--neon-accent-secondary), var(--neon-accent-primary)) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 0 30px rgba(0, 255, 170, 0.5), 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+            border-color: var(--neon-accent-secondary) !important;
+        }
+        
+        html[data-theme="neon-dark"] .btn-success {
+            background: linear-gradient(135deg, var(--neon-success), #059669) !important;
+            border: 1px solid var(--neon-success) !important;
+            color: white !important;
+            font-weight: 600 !important;
+            border-radius: 12px !important;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3) !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        html[data-theme="neon-dark"] .btn-success:hover {
+            background: linear-gradient(135deg, #059669, var(--neon-success)) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.5), 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        html[data-theme="neon-dark"] .btn-outline-primary {
+            border-color: var(--neon-accent-primary) !important;
+            color: var(--neon-accent-primary) !important;
+            background: transparent !important;
+            border-radius: 12px !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        html[data-theme="neon-dark"] .btn-outline-primary:hover {
+            background: var(--neon-accent-primary) !important;
+            border-color: var(--neon-accent-primary) !important;
+            color: var(--neon-bg-primary) !important;
+            box-shadow: var(--neon-glow) !important;
+            transform: translateY(-2px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .btn-secondary {
+            background: linear-gradient(135deg, var(--neon-text-secondary), var(--neon-text-muted)) !important;
+            border: 1px solid var(--neon-text-secondary) !important;
+            color: var(--neon-text-primary) !important;
+            font-weight: 600 !important;
+            border-radius: 12px !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        html[data-theme="neon-dark"] .btn-secondary:hover {
+            background: linear-gradient(135deg, var(--neon-text-muted), var(--neon-text-secondary)) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        /* NEON DARK THEME - FORMS */
+        html[data-theme="neon-dark"] .form-control {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid var(--neon-border) !important;
+            color: var(--neon-text-primary) !important;
+            border-radius: 12px !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        html[data-theme="neon-dark"] .form-control:focus {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: var(--neon-accent-primary) !important;
+            box-shadow: var(--neon-glow), 0 0 0 0.2rem rgba(0, 255, 170, 0.25) !important;
+            color: var(--neon-text-primary) !important;
+        }
+        
+        html[data-theme="neon-dark"] .form-select {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid var(--neon-border) !important;
+            color: var(--neon-text-primary) !important;
+            border-radius: 12px !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .form-label {
+            color: var(--neon-text-primary) !important;
+            font-weight: 600 !important;
+        }
+        
+        /* NEON DARK THEME - TABLES */
+        html[data-theme="neon-dark"] .table {
+            color: var(--neon-text-primary) !important;
+            background: var(--neon-glass-bg) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            border-radius: 12px !important;
+            overflow: hidden !important;
+        }
+        
+        html[data-theme="neon-dark"] .table-dark {
+            background: var(--neon-glass-bg) !important;
+            border-color: var(--neon-border) !important;
+        }
+        
+        html[data-theme="neon-dark"] .table-dark th,
+        html[data-theme="neon-dark"] .table-dark td {
+            border-color: var(--neon-border) !important;
+            background: rgba(0, 255, 170, 0.02) !important;
+        }
+        
+        html[data-theme="neon-dark"] .table-striped > tbody > tr:nth-of-type(odd) > td {
+            background: rgba(0, 255, 170, 0.05) !important;
+        }
+        
+        /* NEON DARK THEME - NAVIGATION TABS */
+        html[data-theme="neon-dark"] .nav-tabs .nav-link {
+            background: transparent !important;
+            border: none !important;
+            border-bottom: 3px solid transparent !important;
+            color: var(--neon-text-secondary) !important;
+            padding: 12px 20px !important;
+            transition: all 0.3s ease !important;
+            border-radius: 12px 12px 0 0 !important;
+        }
+        
+        html[data-theme="neon-dark"] .nav-tabs .nav-link:hover {
+            color: var(--neon-text-primary) !important;
+            border-bottom-color: var(--neon-accent-primary) !important;
+            background: rgba(0, 255, 170, 0.1) !important;
+            text-shadow: var(--neon-glow) !important;
+        }
+        
+        html[data-theme="neon-dark"] .nav-tabs .nav-link.active {
+            color: var(--neon-accent-primary) !important;
+            border-bottom-color: var(--neon-accent-primary) !important;
+            background: rgba(0, 255, 170, 0.15) !important;
+            text-shadow: var(--neon-glow) !important;
+            box-shadow: var(--neon-glow) !important;
+        }
+        
+        /* NEON DARK THEME - BADGES */
+        html[data-theme="neon-dark"] .badge {
+            background: var(--neon-glass-bg) !important;
+            color: var(--neon-text-primary) !important;
+            border: 1px solid var(--neon-border) !important;
             border-radius: 8px !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .badge.bg-primary {
+            background: linear-gradient(135deg, var(--neon-accent-primary), var(--neon-accent-secondary)) !important;
+            color: var(--neon-bg-primary) !important;
+            box-shadow: var(--neon-glow) !important;
+        }
+        
+        html[data-theme="neon-dark"] .badge.bg-success {
+            background: linear-gradient(135deg, var(--neon-success), #059669) !important;
+            color: white !important;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3) !important;
+        }
+        
+        html[data-theme="neon-dark"] .badge.bg-warning {
+            background: linear-gradient(135deg, var(--neon-warning), #D97706) !important;
+            color: white !important;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.3) !important;
+        }
+        
+        html[data-theme="neon-dark"] .badge.bg-danger {
+            background: linear-gradient(135deg, var(--neon-danger), #DC2626) !important;
+            color: white !important;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3) !important;
+        }
+        
+        /* NEON DARK THEME - ALERTS */
+        html[data-theme="neon-dark"] .alert {
+            border-radius: 12px !important;
+            border: 1px solid var(--neon-border) !important;
+            background: var(--neon-glass-bg) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .alert-info {
+            background: rgba(6, 182, 212, 0.15) !important;
+            color: var(--neon-accent-cyan) !important;
+            border-left: 4px solid var(--neon-accent-cyan) !important;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.2) !important;
+        }
+        
+        html[data-theme="neon-dark"] .alert-success {
+            background: rgba(16, 185, 129, 0.15) !important;
+            color: var(--neon-success) !important;
+            border-left: 4px solid var(--neon-success) !important;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2) !important;
+        }
+        
+        html[data-theme="neon-dark"] .alert-warning {
+            background: rgba(245, 158, 11, 0.15) !important;
+            color: var(--neon-warning) !important;
+            border-left: 4px solid var(--neon-warning) !important;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.2) !important;
+        }
+        
+        html[data-theme="neon-dark"] .alert-danger {
+            background: rgba(239, 68, 68, 0.15) !important;
+            color: var(--neon-danger) !important;
+            border-left: 4px solid var(--neon-danger) !important;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.2) !important;
+        }
+        
+        /* NEON DARK THEME - MODALS */
+        html[data-theme="neon-dark"] .modal-content {
+            background: linear-gradient(135deg, var(--neon-bg-secondary), var(--neon-bg-primary)) !important;
+            border: 1px solid var(--neon-border) !important;
+            border-radius: 20px !important;
+            color: var(--neon-text-primary) !important;
+            box-shadow: var(--neon-glow), 0 25px 50px rgba(0, 0, 0, 0.6) !important;
+            backdrop-filter: blur(15px) !important;
+            -webkit-backdrop-filter: blur(15px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .modal-header {
+            background: linear-gradient(135deg, var(--neon-accent-primary), var(--neon-accent-secondary)) !important;
+            color: var(--neon-bg-primary) !important;
+            border-radius: 20px 20px 0 0 !important;
+            border-bottom: 1px solid var(--neon-border) !important;
+            box-shadow: var(--neon-glow) !important;
+        }
+        
+        html[data-theme="neon-dark"] .modal-body {
+            background: transparent !important;
+            color: var(--neon-text-primary) !important;
+        }
+        
+        html[data-theme="neon-dark"] .modal-footer {
+            background: rgba(0, 0, 0, 0.2) !important;
+            border-top: 1px solid var(--neon-border) !important;
+            border-radius: 0 0 20px 20px !important;
+        }
+        
+        /* NEON DARK THEME - DROPDOWN MENUS */
+        html[data-theme="neon-dark"] .dropdown-menu {
+            background: linear-gradient(135deg, var(--neon-bg-secondary), var(--neon-bg-primary)) !important;
+            border: 1px solid var(--neon-border) !important;
+            border-radius: 12px !important;
+            box-shadow: var(--neon-glow), 0 12px 32px rgba(0, 0, 0, 0.4) !important;
+            backdrop-filter: blur(15px) !important;
+            -webkit-backdrop-filter: blur(15px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .dropdown-item {
+            color: var(--neon-text-primary) !important;
+            transition: all 0.3s ease !important;
+            border-radius: 8px !important;
+            margin: 2px 4px !important;
+        }
+        
+        html[data-theme="neon-dark"] .dropdown-item:hover {
+            background: linear-gradient(135deg, var(--neon-accent-primary), var(--neon-accent-secondary)) !important;
+            color: var(--neon-bg-primary) !important;
+            box-shadow: var(--neon-glow) !important;
+            transform: translateX(5px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .dropdown-divider {
+            border-color: var(--neon-border) !important;
+        }
+        
+        /* NEON DARK THEME - TEXT COLORS */
+        html[data-theme="neon-dark"] .text-muted {
+            color: white !important;
+        }
+        
+        html[data-theme="neon-dark"] .text-primary {
+            color: var(--neon-accent-primary) !important;
+            text-shadow: var(--neon-glow) !important;
+        }
+        
+        html[data-theme="neon-dark"] .text-success {
+            color: var(--neon-success) !important;
+        }
+        
+        html[data-theme="neon-dark"] .text-warning {
+            color: var(--neon-warning) !important;
+        }
+        
+        html[data-theme="neon-dark"] .text-danger {
+            color: var(--neon-danger) !important;
+        }
+        
+        /* NEON DARK THEME - BORDERS */
+        html[data-theme="neon-dark"] .border {
+            border-color: var(--neon-border) !important;
+        }
+        
+        html[data-theme="neon-dark"] .border-primary {
+            border-color: var(--neon-accent-primary) !important;
+        }
+        
+        html[data-theme="neon-dark"] .border-success {
+            border-color: var(--neon-success) !important;
+        }
+        
+        /* NEON DARK THEME - PAGINATION */
+        html[data-theme="neon-dark"] .pagination .page-link {
+            background: var(--neon-glass-bg) !important;
+            border: 1px solid var(--neon-border) !important;
+            color: var(--neon-text-primary) !important;
+            border-radius: 8px !important;
+            margin: 0 2px !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        html[data-theme="neon-dark"] .pagination .page-link:hover {
+            background: var(--neon-accent-primary) !important;
+            border-color: var(--neon-accent-primary) !important;
+            color: var(--neon-bg-primary) !important;
+            box-shadow: var(--neon-glow) !important;
+            transform: translateY(-2px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .pagination .page-item.active .page-link {
+            background: linear-gradient(135deg, var(--neon-accent-primary), var(--neon-accent-secondary)) !important;
+            border-color: var(--neon-accent-primary) !important;
+            color: var(--neon-bg-primary) !important;
+            box-shadow: var(--neon-glow) !important;
+        }
+        
+        /* NEON DARK THEME - ADDITIONAL COMPONENTS */
+        
+        /* List Groups */
+        html[data-theme="neon-dark"] .list-group-item {
+            background: var(--neon-glass-bg) !important;
+            border: 1px solid var(--neon-border) !important;
+            color: var(--neon-text-primary) !important;
+            border-radius: 8px !important;
+            margin-bottom: 4px !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        html[data-theme="neon-dark"] .list-group-item:hover {
+            background: rgba(0, 255, 170, 0.1) !important;
+            transform: translateX(5px) !important;
+            box-shadow: var(--neon-glow) !important;
+        }
+        
+        html[data-theme="neon-dark"] .list-group-item.active {
+            background: linear-gradient(135deg, var(--neon-accent-primary), var(--neon-accent-secondary)) !important;
+            border-color: var(--neon-accent-primary) !important;
+            color: var(--neon-bg-primary) !important;
+            box-shadow: var(--neon-glow) !important;
+        }
+        
+        /* NEON DARK THEME - ADMIN DASHBOARD CARDS (MATCHING SUPERUSER STYLE) */
+        
+        /* Use the same border-left style as superuser dashboard with neon colors */
+        html[data-theme="neon-dark"] .card.text-white.bg-primary {
+            background: var(--neon-glass-bg) !important;
+            border-left: 0.25rem solid #4e73df !important;
+            border: 1px solid var(--neon-border) !important;
+            box-shadow: 0 0 15px rgba(78, 115, 223, 0.3), 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+            color: var(--neon-text-primary) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .card.text-white.bg-warning {
+            background: var(--neon-glass-bg) !important;
+            border-left: 0.25rem solid #f6c23e !important;
+            border: 1px solid var(--neon-border) !important;
+            box-shadow: 0 0 15px rgba(246, 194, 62, 0.3), 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+            color: var(--neon-text-primary) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .card.text-white.bg-success {
+            background: var(--neon-glass-bg) !important;
+            border-left: 0.25rem solid #1cc88a !important;
+            border: 1px solid var(--neon-border) !important;
+            box-shadow: 0 0 15px rgba(28, 200, 138, 0.3), 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+            color: var(--neon-text-primary) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .card.text-white.bg-info {
+            background: var(--neon-glass-bg) !important;
+            border-left: 0.25rem solid #36b9cc !important;
+            border: 1px solid var(--neon-border) !important;
+            box-shadow: 0 0 15px rgba(54, 185, 204, 0.3), 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+            color: var(--neon-text-primary) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .card.text-white.bg-secondary {
+            background: var(--neon-glass-bg) !important;
+            border-left: 0.25rem solid #6c757d !important;
+            border: 1px solid var(--neon-border) !important;
+            box-shadow: 0 0 15px rgba(108, 117, 125, 0.3), 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+            color: var(--neon-text-primary) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        
+        /* Also apply to cards without text-white class */
+        html[data-theme="neon-dark"] .card.bg-primary {
+            background: var(--neon-glass-bg) !important;
+            border-left: 0.25rem solid #4e73df !important;
+            border: 1px solid var(--neon-border) !important;
+            box-shadow: 0 0 15px rgba(78, 115, 223, 0.3), 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .card.bg-warning {
+            background: var(--neon-glass-bg) !important;
+            border-left: 0.25rem solid #f6c23e !important;
+            border: 1px solid var(--neon-border) !important;
+            box-shadow: 0 0 15px rgba(246, 194, 62, 0.3), 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .card.bg-success {
+            background: var(--neon-glass-bg) !important;
+            border-left: 0.25rem solid #1cc88a !important;
+            border: 1px solid var(--neon-border) !important;
+            box-shadow: 0 0 15px rgba(28, 200, 138, 0.3), 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .card.bg-info {
+            background: var(--neon-glass-bg) !important;
+            border-left: 0.25rem solid #36b9cc !important;
+            border: 1px solid var(--neon-border) !important;
+            box-shadow: 0 0 15px rgba(54, 185, 204, 0.3), 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .card.bg-secondary {
+            background: var(--neon-glass-bg) !important;
+            border-left: 0.25rem solid #6c757d !important;
+            border: 1px solid var(--neon-border) !important;
+            box-shadow: 0 0 15px rgba(108, 117, 125, 0.3), 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        
+        /* NEON DARK THEME - WHITE ICONS AND TEXT (NO GRAY) */
+        
+        /* Make ALL icons white but NOT shiny */
+        html[data-theme="neon-dark"] .fas,
+        html[data-theme="neon-dark"] .bi,
+        html[data-theme="neon-dark"] i[class*="fa-"],
+        html[data-theme="neon-dark"] i[class*="bi-"],
+        html[data-theme="neon-dark"] .card .fas,
+        html[data-theme="neon-dark"] .card .bi,
+        html[data-theme="neon-dark"] .card i {
+            color: white !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+            font-weight: normal !important;
+        }
+        
+        /* Large icons - simple styling */
+        html[data-theme="neon-dark"] .fa-2x,
+        html[data-theme="neon-dark"] .fa-3x,
+        html[data-theme="neon-dark"] i[style*="font-size: 3rem"] {
+            color: white !important;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+            font-weight: normal !important;
+        }
+        
+        /* Convert ALL gray text to white */
+        html[data-theme="neon-dark"] .text-gray-800,
+        html[data-theme="neon-dark"] .text-gray-700,
+        html[data-theme="neon-dark"] .text-gray-600,
+        html[data-theme="neon-dark"] .text-gray-500,
+        html[data-theme="neon-dark"] .text-gray-400,
+        html[data-theme="neon-dark"] .text-gray-300,
+        html[data-theme="neon-dark"] .text-gray-200,
+        html[data-theme="neon-dark"] .text-gray-100,
+        html[data-theme="neon-dark"] .text-dark,
+        html[data-theme="neon-dark"] .text-black,
+        html[data-theme="neon-dark"] .text-secondary {
+            color: white !important;
+        }
+        
+        /* Card content - make all text white */
+        html[data-theme="neon-dark"] .card-body,
+        html[data-theme="neon-dark"] .card-body *,
+        html[data-theme="neon-dark"] .card h1,
+        html[data-theme="neon-dark"] .card h2,
+        html[data-theme="neon-dark"] .card h3,
+        html[data-theme="neon-dark"] .card h4,
+        html[data-theme="neon-dark"] .card h5,
+        html[data-theme="neon-dark"] .card h6,
+        html[data-theme="neon-dark"] .card .h1,
+        html[data-theme="neon-dark"] .card .h2,
+        html[data-theme="neon-dark"] .card .h3,
+        html[data-theme="neon-dark"] .card .h4,
+        html[data-theme="neon-dark"] .card .h5,
+        html[data-theme="neon-dark"] .card .h6,
+        html[data-theme="neon-dark"] .card small,
+        html[data-theme="neon-dark"] .card .small,
+        html[data-theme="neon-dark"] .card .font-weight-bold {
+            color: white !important;
+        }
+        
+        /* Ensure card titles and content are white */
+        html[data-theme="neon-dark"] .card.text-white,
+        html[data-theme="neon-dark"] .card.text-white *,
+        html[data-theme="neon-dark"] .card-title {
+            color: white !important;
+        }
+        
+        /* FORCE Admin Settings Card Header - Multiple Selectors */
+        html[data-theme="neon-dark"] .card-header,
+        html[data-theme="neon-dark"] .card .card-header,
+        html[data-theme="neon-dark"] div.card div.card-header,
+        html[data-theme="neon-dark"] .container .card .card-header,
+        html[data-theme="neon-dark"] .container-fluid .card .card-header {
+            background: linear-gradient(135deg, var(--neon-accent-primary), var(--neon-accent-secondary)) !important;
+            color: var(--neon-bg-primary) !important;
+            border-bottom: 1px solid var(--neon-border) !important;
+            border-radius: 16px 16px 0 0 !important;
+            font-weight: 600 !important;
+            text-shadow: none !important;
+            box-shadow: var(--neon-glow) !important;
+        }
+        
+        /* Force ALL card header text to be dark (readable on neon background) */
+        html[data-theme="neon-dark"] .card-header *,
+        html[data-theme="neon-dark"] .card .card-header *,
+        html[data-theme="neon-dark"] .card-header h1,
+        html[data-theme="neon-dark"] .card-header h2,
+        html[data-theme="neon-dark"] .card-header h3,
+        html[data-theme="neon-dark"] .card-header h4,
+        html[data-theme="neon-dark"] .card-header h5,
+        html[data-theme="neon-dark"] .card-header h6,
+        html[data-theme="neon-dark"] .card .card-header h1,
+        html[data-theme="neon-dark"] .card .card-header h2,
+        html[data-theme="neon-dark"] .card .card-header h3,
+        html[data-theme="neon-dark"] .card .card-header h4,
+        html[data-theme="neon-dark"] .card .card-header h5,
+        html[data-theme="neon-dark"] .card .card-header h6 {
+            color: var(--neon-bg-primary) !important;
+            font-weight: 600 !important;
+            text-shadow: none !important;
+        }
+        
+        /* Ultra-specific selector for Admin Settings page */
+        html[data-theme="neon-dark"] body .container .card .card-header,
+        html[data-theme="neon-dark"] body .container-fluid .card .card-header {
+            background: linear-gradient(135deg, var(--neon-accent-primary), var(--neon-accent-secondary)) !important;
+            color: var(--neon-bg-primary) !important;
+            box-shadow: var(--neon-glow) !important;
+        }
+        
+        /* NEON DARK THEME - DROPDOWN MENUS */
+        
+        /* Fix dropdown menu backgrounds and text */
+        html[data-theme="neon-dark"] .dropdown-menu {
+            background: var(--neon-glass-bg) !important;
+            border: 1px solid var(--neon-border) !important;
+            border-radius: 12px !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), var(--neon-glow) !important;
+            color: var(--neon-text-primary) !important;
+        }
+        
+        html[data-theme="neon-dark"] .dropdown-item {
+            color: var(--neon-text-primary) !important;
+            background: transparent !important;
+            transition: all 0.3s ease !important;
+            border-radius: 8px !important;
+            margin: 2px 4px !important;
+        }
+        
+        html[data-theme="neon-dark"] .dropdown-item:hover,
+        html[data-theme="neon-dark"] .dropdown-item:focus {
+            background: rgba(0, 255, 170, 0.1) !important;
+            color: var(--neon-text-primary) !important;
+            box-shadow: 0 0 10px rgba(0, 255, 170, 0.2) !important;
+            transform: translateX(3px) !important;
+        }
+        
+        html[data-theme="neon-dark"] .dropdown-item.active,
+        html[data-theme="neon-dark"] .dropdown-item:active {
+            background: linear-gradient(135deg, var(--neon-accent-primary), var(--neon-accent-secondary)) !important;
+            color: var(--neon-bg-primary) !important;
+            box-shadow: var(--neon-glow) !important;
+        }
+        
+        /* Fix select dropdowns */
+        html[data-theme="neon-dark"] select.form-select,
+        html[data-theme="neon-dark"] select.form-control {
+            background: var(--neon-glass-bg) !important;
+            border: 1px solid var(--neon-border) !important;
+            color: var(--neon-text-primary) !important;
+            border-radius: 12px !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        
+        html[data-theme="neon-dark"] select.form-select option,
+        html[data-theme="neon-dark"] select.form-control option {
+            background: var(--neon-bg-secondary) !important;
+            color: var(--neon-text-primary) !important;
             border: none !important;
         }
         
-        html[data-theme="modal"] .alert-info {
-            background: rgba(52, 152, 219, 0.2) !important;
-            color: #3498db !important;
-            border-left: 4px solid #3498db !important;
-        }
-        
-        html[data-theme="modal"] .alert-success {
-            background: rgba(39, 174, 96, 0.2) !important;
-            color: var(--modal-success) !important;
-            border-left: 4px solid var(--modal-success) !important;
-        }
-        
-        html[data-theme="modal"] .alert-warning {
-            background: rgba(243, 156, 18, 0.2) !important;
-            color: var(--modal-warning) !important;
-            border-left: 4px solid var(--modal-warning) !important;
-        }
-        
-        html[data-theme="modal"] .alert-danger {
-            background: rgba(231, 76, 60, 0.2) !important;
-            color: var(--modal-danger) !important;
-            border-left: 4px solid var(--modal-danger) !important;
-        }
-        
-        /* MODAL THEME - MODALS */
-        html[data-theme="modal"] .modal-content {
-            background: var(--modal-bg-primary) !important;
-            border: 1px solid var(--modal-border) !important;
+        /* Bootstrap dropdown toggle buttons */
+        html[data-theme="neon-dark"] .dropdown-toggle {
+            background: var(--neon-glass-bg) !important;
+            border: 1px solid var(--neon-border) !important;
+            color: var(--neon-text-primary) !important;
             border-radius: 12px !important;
-            color: var(--modal-text-primary) !important;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
         }
         
-        html[data-theme="modal"] .modal-header {
-            background: linear-gradient(135deg, var(--modal-accent), var(--modal-accent-hover)) !important;
-            color: white !important;
-            border-radius: 12px 12px 0 0 !important;
-            border-bottom: none !important;
+        html[data-theme="neon-dark"] .dropdown-toggle:hover,
+        html[data-theme="neon-dark"] .dropdown-toggle:focus {
+            background: rgba(0, 255, 170, 0.1) !important;
+            border-color: var(--neon-accent-primary) !important;
+            box-shadow: var(--neon-glow) !important;
+            color: var(--neon-text-primary) !important;
         }
         
-        html[data-theme="modal"] .modal-body {
-            background: var(--modal-bg-primary) !important;
-            color: var(--modal-text-primary) !important;
-        }
+        /* NEON DARK THEME - NAVBAR HOVER EFFECTS */
         
-        html[data-theme="modal"] .modal-footer {
-            background: var(--modal-bg-secondary) !important;
-            border-top: 1px solid var(--modal-border) !important;
-            border-radius: 0 0 12px 12px !important;
-        }
-        
-        /* MODAL THEME - DROPDOWN MENUS */
-        html[data-theme="modal"] .dropdown-menu {
-            background: var(--modal-bg-secondary) !important;
-            border: 1px solid var(--modal-border) !important;
+        /* Navbar links hover effects */
+        html[data-theme="neon-dark"] .navbar-nav .nav-link:hover,
+        html[data-theme="neon-dark"] .navbar-nav .nav-link:focus {
+            color: var(--neon-accent-primary) !important;
+            text-shadow: var(--neon-glow) !important;
+            background: rgba(0, 255, 170, 0.1) !important;
             border-radius: 8px !important;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+            transform: translateY(-1px) !important;
+            transition: all 0.3s ease !important;
         }
         
-        html[data-theme="modal"] .dropdown-item {
-            color: var(--modal-text-primary) !important;
+        /* Active navbar links */
+        html[data-theme="neon-dark"] .navbar-nav .nav-link.active {
+            color: var(--neon-accent-primary) !important;
+            text-shadow: var(--neon-glow) !important;
+            background: rgba(0, 255, 170, 0.15) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 0 10px rgba(0, 255, 170, 0.3) !important;
         }
         
-        html[data-theme="modal"] .dropdown-item:hover {
-            background: var(--modal-accent) !important;
+        /* Navbar brand hover */
+        html[data-theme="neon-dark"] .navbar-brand:hover {
+            color: var(--neon-accent-primary) !important;
+            text-shadow: var(--neon-glow) !important;
+            transform: scale(1.05) !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        /* Theme switcher button styling */
+        html[data-theme="neon-dark"] .theme-switcher {
+            background: var(--neon-glass-bg) !important;
+            border: 1px solid var(--neon-border) !important;
+            color: var(--neon-text-primary) !important;
+            border-radius: 12px !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        html[data-theme="neon-dark"] .theme-switcher:hover,
+        html[data-theme="neon-dark"] .theme-switcher:focus {
+            background: rgba(0, 255, 170, 0.1) !important;
+            border-color: var(--neon-accent-primary) !important;
+            color: var(--neon-accent-primary) !important;
+            box-shadow: var(--neon-glow) !important;
+            text-shadow: var(--neon-glow) !important;
+            transform: translateY(-2px) !important;
+        }
+        
+        /* Navbar dropdown menus */
+        html[data-theme="neon-dark"] .navbar .dropdown-menu {
+            background: var(--neon-glass-bg) !important;
+            border: 1px solid var(--neon-border) !important;
+            border-radius: 12px !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), var(--neon-glow) !important;
+        }
+        
+        html[data-theme="neon-dark"] .navbar .dropdown-item:hover {
+            background: rgba(0, 255, 170, 0.1) !important;
+            color: var(--neon-accent-primary) !important;
+            text-shadow: var(--neon-glow) !important;
+            border-radius: 8px !important;
+        }
+        
+        /* Navbar toggler (mobile menu button) */
+        html[data-theme="neon-dark"] .navbar-toggler {
+            border-color: var(--neon-border) !important;
+            background: var(--neon-glass-bg) !important;
+            border-radius: 8px !important;
+        }
+        
+        html[data-theme="neon-dark"] .navbar-toggler:hover,
+        html[data-theme="neon-dark"] .navbar-toggler:focus {
+            border-color: var(--neon-accent-primary) !important;
+            box-shadow: var(--neon-glow) !important;
+        }
+        
+        html[data-theme="neon-dark"] .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2800, 255, 170, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='m4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+        }
+        
+        /* LEBANESE CEDAR TREE LOGO - FOR INTERNAL APP */
+        
+        .lebanese-logo {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            font-family: 'Arial', sans-serif !important;
+            font-weight: bold !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .cedar-logo {
+            height: 32px !important;
+            width: auto !important;
+            max-width: 32px !important;
+            object-fit: contain !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .logo-text {
+            font-size: 1.4rem !important;
             color: white !important;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
         }
         
-        html[data-theme="modal"] .dropdown-divider {
-            border-color: var(--modal-border) !important;
-        }
-        
-        /* MODAL THEME - TEXT COLORS */
-        html[data-theme="modal"] .text-muted {
-            color: var(--modal-text-secondary) !important;
-        }
-        
-        html[data-theme="modal"] .text-primary {
-            color: var(--modal-accent) !important;
-        }
-        
-        html[data-theme="modal"] .text-success {
-            color: var(--modal-success) !important;
-        }
-        
-        html[data-theme="modal"] .text-warning {
-            color: var(--modal-warning) !important;
-        }
-        
-        html[data-theme="modal"] .text-danger {
-            color: var(--modal-danger) !important;
-        }
-        
-        /* MODAL THEME - BORDERS */
-        html[data-theme="modal"] .border {
-            border-color: var(--modal-border) !important;
-        }
-        
-        html[data-theme="modal"] .border-primary {
-            border-color: var(--modal-accent) !important;
-        }
-        
-        html[data-theme="modal"] .border-success {
-            border-color: var(--modal-success) !important;
-        }
-        
-        /* MODAL THEME - PAGINATION */
-        html[data-theme="modal"] .pagination .page-link {
-            background: var(--modal-bg-secondary) !important;
-            border-color: var(--modal-border) !important;
-            color: var(--modal-text-primary) !important;
-        }
-        
-        html[data-theme="modal"] .pagination .page-link:hover {
-            background: var(--modal-accent) !important;
-            border-color: var(--modal-accent) !important;
+        /* Dark theme Lebanese logo */
+        html[data-theme="dark"] .logo-text {
             color: white !important;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
         }
         
-        html[data-theme="modal"] .pagination .page-item.active .page-link {
-            background: var(--modal-accent) !important;
-            border-color: var(--modal-accent) !important;
+        html[data-theme="dark"] .cedar-logo {
+            filter: brightness(1.1) contrast(1.1) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3)) !important;
         }
         
-        /* MODAL THEME - COMPREHENSIVE OVERRIDES FOR ALL GOLD/YELLOW ELEMENTS */
+        html[data-theme="dark"] .lebanese-logo:hover {
+            transform: scale(1.05) !important;
+        }
         
-        /* Override any remaining gold/yellow backgrounds */
-        html[data-theme="modal"] .bg-warning,
-        html[data-theme="modal"] .bg-gold,
-        html[data-theme="modal"] .bg-yellow,
-        html[data-theme="modal"] .alert-warning {
-            background: var(--modal-accent) !important;
+        /* Neon theme Lebanese logo */
+        html[data-theme="neon-dark"] .logo-text {
+            color: var(--neon-text-primary) !important;
+            text-shadow: var(--neon-glow) !important;
+        }
+        
+        html[data-theme="neon-dark"] .cedar-logo {
+            filter: 
+                brightness(1.2) 
+                contrast(1.2) 
+                drop-shadow(0 0 5px rgba(0, 255, 127, 0.4)) 
+                drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4)) !important;
+        }
+        
+        html[data-theme="neon-dark"] .lebanese-logo:hover {
+            transform: scale(1.08) !important;
+        }
+        
+        html[data-theme="neon-dark"] .lebanese-logo:hover .logo-text {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), var(--neon-glow) !important;
+        }
+        
+        html[data-theme="neon-dark"] .lebanese-logo:hover .cedar-logo {
+            filter: 
+                brightness(1.3) 
+                contrast(1.3) 
+                drop-shadow(0 0 8px rgba(0, 255, 127, 0.6)) 
+                drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4)) !important;
+        }
+        
+        /* BRAND TITLE STYLING - FOR CASHIER ACCOUNTS */
+        
+        .brand-title {
+            font-size: 1.5rem !important;
+            font-weight: 700 !important;
             color: white !important;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        /* Dark theme brand title */
+        html[data-theme="dark"] .brand-title {
+            color: white !important;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+        }
+        
+        html[data-theme="dark"] .brand-title:hover {
+            transform: scale(1.05) !important;
+            text-shadow: 0 3px 6px rgba(0, 0, 0, 0.5) !important;
+        }
+        
+        /* Neon theme brand title */
+        html[data-theme="neon-dark"] .brand-title {
+            color: var(--neon-text-primary) !important;
+            text-shadow: var(--neon-glow) !important;
+        }
+        
+        html[data-theme="neon-dark"] .brand-title:hover {
+            transform: scale(1.08) !important;
+            color: var(--neon-accent-primary) !important;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.8), var(--neon-glow) !important;
+        }
+        
+        /* LOGIN PAGE STYLING */
+        
+        .login-container {
+            min-height: 100vh !important;
+            background: linear-gradient(135deg, 
+                rgba(13, 110, 253, 0.1) 0%, 
+                rgba(25, 135, 84, 0.1) 50%, 
+                rgba(220, 53, 69, 0.1) 100%) !important;
+            padding: 20px !important;
+        }
+        
+        .welcome-section {
+            margin-bottom: 2rem !important;
+        }
+        
+        .login-logo-main {
+            height: 120px !important;
+            width: auto !important;
+            max-width: 300px !important;
+            object-fit: contain !important;
+            transition: all 0.3s ease !important;
+            margin-bottom: 1rem !important;
+        }
+        
+        .welcome-title {
+            font-size: 2.5rem !important;
+            font-weight: 700 !important;
+            color: var(--bs-primary) !important;
+            margin-bottom: 0.5rem !important;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .welcome-subtitle {
+            font-size: 1.8rem !important;
+            font-weight: 600 !important;
+            color: var(--bs-success) !important;
+            margin-bottom: 1rem !important;
+        }
+        
+        .welcome-description {
+            font-size: 1.1rem !important;
+            color: var(--bs-secondary) !important;
+            margin-bottom: 0 !important;
+        }
+        
+        .specialties {
+            color: var(--bs-warning) !important;
+            font-weight: 600 !important;
+            font-style: italic !important;
+        }
+        
+        .login-card {
+            border-radius: 20px !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+            border: none !important;
+            overflow: hidden !important;
+        }
+        
+        .login-header {
+            font-size: 1.5rem !important;
+            font-weight: 600 !important;
+            margin-bottom: 0.5rem !important;
+            color: var(--bs-primary) !important;
+        }
+        
+        .login-subtitle {
+            color: var(--bs-secondary) !important;
+            margin-bottom: 0 !important;
+            font-size: 0.95rem !important;
+        }
+        
+        .login-btn {
+            padding: 12px 20px !important;
+            font-size: 1.1rem !important;
+            font-weight: 600 !important;
+            border-radius: 12px !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 25px rgba(13, 110, 253, 0.3) !important;
+        }
+        
+        .login-footer {
+            color: var(--bs-secondary) !important;
+            font-size: 0.9rem !important;
+        }
+        
+        /* Fix footer color issue */
+        .footer,
+        footer {
+            background-color: var(--bs-dark) !important;
+            color: var(--bs-light) !important;
+        }
+        
+        /* Dark theme login page */
+        html[data-theme="dark"] .login-container {
+            background: linear-gradient(135deg, 
+                rgba(13, 110, 253, 0.05) 0%, 
+                rgba(25, 135, 84, 0.05) 50%, 
+                rgba(220, 53, 69, 0.05) 100%) !important;
+        }
+        
+        html[data-theme="dark"] .welcome-title {
+            color: #4dabf7 !important;
+        }
+        
+        html[data-theme="dark"] .welcome-subtitle {
+            color: #51cf66 !important;
+        }
+        
+        html[data-theme="dark"] .specialties {
+            color: #ffd43b !important;
+        }
+        
+        html[data-theme="dark"] .login-logo-main {
+            filter: brightness(1.2) contrast(1.2) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) !important;
+        }
+        
+        /* Neon theme login page */
+        html[data-theme="neon-dark"] .login-container {
+            background: linear-gradient(135deg, 
+                rgba(0, 255, 170, 0.03) 0%, 
+                rgba(0, 255, 255, 0.03) 50%, 
+                rgba(255, 0, 170, 0.03) 100%) !important;
+        }
+        
+        html[data-theme="neon-dark"] .welcome-title {
+            color: var(--neon-accent-primary) !important;
+            text-shadow: var(--neon-glow) !important;
+        }
+        
+        html[data-theme="neon-dark"] .welcome-subtitle {
+            color: var(--neon-success) !important;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
+        }
+        
+        html[data-theme="neon-dark"] .specialties {
+            color: var(--neon-warning) !important;
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
+        }
+        
+        html[data-theme="neon-dark"] .login-logo-main {
+            filter: 
+                brightness(1.3) 
+                contrast(1.3) 
+                drop-shadow(0 0 15px rgba(255, 255, 255, 0.4))
+                drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5))
+                drop-shadow(0 0 10px rgba(0, 255, 170, 0.3)) !important;
+        }
+        
+        html[data-theme="neon-dark"] .login-card {
+            background: var(--neon-glass-bg) !important;
+            border: 1px solid var(--neon-border) !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), var(--neon-glow) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+        }
+        
+        /* NEON THEME - DASHBOARD STAT CARDS COLORS */
+        
+        /* Stat card numbers/values - Large prominent numbers */
+        html[data-theme="neon-dark"] .card .display-4,
+        html[data-theme="neon-dark"] .card .display-3,
+        html[data-theme="neon-dark"] .card .display-2,
+        html[data-theme="neon-dark"] .card .display-1,
+        html[data-theme="neon-dark"] .card h1,
+        html[data-theme="neon-dark"] .card h2,
+        html[data-theme="neon-dark"] .stat-number,
+        html[data-theme="neon-dark"] .metric-value,
+        html[data-theme="neon-dark"] .dashboard-number {
+            color: var(--neon-accent-primary) !important;
+            text-shadow: 0 0 10px rgba(0, 255, 170, 0.5) !important;
+            font-weight: 700 !important;
+        }
+        
+        /* Stat card titles - Main headings */
+        html[data-theme="neon-dark"] .card h3,
+        html[data-theme="neon-dark"] .card h4,
+        html[data-theme="neon-dark"] .card h5,
+        html[data-theme="neon-dark"] .card .card-title,
+        html[data-theme="neon-dark"] .stat-title,
+        html[data-theme="neon-dark"] .metric-title {
+            color: #00FFFF !important;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.4) !important;
+            font-weight: 600 !important;
+        }
+        
+        /* Stat card subtexts - Descriptions and labels */
+        html[data-theme="neon-dark"] .card .text-muted,
+        html[data-theme="neon-dark"] .card .small,
+        html[data-theme="neon-dark"] .card .card-text,
+        html[data-theme="neon-dark"] .stat-subtitle,
+        html[data-theme="neon-dark"] .metric-subtitle,
+        html[data-theme="neon-dark"] .card p:not(.display-1):not(.display-2):not(.display-3):not(.display-4),
+        html[data-theme="neon-dark"] .text-secondary,
+        html[data-theme="neon-dark"] .card .text-secondary,
+        html[data-theme="neon-dark"] .card-subtitle,
+        html[data-theme="neon-dark"] .card .card-subtitle {
+            color: #FFB347 !important;
+            text-shadow: 0 0 8px rgba(255, 179, 71, 0.4) !important;
+        }
+        
+        /* Revenue/Money related numbers - Special green glow */
+        html[data-theme="neon-dark"] .revenue-number,
+        html[data-theme="neon-dark"] .money-value,
+        html[data-theme="neon-dark"] .total-sales,
+        html[data-theme="neon-dark"] .card:has(.fa-dollar-sign) .display-4,
+        html[data-theme="neon-dark"] .card:has(.fa-money-bill) .display-4,
+        html[data-theme="neon-dark"] .card:has(.bi-currency-dollar) .display-4 {
+            color: #00FF7F !important;
+            text-shadow: 0 0 12px rgba(0, 255, 127, 0.6) !important;
+        }
+        
+        /* Order/Count related numbers - Special blue glow */
+        html[data-theme="neon-dark"] .order-count,
+        html[data-theme="neon-dark"] .count-value,
+        html[data-theme="neon-dark"] .total-orders,
+        html[data-theme="neon-dark"] .card:has(.fa-shopping-cart) .display-4,
+        html[data-theme="neon-dark"] .card:has(.bi-cart) .display-4,
+        html[data-theme="neon-dark"] .card:has(.fa-list) .display-4 {
+            color: #1E90FF !important;
+            text-shadow: 0 0 12px rgba(30, 144, 255, 0.6) !important;
+        }
+        
+        /* User/Staff related numbers - Special purple glow */
+        html[data-theme="neon-dark"] .user-count,
+        html[data-theme="neon-dark"] .staff-count,
+        html[data-theme="neon-dark"] .card:has(.fa-users) .display-4,
+        html[data-theme="neon-dark"] .card:has(.bi-people) .display-4,
+        html[data-theme="neon-dark"] .card:has(.fa-user) .display-4 {
+            color: #DA70D6 !important;
+            text-shadow: 0 0 12px rgba(218, 112, 214, 0.6) !important;
+        }
+        
+        /* Performance/Analytics numbers - Special orange glow */
+        html[data-theme="neon-dark"] .performance-number,
+        html[data-theme="neon-dark"] .analytics-value,
+        html[data-theme="neon-dark"] .card:has(.fa-chart) .display-4,
+        html[data-theme="neon-dark"] .card:has(.bi-graph) .display-4,
+        html[data-theme="neon-dark"] .card:has(.fa-analytics) .display-4 {
+            color: #FF6347 !important;
+            text-shadow: 0 0 12px rgba(255, 99, 71, 0.6) !important;
+        }
+        
+        /* Table headers in reports */
+        html[data-theme="neon-dark"] .table th {
+            color: var(--neon-accent-primary) !important;
+            text-shadow: 0 0 6px rgba(0, 255, 170, 0.4) !important;
+            border-color: var(--neon-border) !important;
+        }
+        
+        /* Table data in reports */
+        html[data-theme="neon-dark"] .table td {
+            color: var(--neon-text-primary) !important;
+            border-color: var(--neon-border) !important;
+        }
+        
+        /* Special highlighting for important metrics */
+        html[data-theme="neon-dark"] .highlight-metric,
+        html[data-theme="neon-dark"] .important-stat {
+            color: #FFFF00 !important;
+            text-shadow: 0 0 15px rgba(255, 255, 0, 0.7) !important;
+            font-weight: 800 !important;
+        }
+        
+        /* Percentage values - Special cyan glow */
+        html[data-theme="neon-dark"] .percentage,
+        html[data-theme="neon-dark"] .percent-value,
+        html[data-theme="neon-dark"] .growth-rate {
+            color: #00FFFF !important;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5) !important;
+        }
+        
+        /* Status indicators */
+        html[data-theme="neon-dark"] .status-active {
+            color: #00FF00 !important;
+            text-shadow: 0 0 8px rgba(0, 255, 0, 0.5) !important;
+        }
+        
+        html[data-theme="neon-dark"] .status-inactive {
+            color: #FF4500 !important;
+            text-shadow: 0 0 8px rgba(255, 69, 0, 0.5) !important;
+        }
+        
+        html[data-theme="neon-dark"] .status-pending {
+            color: #FFD700 !important;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.5) !important;
         }
         
         /* Override gold/yellow text colors */
@@ -1427,7 +2304,14 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary collapsible-navbar">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                <i class="bi bi-shop"></i> Restaurant POS
+                {% if current_user.is_authenticated and current_user.role.name == 'CASHIER' %}
+                    <span class="brand-title">Beirut Restaurant</span>
+                {% else %}
+                    <div class="lebanese-logo">
+                        <img src="{{ url_for('static', filename='cedar.png') }}" alt="Cedar Tree" class="cedar-logo">
+                        <span class="logo-text">Restaurant</span>
+                    </div>
+                {% endif %}
             </a>
             
             {% if current_user.is_authenticated %}
@@ -1479,8 +2363,39 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.notifications') }}">
+                                <i class="bi bi-bell"></i> Notifications
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('admin.settings') }}">
                                 <i class="bi bi-gear"></i> Settings
+                            </a>
+                        </li>
+                    {% elif current_user.role.name == 'IT_ADMIN' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('it.dashboard') }}">
+                                <i class="bi bi-pc-display"></i> IT Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('it.users') }}">
+                                <i class="bi bi-people"></i> All Users
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('it.email_config') }}">
+                                <i class="bi bi-envelope-gear"></i> Email Config
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('it.system_settings') }}">
+                                <i class="bi bi-gear-wide-connected"></i> System Settings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('it.audit_logs') }}">
+                                <i class="bi bi-journal-text"></i> Audit Logs
                             </a>
                         </li>
                     {% elif current_user.role.name == 'SUPER_USER' %}
@@ -1517,6 +2432,11 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('superuser.reports') }}">
                                 <i class="bi bi-graph-up"></i> Reports
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('superuser.items_insights') }}">
+                                <i class="bi bi-graph-up-arrow"></i> Items Insights
                             </a>
                         </li>
                         <li class="nav-item">
@@ -1570,7 +2490,7 @@
                     <li class="nav-item">
                         <button class="btn theme-switcher" onclick="toggleTheme()" id="themeToggle">
                             <i class="bi bi-palette"></i> 
-                            <span id="themeText">{% if current_user.theme_preference == 'modal' %}Modal{% else %}Dark{% endif %}</span>
+                            <span id="themeText">{% if current_user.theme_preference == 'neon-dark' %}Neon{% else %}Dark{% endif %}</span>
                         </button>
                     </li>
                     <li class="nav-item dropdown">
@@ -1676,9 +2596,8 @@
             .then(data => {
                 if (data.success) {
                     if (data.can_logout) {
-                        // Allow logout
-                        console.log('Logout allowed:', data.reason);
-                        window.location.href = "{{ url_for('auth.logout') }}";
+                        // Always check ATM card payment before final logout (mandatory)
+                        checkATMCardPaymentBeforeLogout();
                     } else {
                         // Show enhanced modal based on action required
                         console.log('Logout blocked:', data.reason);
@@ -2456,7 +3375,7 @@
     // Theme Toggle Function
     function toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'modal' : 'dark';
+        const newTheme = currentTheme === 'dark' ? 'neon-dark' : 'dark';
         const themeText = document.getElementById('themeText');
         const themeButton = document.getElementById('themeToggle');
         
@@ -2477,24 +3396,284 @@
             if (data.success) {
                 // Update the theme immediately
                 document.documentElement.setAttribute('data-theme', newTheme);
-                themeText.textContent = newTheme === 'modal' ? 'Modal' : 'Dark';
+                themeText.textContent = newTheme === 'neon-dark' ? 'Neon' : 'Dark';
                 
-                // Show success message
-                showToast(`Theme switched to ${newTheme} mode`, 'success');
+                // No success message needed - theme switch is visual feedback enough
             } else {
                 // Show error message
                 showToast('Failed to switch theme: ' + (data.error || 'Unknown error'), 'danger');
-                themeText.textContent = currentTheme === 'modal' ? 'Modal' : 'Dark';
+                themeText.textContent = currentTheme === 'neon-dark' ? 'Neon' : 'Dark';
             }
         })
         .catch(error => {
             console.error('Theme switch error:', error);
             showToast('Failed to switch theme. Please try again.', 'danger');
-            themeText.textContent = currentTheme === 'modal' ? 'Modal' : 'Dark';
+            themeText.textContent = currentTheme === 'neon-dark' ? 'Neon' : 'Dark';
         })
         .finally(() => {
             // Re-enable button
             themeButton.disabled = false;
+        });
+    }
+    
+    // ATM Card Payment Check Function
+    function checkATMCardPaymentBeforeLogout() {
+        {% if current_user.is_authenticated and current_user.role.name == 'CASHIER' %}
+        // Check if branch has entered ATM card payment today (mandatory)
+        fetch('/pos/check_card_payment_status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.has_card_payment) {
+                        // Branch has card payment entered, show current value and allow logout or edit
+                        console.log('Card payment entered for branch, showing current value modal');
+                        showATMCardPaymentModal(data);
+                    } else {
+                        // No card payment entered for branch, MUST enter before logout
+                        console.log('No card payment entered for branch, MUST enter before logout');
+                        showATMCardPaymentModal(data);
+                    }
+                } else {
+                    // Error checking, show error and don't allow logout
+                    console.log('Error checking card payment status');
+                    alert('Error checking card payment status. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error checking card payment status:', error);
+                alert('Error checking card payment status. Please try again.');
+            });
+        {% else %}
+        // Non-cashiers can logout directly
+        window.location.href = "{{ url_for('auth.logout') }}";
+        {% endif %}
+    }
+    
+    // ATM Card Payment Modal Function
+    function showATMCardPaymentModal(paymentData) {
+        // Remove existing modal if it exists
+        const existingModal = document.getElementById('atmCardPaymentModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        const hasPayment = paymentData && paymentData.has_card_payment;
+        const amount = paymentData && paymentData.amount ? paymentData.amount : 0;
+        const enteredBy = paymentData && paymentData.entered_by ? paymentData.entered_by : '';
+        
+        let modalContent = '';
+        
+        if (hasPayment) {
+            // Show existing payment with edit option (requires admin PIN)
+            modalContent = `
+                <div class="modal fade" id="atmCardPaymentModal" tabindex="-1" aria-labelledby="atmCardPaymentModalLabel" aria-hidden="true" data-bs-backdrop="static">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-success">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title" id="atmCardPaymentModalLabel">
+                                    <i class="bi bi-credit-card me-2"></i>ATM Card Payment - Branch Entry
+                                </h5>
+                            </div>
+                            <div class="modal-body text-center">
+                                <div class="mb-3">
+                                    <i class="bi bi-check-circle display-1 text-success"></i>
+                                </div>
+                                <h5 class="mb-3">Card Payment Already Entered for Today</h5>
+                                <div class="alert alert-success">
+                                    <h4><strong>${amount.toFixed(2)} QAR</strong></h4>
+                                    <small>Entered by: ${enteredBy}</small>
+                                </div>
+                                <p class="text-muted mb-4">
+                                    Your branch has already entered today's ATM card payment amount. 
+                                    You can proceed with logout or edit the amount using admin PIN.
+                                </p>
+                            </div>
+                            <div class="modal-footer justify-content-center">
+                                <button type="button" class="btn btn-success" id="proceedLogoutBtn">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Proceed with Logout
+                                </button>
+                                <button type="button" class="btn btn-warning" id="editPaymentBtn">
+                                    <i class="bi bi-pencil me-2"></i>Edit Amount (Admin PIN Required)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Must enter payment before logout
+            modalContent = `
+                <div class="modal fade" id="atmCardPaymentModal" tabindex="-1" aria-labelledby="atmCardPaymentModalLabel" aria-hidden="true" data-bs-backdrop="static">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-danger">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title" id="atmCardPaymentModalLabel">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>ATM Card Payment Required
+                                </h5>
+                            </div>
+                            <div class="modal-body text-center">
+                                <div class="mb-3">
+                                    <i class="bi bi-exclamation-triangle display-1 text-danger"></i>
+                                </div>
+                                <h5 class="mb-3">Card Payment Entry is Mandatory!</h5>
+                                <p class="text-muted mb-4">
+                                    You must enter today's ATM card payment amount before logging out. 
+                                    This is required for accurate daily reporting and revenue tracking.
+                                </p>
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <strong>Note:</strong> You can enter 0 (zero) if there were no card payments today.
+                                </div>
+                            </div>
+                            <div class="modal-footer justify-content-center">
+                                <button type="button" class="btn btn-success" id="goToCardPaymentPageBtn">
+                                    <i class="bi bi-credit-card me-2"></i>Enter Payment Amount Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        document.body.insertAdjacentHTML('beforeend', modalContent);
+        const modal = document.getElementById('atmCardPaymentModal');
+        
+        // Add event listeners based on modal type
+        if (hasPayment) {
+            document.getElementById('proceedLogoutBtn').addEventListener('click', function() {
+                window.location.href = "{{ url_for('auth.logout') }}";
+            });
+            
+            document.getElementById('editPaymentBtn').addEventListener('click', function() {
+                showAdminPinModal();
+            });
+        } else {
+            document.getElementById('goToCardPaymentPageBtn').addEventListener('click', function() {
+                window.location.href = "{{ url_for('pos.card_payment') }}";
+            });
+        }
+        
+        // Show the modal
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+    }
+    
+    // Admin PIN Modal for editing existing card payment
+    function showAdminPinModal() {
+        // Remove existing PIN modal if it exists
+        const existingPinModal = document.getElementById('adminPinModal');
+        if (existingPinModal) {
+            existingPinModal.remove();
+        }
+        
+        const pinModalHTML = `
+            <div class="modal fade" id="adminPinModal" tabindex="-1" aria-labelledby="adminPinModalLabel" aria-hidden="true" data-bs-backdrop="static">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-warning">
+                        <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title" id="adminPinModalLabel">
+                                <i class="bi bi-shield-lock me-2"></i>Admin PIN Required
+                            </h5>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-center mb-4">Enter admin PIN to edit the card payment amount:</p>
+                            <div class="mb-3">
+                                <input type="password" class="form-control form-control-lg text-center" 
+                                       id="adminPinInput" placeholder="Enter Admin PIN" maxlength="10">
+                            </div>
+                            <div id="pinErrorMessage" class="alert alert-danger d-none">
+                                Invalid PIN. Please try again.
+                            </div>
+                        </div>
+                        <div class="modal-footer justify-content-center">
+                            <button type="button" class="btn btn-secondary" id="cancelPinBtn">
+                                <i class="bi bi-x-circle me-2"></i>Cancel
+                            </button>
+                            <button type="button" class="btn btn-warning" id="verifyPinBtn">
+                                <i class="bi bi-check-circle me-2"></i>Verify PIN
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', pinModalHTML);
+        const pinModal = document.getElementById('adminPinModal');
+        
+        // Add event listeners
+        document.getElementById('cancelPinBtn').addEventListener('click', function() {
+            const modal = bootstrap.Modal.getInstance(pinModal);
+            modal.hide();
+        });
+        
+        document.getElementById('verifyPinBtn').addEventListener('click', function() {
+            const pin = document.getElementById('adminPinInput').value;
+            verifyAdminPin(pin);
+        });
+        
+        // Allow Enter key to verify PIN
+        document.getElementById('adminPinInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const pin = this.value;
+                verifyAdminPin(pin);
+            }
+        });
+        
+        // Show the modal and focus on input
+        const bootstrapPinModal = new bootstrap.Modal(pinModal);
+        bootstrapPinModal.show();
+        setTimeout(() => {
+            document.getElementById('adminPinInput').focus();
+        }, 500);
+    }
+    
+    // Verify Admin PIN
+    function verifyAdminPin(pin) {
+        if (!pin) {
+            document.getElementById('pinErrorMessage').classList.remove('d-none');
+            return;
+        }
+        
+        // Show loading state
+        const verifyBtn = document.getElementById('verifyPinBtn');
+        verifyBtn.disabled = true;
+        verifyBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Verifying...';
+        
+        // Send PIN to backend for verification
+        fetch('/pos/verify_admin_pin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ pin: pin })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // PIN verified, close modals and go to card payment page
+                const pinModal = bootstrap.Modal.getInstance(document.getElementById('adminPinModal'));
+                const cardModal = bootstrap.Modal.getInstance(document.getElementById('atmCardPaymentModal'));
+                pinModal.hide();
+                cardModal.hide();
+                
+                // Redirect to card payment page with edit permission
+                window.location.href = "{{ url_for('pos.card_payment') }}?edit=1";
+            } else {
+                // Show error
+                document.getElementById('pinErrorMessage').classList.remove('d-none');
+                document.getElementById('adminPinInput').value = '';
+                document.getElementById('adminPinInput').focus();
+            }
+        })
+        .catch(error => {
+            console.error('Error verifying PIN:', error);
+            document.getElementById('pinErrorMessage').classList.remove('d-none');
+        })
+        .finally(() => {
+            verifyBtn.disabled = false;
+            verifyBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Verify PIN';
         });
     }
     </script>

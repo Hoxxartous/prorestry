@@ -1,7 +1,7 @@
-from flask import render_template, redirect, url_for, request, jsonify, flash
+from flask import render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from app.admin import admin
-from app.models import User, MenuItem, Category, Order, AuditLog, Table, Customer, UserRole, OrderItem, DeliveryCompany, ServiceType, OrderStatus, TimezoneManager, AdminPinCode, WaiterCashierAssignment, OrderEditHistory, ManualCardPayment, Kitchen, CategoryKitchenAssignment, KitchenOrder, KitchenOrderStatus, CategorySpecialItemAssignment
+from app.models import User, MenuItem, Category, Order, AuditLog, Table, Customer, UserRole, OrderItem, DeliveryCompany, ServiceType, OrderStatus, TimezoneManager, AdminPinCode, WaiterCashierAssignment, OrderEditHistory, ManualCardPayment, Kitchen, CategoryKitchenAssignment, KitchenOrder, KitchenOrderStatus, CategorySpecialItemAssignment, AdminNotification
 from app import db
 from app.auth.decorators import branch_admin_required, filter_by_user_branch, get_user_branch_filter
 from datetime import datetime, timedelta
@@ -4224,3 +4224,192 @@ def restore_elements():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@admin.route('/notifications')
+@login_required
+@branch_admin_required
+def notifications():
+    """Admin notifications page for cashier logout alerts"""
+    return render_template('admin/notifications.html')
+
+@admin.route('/test_email_notification', methods=['POST'])
+@login_required
+@branch_admin_required
+def test_email_notification():
+    """Test email notification system"""
+    try:
+        from app.notifications import send_test_notification, check_email_configuration
+        
+        if not current_user.email:
+            return jsonify({
+                'success': False,
+                'message': 'Your account does not have an email address configured.'
+            })
+        
+        # Check configuration first
+        is_configured, missing_configs = check_email_configuration()
+        if not is_configured:
+            return jsonify({
+                'success': False,
+                'message': f'Email not configured. Please contact IT Admin to configure email settings. Missing: {", ".join(missing_configs)}'
+            })
+        
+        success, message = send_test_notification(current_user.email)
+        
+        return jsonify({
+            'success': success,
+            'message': message if not success else f'Test email sent successfully to {current_user.email}'
+        })
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error sending test email: {str(e)}'
+        })
+
+@admin.route('/email_configuration_status')
+@login_required
+@branch_admin_required
+def email_configuration_status():
+    """Check email configuration status"""
+    try:
+        from app.notifications import check_email_configuration
+        from flask import current_app
+        
+        is_configured, missing_configs = check_email_configuration()
+        
+        config_status = {
+            'MAIL_SERVER': current_app.config.get('MAIL_SERVER', 'Not set'),
+            'MAIL_PORT': current_app.config.get('MAIL_PORT', 'Not set'),
+            'MAIL_USE_TLS': current_app.config.get('MAIL_USE_TLS', 'Not set'),
+            'MAIL_USERNAME': '***' if current_app.config.get('MAIL_USERNAME') else 'Not set',
+            'MAIL_PASSWORD': '***' if current_app.config.get('MAIL_PASSWORD') else 'Not set',
+            'MAIL_DEFAULT_SENDER': current_app.config.get('MAIL_DEFAULT_SENDER', 'Not set')
+        }
+        
+        return jsonify({
+            'success': True,
+            'is_configured': is_configured,
+            'missing_configs': missing_configs,
+            'config_status': config_status
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error checking configuration: {str(e)}'
+        })
+
+# ===== NOTIFICATION API ENDPOINTS =====
+
+@admin.route('/api/notifications')
+@login_required
+@branch_admin_required
+def get_notifications():
+    """Get all notifications for the current admin"""
+    try:
+        # Get notifications for current user, ordered by newest first
+        notifications = AdminNotification.query.filter_by(
+            recipient_id=current_user.id
+        ).order_by(AdminNotification.created_at.desc()).limit(50).all()
+        
+        # Convert to dictionaries
+        notifications_data = [notification.to_dict() for notification in notifications]
+        
+        return jsonify({
+            'success': True,
+            'notifications': notifications_data,
+            'count': len(notifications_data)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error loading notifications: {str(e)}'
+        })
+
+@admin.route('/api/notifications/<int:notification_id>/mark_read', methods=['POST'])
+@login_required
+@branch_admin_required
+def mark_notification_read(notification_id):
+    """Mark a specific notification as read"""
+    try:
+        notification = AdminNotification.query.filter_by(
+            id=notification_id,
+            recipient_id=current_user.id
+        ).first()
+        
+        if not notification:
+            return jsonify({
+                'success': False,
+                'message': 'Notification not found'
+            })
+        
+        notification.mark_as_read()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Notification marked as read'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error marking notification as read: {str(e)}'
+        })
+
+@admin.route('/api/notifications/mark_all_read', methods=['POST'])
+@login_required
+@branch_admin_required
+def mark_all_notifications_read():
+    """Mark all notifications as read for current admin"""
+    try:
+        notifications = AdminNotification.query.filter_by(
+            recipient_id=current_user.id,
+            is_read=False
+        ).all()
+        
+        for notification in notifications:
+            notification.is_read = True
+            notification.read_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Marked {len(notifications)} notifications as read'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error marking notifications as read: {str(e)}'
+        })
+
+@admin.route('/api/notifications/clear_all', methods=['POST'])
+@login_required
+@branch_admin_required
+def clear_all_notifications():
+    """Clear all notifications for current admin"""
+    try:
+        notifications = AdminNotification.query.filter_by(
+            recipient_id=current_user.id
+        ).all()
+        
+        for notification in notifications:
+            db.session.delete(notification)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Cleared {len(notifications)} notifications'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error clearing notifications: {str(e)}'
+        })

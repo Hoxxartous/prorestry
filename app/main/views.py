@@ -11,6 +11,8 @@ def index():
             if hasattr(current_user, 'role') and current_user.role:
                 if current_user.role.name == 'SUPER_USER':
                     return redirect(url_for('superuser.dashboard'))
+                elif current_user.role.name == 'IT_ADMIN':
+                    return redirect(url_for('it.dashboard'))
                 elif current_user.role.name == 'BRANCH_ADMIN' or current_user.role.name == 'ADMIN':
                     return redirect(url_for('admin.dashboard'))
                 elif current_user.role.name == 'WAITER':
@@ -30,13 +32,13 @@ def index():
 @main.route('/switch_theme', methods=['POST'])
 @login_required
 def switch_theme():
-    """Switch user theme preference between dark and modal themes"""
+    """Switch user theme preference between dark and neon-dark themes"""
     try:
         data = request.get_json()
         theme = data.get('theme', 'dark')
         
         # Validate theme
-        if theme not in ['dark', 'modal']:
+        if theme not in ['dark', 'neon-dark']:
             return jsonify({'success': False, 'error': 'Invalid theme'})
         
         # Update user theme preference

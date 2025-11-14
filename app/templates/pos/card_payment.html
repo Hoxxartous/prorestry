@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+
+{% block title %}ATM Card Payment Entry - Restaurant POS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h4 class="card-title mb-0">
+                    <i class="bi bi-credit-card me-2"></i>ATM Card Payment Entry
+                </h4>
+                <small>Enter the total amount of card payments received today</small>
+            </div>
+            <div class="card-body">
+                <!-- Current Status -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        {% if manual_card_payment_today %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>Branch Entry for Today:</strong> {{ "%.2f"|format(manual_card_payment_today.amount) }} QAR 
+                            <br><small class="text-muted">
+                                Entered by: <strong>{{ manual_card_payment_today.cashier.get_full_name() }}</strong> 
+                                at {{ manual_card_payment_today.created_at.strftime('%H:%M on %B %d, %Y') }}
+                            </small>
+                            {% if manual_card_payment_today.notes %}
+                            <br><small><strong>Notes:</strong> {{ manual_card_payment_today.notes }}</small>
+                            {% endif %}
+                            {% if not is_edit_mode %}
+                            <br><small class="text-info"><i class="bi bi-info-circle me-1"></i>Use admin PIN to edit this entry</small>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>No Entry Today:</strong> Your branch hasn't entered today's card payment amount yet.
+                            <br><small>This entry is <strong>mandatory</strong> for logout. You can enter 0 if no card payments were received.</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Payment Entry Form -->
+                {% if manual_card_payment_today and not is_edit_mode %}
+                <!-- Show existing entry with admin PIN option -->
+                <div class="alert alert-info">
+                    <h5><i class="bi bi-info-circle me-2"></i>Branch Entry Already Exists</h5>
+                    <p>Your branch has already entered today's card payment amount. To edit this entry, you need to verify your admin PIN.</p>
+                </div>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="{{ url_for('pos.dashboard') }}" class="btn btn-secondary btn-lg me-md-2">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                    <button type="button" class="btn btn-warning btn-lg" id="requestEditBtn">
+                        <i class="bi bi-pencil me-2"></i>Edit Entry (Admin PIN Required)
+                    </button>
+                </div>
+                {% else %}
+                <!-- Show entry form (new entry or admin-verified edit) -->
+                <form id="cardPaymentForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="cardAmount" class="form-label">
+                                    <i class="bi bi-currency-dollar me-2"></i>Card Payment Amount (QAR) *
+                                </label>
+                                <input type="number" class="form-control form-control-lg" id="cardAmount" 
+                                       step="0.01" min="0" placeholder="0.00" required
+                                       value="{% if manual_card_payment_today %}{{ manual_card_payment_today.amount }}{% endif %}">
+                                <div class="form-text">Enter the total amount of card payments received today (0 is allowed)</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="cardNotes" class="form-label">
+                                    <i class="bi bi-chat-text me-2"></i>Notes (Optional)
+                                </label>
+                                <textarea class="form-control" id="cardNotes" rows="4" 
+                                          placeholder="Any additional notes about today's card payments...">{% if manual_card_payment_today %}{{ manual_card_payment_today.notes or '' }}{% endif %}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if is_edit_mode %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-shield-check me-2"></i>
+                        <strong>Admin PIN Verified:</strong> You are editing the existing branch entry for today.
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Important:</strong> This amount will be included in today's revenue calculations and reports.
+                        This will create the branch entry for today.
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('pos.dashboard') }}" class="btn btn-secondary btn-lg me-md-2">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                        <button type="submit" class="btn btn-success btn-lg" id="saveCardPaymentBtn">
+                            <i class="bi bi-check-circle me-2"></i>
+                            {% if is_edit_mode %}Update{% else %}Save{% endif %} Payment
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Branch Statistics (for context) -->
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h5 class="card-title">Today's Cash Sales</h5>
+                <h3>{{ "%.2f"|format(today_cash_sales) }} QAR</h3>
+                <small>Cash payments only</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h5 class="card-title">Today's Card Payments</h5>
+                <h3>{{ "%.2f"|format(manual_card_total_today) }} QAR</h3>
+                <small>Manual card entries</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total Today's Sales</h5>
+                <h3>{{ "%.2f"|format(today_cash_sales + manual_card_total_today) }} QAR</h3>
+                <small>Cash + Card combined</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('cardPaymentForm');
+    const saveBtn = document.getElementById('saveCardPaymentBtn');
+    const cardAmountInput = document.getElementById('cardAmount');
+    const cardNotesInput = document.getElementById('cardNotes');
+    const requestEditBtn = document.getElementById('requestEditBtn');
+    
+    // Handle form submission (for new entries or admin-verified edits)
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const amount = parseFloat(cardAmountInput.value);
+            const notes = cardNotesInput.value.trim();
+            
+            if (isNaN(amount) || amount < 0) {
+                showAlert('Please enter a valid amount (0 or greater)', 'danger');
+                cardAmountInput.focus();
+                return;
+            }
+            
+            // Show loading state
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Saving...';
+            
+            const isEdit = new URLSearchParams(window.location.search).get('edit') === '1';
+            
+            // Send to backend
+            fetch('/pos/manual_card_payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    amount: amount,
+                    notes: notes,
+                    is_edit: isEdit
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Card payment amount saved successfully!', 'success');
+                    // Redirect to dashboard after successful save
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('pos.dashboard') }}";
+                    }, 1500);
+                } else {
+                    if (data.existing_amount !== undefined) {
+                        // Branch already has entry
+                        showAlert(`Entry already exists (${data.existing_amount} QAR by ${data.entered_by}). Use admin PIN to edit.`, 'warning');
+                    } else {
+                        showAlert('Error: ' + (data.error || 'Failed to save payment'), 'danger');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error saving payment. Please try again.', 'danger');
+            })
+            .finally(() => {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>{% if is_edit_mode %}Update{% else %}Save{% endif %} Payment';
+            });
+        });
+    }
+    
+    // Handle request edit button (shows admin PIN modal)
+    if (requestEditBtn) {
+        requestEditBtn.addEventListener('click', function() {
+            showAdminPinModal();
+        });
+    }
+    
+    // Admin PIN Modal
+    function showAdminPinModal() {
+        // Remove existing PIN modal if it exists
+        const existingPinModal = document.getElementById('adminPinModal');
+        if (existingPinModal) {
+            existingPinModal.remove();
+        }
+        
+        const pinModalHTML = `
+            <div class="modal fade" id="adminPinModal" tabindex="-1" aria-labelledby="adminPinModalLabel" aria-hidden="true" data-bs-backdrop="static">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-warning">
+                        <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title" id="adminPinModalLabel">
+                                <i class="bi bi-shield-lock me-2"></i>Admin PIN Required
+                            </h5>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-center mb-4">Enter admin PIN to edit the card payment amount:</p>
+                            <div class="mb-3">
+                                <input type="password" class="form-control form-control-lg text-center" 
+                                       id="adminPinInput" placeholder="Enter Admin PIN" maxlength="10">
+                            </div>
+                            <div id="pinErrorMessage" class="alert alert-danger d-none">
+                                Invalid PIN. Please try again.
+                            </div>
+                        </div>
+                        <div class="modal-footer justify-content-center">
+                            <button type="button" class="btn btn-secondary" id="cancelPinBtn">
+                                <i class="bi bi-x-circle me-2"></i>Cancel
+                            </button>
+                            <button type="button" class="btn btn-warning" id="verifyPinBtn">
+                                <i class="bi bi-check-circle me-2"></i>Verify PIN
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', pinModalHTML);
+        const pinModal = document.getElementById('adminPinModal');
+        
+        // Add event listeners
+        document.getElementById('cancelPinBtn').addEventListener('click', function() {
+            const modal = bootstrap.Modal.getInstance(pinModal);
+            modal.hide();
+        });
+        
+        document.getElementById('verifyPinBtn').addEventListener('click', function() {
+            const pin = document.getElementById('adminPinInput').value;
+            verifyAdminPin(pin);
+        });
+        
+        // Allow Enter key to verify PIN
+        document.getElementById('adminPinInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const pin = this.value;
+                verifyAdminPin(pin);
+            }
+        });
+        
+        // Show the modal and focus on input
+        const bootstrapPinModal = new bootstrap.Modal(pinModal);
+        bootstrapPinModal.show();
+        setTimeout(() => {
+            document.getElementById('adminPinInput').focus();
+        }, 500);
+    }
+    
+    // Verify Admin PIN
+    function verifyAdminPin(pin) {
+        if (!pin) {
+            document.getElementById('pinErrorMessage').classList.remove('d-none');
+            return;
+        }
+        
+        // Show loading state
+        const verifyBtn = document.getElementById('verifyPinBtn');
+        verifyBtn.disabled = true;
+        verifyBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Verifying...';
+        
+        // Send PIN to backend for verification
+        fetch('/pos/verify_admin_pin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ pin: pin })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // PIN verified, close modal and reload page with edit permission
+                const pinModal = bootstrap.Modal.getInstance(document.getElementById('adminPinModal'));
+                pinModal.hide();
+                
+                // Redirect to card payment page with edit permission
+                window.location.href = "{{ url_for('pos.card_payment') }}?edit=1";
+            } else {
+                // Show error
+                document.getElementById('pinErrorMessage').classList.remove('d-none');
+                document.getElementById('adminPinInput').value = '';
+                document.getElementById('adminPinInput').focus();
+            }
+        })
+        .catch(error => {
+            console.error('Error verifying PIN:', error);
+            document.getElementById('pinErrorMessage').classList.remove('d-none');
+        })
+        .finally(() => {
+            verifyBtn.disabled = false;
+            verifyBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Verify PIN';
+        });
+    }
+    
+    function showAlert(message, type) {
+        // Remove existing alerts
+        const existingAlerts = document.querySelectorAll('.alert-dismissible');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        // Create new alert
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alert.style = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alert);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.parentNode.removeChild(alert);
+            }
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

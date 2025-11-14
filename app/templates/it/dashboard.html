@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}IT Dashboard - Restaurant POS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i class="bi bi-pc-display me-2"></i>IT Dashboard</h1>
+                    <p class="text-muted">System Administration & Configuration</p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('it.email_config') }}" class="btn btn-primary">
+                        <i class="bi bi-envelope-gear me-2"></i>Email Config
+                    </a>
+                    <a href="{{ url_for('it.users') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-people me-2"></i>Manage Users
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body text-center">
+                    <i class="bi bi-people display-4"></i>
+                    <h3 class="mt-2">{{ total_users }}</h3>
+                    <p class="mb-0">Total Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body text-center">
+                    <i class="bi bi-person-check display-4"></i>
+                    <h3 class="mt-2">{{ active_users }}</h3>
+                    <p class="mb-0">Active Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body text-center">
+                    <i class="bi bi-building display-4"></i>
+                    <h3 class="mt-2">{{ total_branches }}</h3>
+                    <p class="mb-0">Branches</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body text-center">
+                    <i class="bi bi-gear-wide-connected display-4"></i>
+                    <h3 class="mt-2">Online</h3>
+                    <p class="mb-0">System Status</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users by Role -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-person-lines-fill me-2"></i>Users by Role</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Role</th>
+                                    <th class="text-end">Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for role, count in role_stats.items() %}
+                                <tr>
+                                    <td>
+                                        {% if role == 'super_user' %}
+                                            <i class="bi bi-shield-check text-danger me-2"></i>Super User
+                                        {% elif role == 'it_admin' %}
+                                            <i class="bi bi-pc-display text-primary me-2"></i>IT Admin
+                                        {% elif role == 'branch_admin' %}
+                                            <i class="bi bi-person-badge text-warning me-2"></i>Branch Admin
+                                        {% elif role == 'cashier' %}
+                                            <i class="bi bi-cash-coin text-success me-2"></i>Cashier
+                                        {% elif role == 'waiter' %}
+                                            <i class="bi bi-person-workspace text-info me-2"></i>Waiter
+                                        {% elif role == 'kitchen' %}
+                                            <i class="bi bi-house text-secondary me-2"></i>Kitchen
+                                        {% else %}
+                                            <i class="bi bi-person me-2"></i>{{ role.title() }}
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end"><span class="badge bg-primary">{{ count }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-activity me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('it.email_config') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-envelope-gear me-2"></i>Configure Email Settings
+                        </a>
+                        <a href="{{ url_for('it.users') }}" class="btn btn-outline-success">
+                            <i class="bi bi-person-plus me-2"></i>Create New User
+                        </a>
+                        <a href="{{ url_for('it.system_settings') }}" class="btn btn-outline-info">
+                            <i class="bi bi-gear-wide-connected me-2"></i>System Settings
+                        </a>
+                        <a href="{{ url_for('it.audit_logs') }}" class="btn btn-outline-warning">
+                            <i class="bi bi-journal-text me-2"></i>View Audit Logs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-clock-history me-2"></i>Recent System Activity</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_logs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in recent_logs %}
+                                <tr>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ log.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% if log.user %}
+                                            <span class="badge bg-secondary">{{ log.user.username }}</span>
+                                        {% else %}
+                                            <span class="text-muted">System</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ log.action }}</span>
+                                    </td>
+                                    <td>{{ log.description }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-journal-x display-4"></i>
+                        <p class="mt-2">No recent activity</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

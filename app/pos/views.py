@@ -1149,12 +1149,11 @@ def dashboard():
             'pending_orders': pending_waiter_orders
         }
     
-    # Get manual card payment for today (for cashiers only)
-    manual_card_payment_today = None
-    if current_user.role == UserRole.CASHIER:
-        manual_card_payment_today = ManualCardPayment.get_cashier_entry_for_date(
-            current_user.id, today
-        )
+    # Get manual card payment for today (branch-wide, not per cashier)
+    manual_card_payment_today = ManualCardPayment.query.filter_by(
+        branch_id=current_user.branch_id,
+        date=today
+    ).first()
     
     # Include manual card payments in revenue calculations
     manual_card_total_today = 0
@@ -1193,6 +1192,41 @@ def dashboard():
                           waiter_stats=waiter_stats,
                           manual_card_payment_today=manual_card_payment_today,
                           manual_card_total_today=manual_card_total_today)
+
+@pos.route('/card_payment')
+@login_required
+def card_payment():
+    """Dedicated page for ATM card payment amount entry - branch-wide"""
+    # Only allow cashiers to access this page
+    if current_user.role != UserRole.CASHIER:
+        flash('Access denied. Only cashiers can enter manual card payments.', 'error')
+        return redirect(url_for('pos.dashboard'))
+    
+    today = datetime.utcnow().date()
+    is_edit_mode = request.args.get('edit') == '1'
+    
+    # Get manual card payment for today (branch-wide, not per cashier)
+    manual_card_payment_today = ManualCardPayment.query.filter_by(
+        branch_id=current_user.branch_id,
+        date=today
+    ).first()
+    
+    # Get today's manual card total for this branch
+    manual_card_total_today = ManualCardPayment.get_total_for_date_and_branch(today, current_user.branch_id)
+    
+    # Calculate today's cash sales (orders marked as paid for this branch)
+    today_cash_sales_query = db.session.query(func.sum(Order.total_amount)).filter(
+        func.date(Order.created_at) == today,
+        Order.status == OrderStatus.PAID,
+        Order.branch_id == current_user.branch_id
+    )
+    today_cash_sales = today_cash_sales_query.scalar() or 0
+    
+    return render_template('pos/card_payment.html',
+                          manual_card_payment_today=manual_card_payment_today,
+                          manual_card_total_today=manual_card_total_today,
+                          today_cash_sales=today_cash_sales,
+                          is_edit_mode=is_edit_mode)
 
 @pos.route('/daily_report')
 @login_required
@@ -4012,7 +4046,7 @@ def verify_admin_pin_for_editing():
 @pos.route('/manual_card_payment', methods=['POST'])
 @login_required
 def manual_card_payment():
-    """Handle manual card payment entry by cashiers"""
+    """Handle manual card payment entry by cashiers - one entry per branch per day"""
     if current_user.role != UserRole.CASHIER:
         return jsonify({'success': False, 'error': 'Access denied. Only cashiers can enter manual card payments.'})
     
@@ -4020,23 +4054,53 @@ def manual_card_payment():
         data = request.get_json()
         amount = float(data.get('amount', 0))
         notes = data.get('notes', '').strip()
+        is_edit = data.get('is_edit', False)  # For admin PIN verified edits
         
-        if amount <= 0:
-            return jsonify({'success': False, 'error': 'Amount must be greater than 0'})
+        if amount < 0:
+            return jsonify({'success': False, 'error': 'Amount cannot be negative'})
         
-        # Add or update manual card payment
-        payment = ManualCardPayment.add_or_update_payment(
-            cashier_id=current_user.id,
+        today = datetime.utcnow().date()
+        
+        # Check if branch already has an entry for today
+        existing_payment = ManualCardPayment.query.filter_by(
             branch_id=current_user.branch_id,
-            amount=amount,
-            notes=notes
-        )
+            date=today
+        ).first()
+        
+        if existing_payment and not is_edit:
+            # Branch already has entry and this is not an admin-verified edit
+            return jsonify({
+                'success': False, 
+                'error': f'Card payment already entered for today by {existing_payment.cashier.get_full_name()}. Use admin PIN to edit.',
+                'existing_amount': float(existing_payment.amount),
+                'entered_by': existing_payment.cashier.get_full_name()
+            })
+        
+        if existing_payment and is_edit:
+            # Update existing entry (admin PIN verified)
+            existing_payment.amount = amount
+            existing_payment.notes = notes
+            existing_payment.cashier_id = current_user.id  # Update to current cashier
+            existing_payment.created_at = datetime.utcnow()
+            payment = existing_payment
+        else:
+            # Create new entry
+            payment = ManualCardPayment(
+                amount=amount,
+                date=today,
+                branch_id=current_user.branch_id,
+                cashier_id=current_user.id,
+                notes=notes
+            )
+            db.session.add(payment)
         
         db.session.commit()
         
+        action = "updated" if (existing_payment and is_edit) else "saved"
+        
         return jsonify({
             'success': True,
-            'message': f'Manual card payment of {amount:.2f} QAR saved successfully',
+            'message': f'Manual card payment of {amount:.2f} QAR {action} successfully',
             'payment_id': payment.id,
             'amount': float(payment.amount)
         })
@@ -4045,6 +4109,76 @@ def manual_card_payment():
         return jsonify({'success': False, 'error': 'Invalid amount format'})
     except Exception as e:
         db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@pos.route('/verify_admin_pin', methods=['POST'])
+@login_required
+def verify_admin_pin():
+    """Verify admin PIN for editing card payments"""
+    if current_user.role != UserRole.CASHIER:
+        return jsonify({'success': False, 'error': 'Access denied. Only cashiers can verify admin PIN.'})
+    
+    try:
+        data = request.get_json()
+        pin = data.get('pin', '').strip()
+        
+        if not pin:
+            return jsonify({'success': False, 'message': 'PIN is required'})
+        
+        # Check if the PIN exists for this branch
+        admin_pin = AdminPinCode.query.filter_by(
+            pin_code=pin,
+            branch_id=current_user.branch_id,
+            is_active=True
+        ).first()
+        
+        if admin_pin:
+            return jsonify({
+                'success': True,
+                'message': 'PIN verified successfully! You can now edit the card payment.',
+                'admin_name': admin_pin.admin_name or 'Administrator'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Invalid PIN code. Please try again.'
+            })
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@pos.route('/check_card_payment_status')
+@login_required
+def check_card_payment_status():
+    """Check if branch has entered ATM card payment for today"""
+    if current_user.role != UserRole.CASHIER:
+        return jsonify({'success': False, 'error': 'Access denied. Only cashiers can check card payment status.'})
+    
+    try:
+        today = datetime.utcnow().date()
+        
+        # Check if ANY cashier in the branch has entered manual card payment for today
+        manual_card_payment_today = ManualCardPayment.query.filter_by(
+            branch_id=current_user.branch_id,
+            date=today
+        ).first()
+        
+        has_card_payment = manual_card_payment_today is not None
+        
+        # Get the cashier who entered the payment
+        entered_by = ''
+        if manual_card_payment_today and manual_card_payment_today.cashier:
+            entered_by = manual_card_payment_today.cashier.get_full_name()
+        
+        return jsonify({
+            'success': True,
+            'has_card_payment': has_card_payment,
+            'amount': float(manual_card_payment_today.amount) if manual_card_payment_today else 0,
+            'entered_by': entered_by,
+            'message': 'Card payment status checked successfully'
+        })
+        
+    except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
 @pos.route('/transfer_order_table', methods=['POST'])

@@ -1,0 +1,562 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Notifications{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="bi bi-bell me-2"></i>Admin Notifications
+                    <span class="badge bg-primary" id="notificationCount">0</span>
+                </h2>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-info" id="checkConfigBtn">
+                        <i class="bi bi-gear-fill me-2"></i>Check Config
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="testEmailBtn">
+                        <i class="bi bi-envelope-check me-2"></i>Test Email
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="clearAllBtn">
+                        <i class="bi bi-trash me-2"></i>Clear All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Settings -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-gear me-2"></i>Notification Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                                <label class="form-check-label" for="emailNotifications">
+                                    <i class="bi bi-envelope me-2"></i>Email Notifications
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="soundNotifications" checked>
+                                <label class="form-check-label" for="soundNotifications">
+                                    <i class="bi bi-volume-up me-2"></i>Sound Notifications
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <label for="notificationSound" class="form-label">Notification Sound</label>
+                            <select class="form-select" id="notificationSound">
+                                <option value="notification1">Notification Bell</option>
+                                <option value="notification2">Chime</option>
+                                <option value="notification3">Alert</option>
+                                <option value="notification4">Ding</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Notifications -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="bi bi-clock-history me-2"></i>Recent Cashier Logout Notifications</h5>
+                    <div class="badge bg-success" id="connectionStatus">Connected</div>
+                </div>
+                <div class="card-body">
+                    <div id="notificationsList" class="list-group">
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-bell-slash display-4"></i>
+                            <p class="mt-2">No notifications yet. Notifications will appear here when cashiers logout.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Sound Elements - Using programmatic generation -->
+<audio id="notificationAudio" preload="auto" style="display: none;">
+    <!-- Fallback audio will be generated programmatically -->
+</audio>
+
+<!-- Notification Modal -->
+<div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="notificationModalLabel">
+                    <i class="bi bi-person-check me-2"></i>Cashier Logout Alert
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="notificationModalBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='sounds/notification.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let notificationCount = 0;
+    let notifications = [];
+    
+    // Load existing notifications from database on page load
+    loadNotificationsFromDatabase();
+    
+    // WebSocket connection for real-time notifications
+    const socket = io();
+    
+    // Join admin room for notifications
+    socket.emit('join', {room: 'admin_{{ current_user.id }}'});
+    
+    // Connection status handling
+    socket.on('connect', function() {
+        document.getElementById('connectionStatus').textContent = 'Connected';
+        document.getElementById('connectionStatus').className = 'badge bg-success';
+        console.log('Connected to notification server');
+    });
+    
+    socket.on('disconnect', function() {
+        document.getElementById('connectionStatus').textContent = 'Disconnected';
+        document.getElementById('connectionStatus').className = 'badge bg-danger';
+        console.log('Disconnected from notification server');
+    });
+    
+    // Listen for cashier logout notifications
+    socket.on('cashier_logout_notification', function(data) {
+        console.log('Received cashier logout notification:', data);
+        handleNewNotification(data);
+    });
+    
+    // Handle new notification
+    function handleNewNotification(data) {
+        notificationCount++;
+        notifications.unshift(data);
+        
+        // Update notification count
+        document.getElementById('notificationCount').textContent = notificationCount;
+        
+        // Play sound if enabled
+        if (document.getElementById('soundNotifications').checked) {
+            playNotificationSound();
+        }
+        
+        // Show browser notification if supported and permitted
+        showBrowserNotification(data);
+        
+        // Show modal notification
+        showNotificationModal(data);
+        
+        // Update notifications list
+        updateNotificationsList();
+        
+        // Flash page title
+        flashPageTitle(`New Logout: ${data.cashier_name}`);
+    }
+    
+    // Play notification sound
+    function playNotificationSound() {
+        try {
+            // Try programmatic sound generation first
+            if (window.createNotificationSound && window.createNotificationSound()) {
+                return;
+            }
+            
+            // Fallback to HTML5 audio
+            const audio = document.getElementById('notificationAudio');
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(e => {
+                    console.log('Could not play HTML5 audio:', e);
+                    // Final fallback to system beep
+                    if (window.speechSynthesis) {
+                        const utterance = new SpeechSynthesisUtterance('');
+                        utterance.volume = 0.1;
+                        utterance.rate = 10;
+                        window.speechSynthesis.speak(utterance);
+                    }
+                });
+            }
+        } catch (e) {
+            console.log('Error playing notification sound:', e);
+        }
+    }
+    
+    // Show browser notification
+    function showBrowserNotification(data) {
+        if ('Notification' in window) {
+            if (Notification.permission === 'granted') {
+                const notification = new Notification(`Cashier Logout: ${data.cashier_name}`, {
+                    body: `${data.branch_name} - ${data.logout_time} on ${data.logout_date}`,
+                    icon: '/static/favicon.ico',
+                    tag: 'cashier-logout',
+                    requireInteraction: true
+                });
+                
+                notification.onclick = function() {
+                    window.focus();
+                    notification.close();
+                };
+                
+                // Auto-close after 10 seconds
+                setTimeout(() => notification.close(), 10000);
+                
+            } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission().then(function(permission) {
+                    if (permission === 'granted') {
+                        showBrowserNotification(data);
+                    }
+                });
+            }
+        }
+    }
+    
+    // Show notification modal
+    function showNotificationModal(data) {
+        const modalBody = document.getElementById('notificationModalBody');
+        modalBody.innerHTML = `
+            <div class="alert alert-info">
+                <h5><i class="bi bi-person-check me-2"></i>Cashier Logout Details</h5>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Cashier:</strong> ${data.cashier_name}</p>
+                        <p><strong>Branch:</strong> ${data.branch_name}</p>
+                        <p><strong>Logout Time:</strong> ${data.logout_time}</p>
+                        <p><strong>Date:</strong> ${data.logout_date}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Total Orders:</strong> ${data.daily_stats.total_orders}</p>
+                        <p><strong>Total Sales:</strong> ${data.daily_stats.total_sales.toFixed(2)} QAR</p>
+                        <p><strong>Cash Sales:</strong> ${data.daily_stats.cash_sales.toFixed(2)} QAR</p>
+                        <p><strong>Card Payments:</strong> ${data.daily_stats.card_payments.toFixed(2)} QAR</p>
+                    </div>
+                </div>
+            </div>
+            <p class="text-muted">
+                <i class="bi bi-envelope me-2"></i>A detailed PDF report has been sent to your email address.
+            </p>
+        `;
+        
+        const modal = new bootstrap.Modal(document.getElementById('notificationModal'));
+        modal.show();
+    }
+    
+    // Flash page title
+    function flashPageTitle(message) {
+        const originalTitle = document.title;
+        let flashCount = 0;
+        const maxFlashes = 6;
+        
+        const flashInterval = setInterval(() => {
+            document.title = flashCount % 2 === 0 ? `🔔 ${message}` : originalTitle;
+            flashCount++;
+            
+            if (flashCount >= maxFlashes) {
+                clearInterval(flashInterval);
+                document.title = originalTitle;
+            }
+        }, 1000);
+    }
+    
+    // Update notifications list
+    function updateNotificationsList() {
+        const listContainer = document.getElementById('notificationsList');
+        
+        if (notifications.length === 0) {
+            listContainer.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-bell-slash display-4"></i>
+                    <p class="mt-2">No notifications yet. Notifications will appear here when cashiers logout.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        listContainer.innerHTML = notifications.map((notification, index) => `
+            <div class="list-group-item ${index === 0 ? 'border-primary' : ''}">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">
+                        <i class="bi bi-person-check me-2 text-success"></i>
+                        ${notification.cashier_name} - ${notification.branch_name}
+                    </h6>
+                    <small class="text-muted">${notification.logout_time} on ${notification.logout_date}</small>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-3">
+                        <small><strong>Orders:</strong> ${notification.daily_stats.total_orders}</small>
+                    </div>
+                    <div class="col-md-3">
+                        <small><strong>Sales:</strong> ${notification.daily_stats.total_sales.toFixed(2)} QAR</small>
+                    </div>
+                    <div class="col-md-3">
+                        <small><strong>Cash:</strong> ${notification.daily_stats.cash_sales.toFixed(2)} QAR</small>
+                    </div>
+                    <div class="col-md-3">
+                        <small><strong>Cards:</strong> ${notification.daily_stats.card_payments.toFixed(2)} QAR</small>
+                    </div>
+                </div>
+                ${index === 0 ? '<div class="mt-2"><span class="badge bg-primary">Latest</span></div>' : ''}
+            </div>
+        `).join('');
+    }
+    
+    // Check email configuration
+    document.getElementById('checkConfigBtn').addEventListener('click', function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Checking...';
+        
+        fetch('/admin/email_configuration_status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showConfigurationModal(data);
+            } else {
+                showAlert(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error checking configuration', 'danger');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-gear-fill me-2"></i>Check Config';
+        });
+    });
+
+    // Test email functionality
+    document.getElementById('testEmailBtn').addEventListener('click', function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Sending...';
+        
+        fetch('/admin/test_email_notification', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(data.message, 'success');
+            } else {
+                showAlert(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error sending test email', 'danger');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-envelope-check me-2"></i>Test Email';
+        });
+    });
+    
+    // Clear all notifications
+    document.getElementById('clearAllBtn').addEventListener('click', function() {
+        if (confirm('Are you sure you want to clear all notifications?')) {
+            notifications = [];
+            notificationCount = 0;
+            document.getElementById('notificationCount').textContent = '0';
+            updateNotificationsList();
+            showAlert('All notifications cleared', 'info');
+        }
+    });
+    
+    // Request notification permission on page load
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+    
+    // Save notification preferences
+    document.getElementById('emailNotifications').addEventListener('change', function() {
+        localStorage.setItem('emailNotifications', this.checked);
+    });
+    
+    document.getElementById('soundNotifications').addEventListener('change', function() {
+        localStorage.setItem('soundNotifications', this.checked);
+    });
+    
+    document.getElementById('notificationSound').addEventListener('change', function() {
+        localStorage.setItem('notificationSound', this.value);
+    });
+    
+    // Load notification preferences
+    const emailPref = localStorage.getItem('emailNotifications');
+    const soundPref = localStorage.getItem('soundNotifications');
+    const soundChoice = localStorage.getItem('notificationSound');
+    
+    if (emailPref !== null) {
+        document.getElementById('emailNotifications').checked = emailPref === 'true';
+    }
+    if (soundPref !== null) {
+        document.getElementById('soundNotifications').checked = soundPref === 'true';
+    }
+    if (soundChoice) {
+        document.getElementById('notificationSound').value = soundChoice;
+    }
+    
+    // Show configuration modal
+    function showConfigurationModal(data) {
+        const modalHTML = `
+            <div class="modal fade" id="configModal" tabindex="-1" aria-labelledby="configModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header ${data.is_configured ? 'bg-success' : 'bg-warning'} text-white">
+                            <h5 class="modal-title" id="configModalLabel">
+                                <i class="bi bi-gear-fill me-2"></i>Email Configuration Status
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert ${data.is_configured ? 'alert-success' : 'alert-warning'}">
+                                <h6><i class="bi bi-${data.is_configured ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                                    ${data.is_configured ? 'Email is properly configured!' : 'Email configuration incomplete'}
+                                </h6>
+                                ${!data.is_configured ? `<p>Missing configurations: <strong>${data.missing_configs.join(', ')}</strong></p>` : ''}
+                            </div>
+                            
+                            <h6>Current Configuration:</h6>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr><td><strong>Mail Server:</strong></td><td>${data.config_status.MAIL_SERVER}</td></tr>
+                                    <tr><td><strong>Mail Port:</strong></td><td>${data.config_status.MAIL_PORT}</td></tr>
+                                    <tr><td><strong>TLS Enabled:</strong></td><td>${data.config_status.MAIL_USE_TLS}</td></tr>
+                                    <tr><td><strong>Username:</strong></td><td>${data.config_status.MAIL_USERNAME}</td></tr>
+                                    <tr><td><strong>Password:</strong></td><td>${data.config_status.MAIL_PASSWORD}</td></tr>
+                                    <tr><td><strong>Default Sender:</strong></td><td>${data.config_status.MAIL_DEFAULT_SENDER}</td></tr>
+                                </tbody>
+                            </table>
+                            
+                            ${!data.is_configured ? `
+                            <div class="alert alert-info">
+                                <h6><i class="bi bi-info-circle me-2"></i>Setup Instructions:</h6>
+                                <p>Add these environment variables to your system or deployment:</p>
+                                <pre class="bg-dark text-light p-3 rounded">
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USE_TLS=true
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_DEFAULT_SENDER=your-email@gmail.com</pre>
+                                <small><strong>Note:</strong> For Gmail, use an App Password instead of your regular password.</small>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            ${data.is_configured ? '<button type="button" class="btn btn-primary" onclick="document.getElementById(\'testEmailBtn\').click(); bootstrap.Modal.getInstance(document.getElementById(\'configModal\')).hide();">Test Email</button>' : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal
+        const existingModal = document.getElementById('configModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        const modal = new bootstrap.Modal(document.getElementById('configModal'));
+        modal.show();
+    }
+
+    // Alert function
+    function showAlert(message, type) {
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alert.style = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alert);
+        
+        setTimeout(() => {
+            alert.remove();
+        }, 5000);
+    }
+    
+    // Load notifications from database
+    function loadNotificationsFromDatabase() {
+        fetch('/admin/api/notifications')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    notifications = data.notifications;
+                    notificationCount = data.count;
+                    
+                    // Update notification count
+                    document.getElementById('notificationCount').textContent = notificationCount;
+                    
+                    // Update notifications list
+                    updateNotificationsList();
+                    
+                    console.log(`Loaded ${notificationCount} notifications from database`);
+                } else {
+                    console.error('Failed to load notifications:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading notifications:', error);
+            });
+    }
+    
+    // Update Clear All button to use API
+    document.getElementById('clearAllBtn').addEventListener('click', function() {
+        if (confirm('Are you sure you want to clear all notifications?')) {
+            fetch('/admin/api/notifications/clear_all', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    notifications = [];
+                    notificationCount = 0;
+                    document.getElementById('notificationCount').textContent = '0';
+                    updateNotificationsList();
+                    showAlert('All notifications cleared!', 'success');
+                } else {
+                    showAlert('Error clearing notifications: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                showAlert('Error clearing notifications', 'danger');
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

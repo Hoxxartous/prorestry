@@ -3,12 +3,10 @@ from flask_login import login_user, logout_user, login_required, current_user
 from app.auth import auth
 from app.models import User, AuditLog, UserRole
 from app import db
-from app.security_headers import CSRFProtection
 from datetime import datetime
 import pytz
 
 @auth.route('/login', methods=['GET', 'POST'])
-@CSRFProtection.csrf_protect
 def login():
     # Clear any stale session data on login page access
     if not current_user.is_authenticated and request.method == 'GET':
@@ -105,9 +103,42 @@ def login():
 @login_required
 def logout():
     username = current_user.username
+    user_id = current_user.id
+    user_role = current_user.role
+    
     # Log the logout action
     log_audit_action(current_user.id, 'logout', 'User logged out')
     current_app.logger.info(f"User logged out: {username}")
+    
+    # Send notification to admins if this is a cashier logout
+    current_app.logger.info(f"=== LOGOUT DETECTED === User: {username}, Role: {user_role.name}, ID: {user_id}")
+    
+    if user_role.name == 'CASHIER':
+        current_app.logger.info(f"🔔 CASHIER LOGOUT DETECTED - STARTING NOTIFICATION PROCESS")
+        current_app.logger.info(f"   Cashier: {username} (ID: {user_id})")
+        current_app.logger.info(f"   Timestamp: {datetime.utcnow()}")
+        try:
+            from app.notifications import send_cashier_logout_notification
+            # Send notification asynchronously to avoid blocking logout
+            from threading import Thread
+            
+            # Capture the Flask app instance before starting the thread
+            app = current_app._get_current_object()
+            
+            # Create a wrapper function that includes the application context
+            def notification_with_context():
+                with app.app_context():
+                    send_cashier_logout_notification(user_id)
+            
+            notification_thread = Thread(target=notification_with_context)
+            notification_thread.daemon = True
+            notification_thread.start()
+            current_app.logger.info(f"✅ Cashier logout notification thread STARTED for: {username}")
+        except Exception as e:
+            current_app.logger.error(f"❌ FAILED to initiate logout notification: {str(e)}")
+    else:
+        current_app.logger.info(f"ℹ️ Non-cashier logout - no notification needed for role: {user_role.name}")
+    
     logout_user()
     flash('You have been logged out successfully.', 'info')
     return redirect(url_for('auth.login'))

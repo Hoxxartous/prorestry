@@ -1,0 +1,723 @@
+{% extends "base.html" %}
+
+{% block title %}Items Selling Insights - Restaurant POS{% endblock %}
+
+{% block styles %}
+<style>
+    /* Custom styles for items insights page */
+    .insights-card {
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+    }
+    
+    .insights-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .stats-icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+    
+    .item-rank {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        font-weight: bold;
+        margin-right: 15px;
+        color: white;
+    }
+    
+    .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
+    .rank-2 { background: linear-gradient(135deg, #C0C0C0, #A9A9A9); }
+    .rank-3 { background: linear-gradient(135deg, #CD7F32, #B8860B); }
+    .rank-other { background: linear-gradient(135deg, #6c757d, #495057); }
+    
+    .item-card {
+        border-left: 4px solid #007bff;
+        transition: all 0.3s ease;
+    }
+    
+    .item-card:hover {
+        border-left-color: #0056b3;
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+    
+    .revenue-badge {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .quantity-badge {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .branch-badge {
+        background: linear-gradient(135deg, #6f42c1, #563d7c);
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .filter-section {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 30px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .progress-bar-custom {
+        height: 8px;
+        border-radius: 4px;
+        background: linear-gradient(90deg, #007bff, #0056b3);
+    }
+    
+    .search-box {
+        border-radius: 25px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+    
+    .search-box:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 20px rgba(0, 123, 255, 0.3);
+        background: rgba(255, 255, 255, 0.15);
+    }
+    
+    /* Dark theme compatibility */
+    html[data-theme="dark"] .insights-card {
+        background-color: #2d3748;
+        border: 1px solid #4a5568;
+    }
+    
+    html[data-theme="dark"] .filter-section {
+        background: rgba(45, 55, 72, 0.8);
+        border: 1px solid #4a5568;
+    }
+    
+    html[data-theme="dark"] .item-card:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    /* Neon theme compatibility */
+    html[data-theme="neon-dark"] .insights-card {
+        background: var(--neon-glass-bg) !important;
+        border: 1px solid var(--neon-border) !important;
+        backdrop-filter: blur(15px) !important;
+        -webkit-backdrop-filter: blur(15px) !important;
+    }
+    
+    html[data-theme="neon-dark"] .insights-card:hover {
+        border-color: var(--neon-accent-primary) !important;
+        box-shadow: var(--neon-glow), 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    html[data-theme="neon-dark"] .filter-section {
+        background: var(--neon-glass-bg) !important;
+        border: 1px solid var(--neon-border) !important;
+        backdrop-filter: blur(15px) !important;
+        -webkit-backdrop-filter: blur(15px) !important;
+    }
+    
+    html[data-theme="neon-dark"] .item-card {
+        border-left-color: var(--neon-accent-primary) !important;
+    }
+    
+    html[data-theme="neon-dark"] .item-card:hover {
+        background: rgba(0, 255, 170, 0.1) !important;
+        box-shadow: var(--neon-glow) !important;
+    }
+    
+    html[data-theme="neon-dark"] .search-box {
+        background: var(--neon-glass-bg) !important;
+        border: 2px solid var(--neon-border) !important;
+        color: var(--neon-text-primary) !important;
+    }
+    
+    html[data-theme="neon-dark"] .search-box:focus {
+        border-color: var(--neon-accent-primary) !important;
+        box-shadow: var(--neon-glow) !important;
+    }
+    
+    html[data-theme="neon-dark"] .revenue-badge {
+        background: linear-gradient(135deg, var(--neon-success), #059669) !important;
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.3) !important;
+    }
+    
+    html[data-theme="neon-dark"] .quantity-badge {
+        background: linear-gradient(135deg, var(--neon-accent-cyan), #0891b2) !important;
+        box-shadow: 0 0 15px rgba(6, 182, 212, 0.3) !important;
+    }
+    
+    html[data-theme="neon-dark"] .branch-badge {
+        background: linear-gradient(135deg, var(--neon-accent-purple), #7c3aed) !important;
+        box-shadow: 0 0 15px rgba(139, 92, 246, 0.3) !important;
+    }
+    
+    html[data-theme="neon-dark"] .progress-bar-custom {
+        background: linear-gradient(90deg, var(--neon-accent-primary), var(--neon-accent-secondary)) !important;
+        box-shadow: var(--neon-glow) !important;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .item-rank {
+            width: 30px;
+            height: 30px;
+            font-size: 0.9rem;
+            margin-right: 10px;
+        }
+        
+        .stats-icon {
+            font-size: 2rem;
+        }
+        
+        .filter-section {
+            padding: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-graph-up-arrow me-2 text-primary"></i>
+                        Items Selling Insights
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Comprehensive analysis of item sales across all branches
+                        {% if current_days == 'all' %}
+                            <span class="badge bg-info ms-2">All Time</span>
+                        {% elif current_days == '1' or current_days == 1 %}
+                            <span class="badge bg-info ms-2">Last 24 Hours</span>
+                        {% else %}
+                            <span class="badge bg-info ms-2">Last {{ current_days }} Days</span>
+                        {% endif %}
+                        {% if current_branch %}
+                            {% for branch in branches %}
+                                {% if branch.id == current_branch %}
+                                    <span class="badge bg-warning ms-1">{{ branch.name }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" onclick="exportData()">
+                        <i class="bi bi-download me-2"></i>Export Data
+                    </button>
+                    <button class="btn btn-primary" onclick="refreshData()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">
+                    <i class="bi bi-building me-1"></i>Branch Filter
+                </label>
+                <select class="form-select" id="branchFilter" onchange="filterData()">
+                    <option value="">All Branches</option>
+                    {% for branch in branches %}
+                    <option value="{{ branch.id }}" {% if current_branch == branch.id %}selected{% endif %}>
+                        {{ branch.name }} ({{ branch.code }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">
+                    <i class="bi bi-calendar me-1"></i>Date Range
+                </label>
+                <select class="form-select" id="dateRange" onchange="filterData()">
+                    <option value="1" {% if current_days == '1' or current_days == 1 %}selected{% endif %}>Last 24 Hours</option>
+                    <option value="7" {% if current_days == '7' or current_days == 7 %}selected{% endif %}>Last 7 Days</option>
+                    <option value="30" {% if current_days == '30' or current_days == 30 %}selected{% endif %}>Last 30 Days</option>
+                    <option value="90" {% if current_days == '90' or current_days == 90 %}selected{% endif %}>Last 90 Days</option>
+                    <option value="365" {% if current_days == '365' or current_days == 365 %}selected{% endif %}>Last Year</option>
+                    <option value="all" {% if current_days == 'all' %}selected{% endif %}>All Time</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">
+                    <i class="bi bi-search me-1"></i>Search Items
+                </label>
+                <input type="text" class="form-control search-box" id="itemSearch" 
+                       placeholder="Search by item name..." onkeyup="searchItems()">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">
+                    <i class="bi bi-sort-down me-1"></i>Sort By
+                </label>
+                <select class="form-select" id="sortBy" onchange="sortItems()">
+                    <option value="quantity">Most Sold</option>
+                    <option value="revenue">Highest Revenue</option>
+                    <option value="name">Item Name</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card insights-card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-box-seam stats-icon"></i>
+                    <h4 class="mb-1">{{ total_items_sold }}</h4>
+                    <p class="mb-0">Total Items Sold</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card insights-card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-currency-dollar stats-icon"></i>
+                    <h4 class="mb-1">{{ "%.2f"|format(total_items_revenue) }} QAR</h4>
+                    <p class="mb-0">Total Items Revenue</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card insights-card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-list-ul stats-icon"></i>
+                    <h4 class="mb-1">{{ unique_items_count }}</h4>
+                    <p class="mb-0">Unique Items</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card insights-card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="bi bi-graph-up stats-icon"></i>
+                    <h4 class="mb-1">{{ "%.2f"|format(avg_item_price) }} QAR</h4>
+                    <p class="mb-0">Avg Item Price</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Insights Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card insights-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-trophy me-2"></i>
+                        Top Selling Items
+                        <span class="badge bg-light text-dark ms-2">{{ items_data|length }} Items</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="itemsTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th width="60">Rank</th>
+                                    <th>Item Name</th>
+                                    <th>Branch</th>
+                                    <th width="120">Quantity Sold</th>
+                                    <th width="120">Revenue</th>
+                                    <th width="120">Avg Price</th>
+                                    <th width="150">Performance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsTableBody">
+                                {% for item in items_data %}
+                                <tr class="item-row" data-item-name="{{ item.name.lower() }}" data-branch="{{ item.branch_name }}">
+                                    <td>
+                                        <div class="item-rank {% if loop.index <= 3 %}rank-{{ loop.index }}{% else %}rank-other{% endif %}">
+                                            {{ loop.index }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div>
+                                                <strong>{{ item.name }}</strong>
+                                                {% if item.name_ar %}
+                                                <br><small class="text-muted">{{ item.name_ar }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="branch-badge">{{ item.branch_name }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="quantity-badge">{{ item.total_quantity }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="revenue-badge">{{ "%.2f"|format(item.total_revenue) }} QAR</span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ "%.2f"|format(item.avg_price) }} QAR</strong>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar progress-bar-custom" 
+                                                     style="width: {{ (item.total_quantity / max_quantity * 100)|round(1) }}%">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">{{ (item.total_quantity / max_quantity * 100)|round(1) }}%</small>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Insights -->
+    <div class="row mt-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card insights-card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pie-chart me-2"></i>
+                        Top 5 Items by Revenue
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card insights-card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bar-chart me-2"></i>
+                        Top 5 Items by Quantity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="quantityChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Branch Performance Comparison -->
+    {% if branches|length > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card insights-card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-building me-2"></i>
+                        Branch Performance Comparison
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for branch_stat in branch_stats %}
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="card item-card h-100">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">{{ branch_stat.branch_name }}</h6>
+                                    <div class="mb-2">
+                                        <span class="quantity-badge">{{ branch_stat.total_items }} Items</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <span class="revenue-badge">{{ "%.2f"|format(branch_stat.total_revenue) }} QAR</span>
+                                    </div>
+                                    <div class="progress mt-2" style="height: 6px;">
+                                        <div class="progress-bar progress-bar-custom" 
+                                             style="width: {{ (branch_stat.total_revenue / max_branch_revenue * 100)|round(1) }}%">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Initialize charts
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCharts();
+    });
+    
+    function initializeCharts() {
+        // Revenue Chart (Pie Chart)
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        const revenueData = [
+            {% for item in items_data[:5] %}
+            {
+                label: "{{ item.name|replace('"', '\\"') }}",
+                value: {{ item.total_revenue|float }},
+                color: getRandomColor({{ loop.index0 }})
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        new Chart(revenueCtx, {
+            type: 'pie',
+            data: {
+                labels: revenueData.map(item => item.label),
+                datasets: [{
+                    data: revenueData.map(item => item.value),
+                    backgroundColor: revenueData.map(item => item.color),
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: getTextColor(),
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.parsed.toFixed(2) + ' QAR';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Quantity Chart (Bar Chart)
+        const quantityCtx = document.getElementById('quantityChart').getContext('2d');
+        const quantityData = [
+            {% for item in items_data[:5] %}
+            {
+                label: "{{ item.name|replace('"', '\\"') }}",
+                value: {{ item.total_quantity|int }}
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        new Chart(quantityCtx, {
+            type: 'bar',
+            data: {
+                labels: quantityData.map(item => item.label),
+                datasets: [{
+                    label: 'Quantity Sold',
+                    data: quantityData.map(item => item.value),
+                    backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: getTextColor()
+                        },
+                        grid: {
+                            color: getGridColor()
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: getTextColor(),
+                            maxRotation: 45
+                        },
+                        grid: {
+                            color: getGridColor()
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: getTextColor()
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    function getRandomColor(index) {
+        const colors = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+            '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
+        ];
+        return colors[index % colors.length];
+    }
+    
+    function getTextColor() {
+        const theme = document.documentElement.getAttribute('data-theme');
+        return theme === 'neon-dark' || theme === 'dark' ? '#ffffff' : '#333333';
+    }
+    
+    function getGridColor() {
+        const theme = document.documentElement.getAttribute('data-theme');
+        return theme === 'neon-dark' ? 'rgba(0, 255, 170, 0.2)' : 
+               theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+    }
+    
+    // Filter and search functions
+    function filterData() {
+        const branchId = document.getElementById('branchFilter').value;
+        const dateRange = document.getElementById('dateRange').value;
+        
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (branchId) params.append('branch_id', branchId);
+        if (dateRange) params.append('days', dateRange);
+        
+        // Reload page with filters
+        window.location.href = '{{ url_for("superuser.items_insights") }}?' + params.toString();
+    }
+    
+    function searchItems() {
+        const searchTerm = document.getElementById('itemSearch').value.toLowerCase();
+        const rows = document.querySelectorAll('.item-row');
+        
+        rows.forEach(row => {
+            const itemName = row.getAttribute('data-item-name');
+            const isVisible = itemName.includes(searchTerm);
+            row.style.display = isVisible ? '' : 'none';
+        });
+        
+        updateRanks();
+    }
+    
+    function sortItems() {
+        const sortBy = document.getElementById('sortBy').value;
+        const tbody = document.getElementById('itemsTableBody');
+        const rows = Array.from(tbody.querySelectorAll('.item-row'));
+        
+        rows.sort((a, b) => {
+            let aValue, bValue;
+            
+            if (sortBy === 'quantity') {
+                aValue = parseInt(a.querySelector('.quantity-badge').textContent);
+                bValue = parseInt(b.querySelector('.quantity-badge').textContent);
+                return bValue - aValue; // Descending
+            } else if (sortBy === 'revenue') {
+                aValue = parseFloat(a.querySelector('.revenue-badge').textContent.replace(' QAR', ''));
+                bValue = parseFloat(b.querySelector('.revenue-badge').textContent.replace(' QAR', ''));
+                return bValue - aValue; // Descending
+            } else if (sortBy === 'name') {
+                aValue = a.getAttribute('data-item-name');
+                bValue = b.getAttribute('data-item-name');
+                return aValue.localeCompare(bValue); // Ascending
+            }
+        });
+        
+        // Clear and re-append sorted rows
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
+        
+        updateRanks();
+    }
+    
+    function updateRanks() {
+        const visibleRows = document.querySelectorAll('.item-row[style=""], .item-row:not([style])');
+        visibleRows.forEach((row, index) => {
+            const rankElement = row.querySelector('.item-rank');
+            rankElement.textContent = index + 1;
+            
+            // Update rank styling
+            rankElement.className = 'item-rank';
+            if (index < 3) {
+                rankElement.classList.add(`rank-${index + 1}`);
+            } else {
+                rankElement.classList.add('rank-other');
+            }
+        });
+    }
+    
+    function exportData() {
+        // Create CSV data
+        const rows = document.querySelectorAll('.item-row');
+        let csvContent = 'Rank,Item Name,Branch,Quantity Sold,Revenue (QAR),Average Price (QAR)\n';
+        
+        rows.forEach((row, index) => {
+            if (row.style.display !== 'none') {
+                const cells = row.querySelectorAll('td');
+                const rank = index + 1;
+                const itemName = cells[1].querySelector('strong').textContent;
+                const branch = cells[2].textContent.trim();
+                const quantity = cells[3].textContent.trim();
+                const revenue = cells[4].textContent.replace(' QAR', '').trim();
+                const avgPrice = cells[5].textContent.replace(' QAR', '').trim();
+                
+                csvContent += `${rank},"${itemName}","${branch}",${quantity},${revenue},${avgPrice}\n`;
+            }
+        });
+        
+        // Download CSV
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `items_insights_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+    
+    function refreshData() {
+        window.location.reload();
+    }
+    
+    // Auto-refresh every 5 minutes
+    setInterval(function() {
+        if (document.visibilityState === 'visible') {
+            refreshData();
+        }
+    }, 300000);
+</script>
+{% endblock %}

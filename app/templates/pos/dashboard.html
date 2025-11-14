@@ -178,6 +178,11 @@
                             <small class="d-block text-muted mt-2">
                                 {% if manual_card_payment_today %}Update today's entry{% else %}Enter today's amount{% endif %}
                             </small>
+                            <div class="mt-2">
+                                <a href="{{ url_for('pos.card_payment') }}" class="btn btn-outline-success">
+                                    <i class="bi bi-credit-card me-2"></i>Full Entry Page
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -239,6 +244,11 @@
                     <a href="{{ url_for('pos.orders') }}" class="btn btn-info btn-lg">
                         <i class="bi bi-list-ul"></i> My Orders
                     </a>
+                    {% if current_user.role.value == 'cashier' %}
+                    <a href="{{ url_for('pos.card_payment') }}" class="btn btn-success btn-lg">
+                        <i class="bi bi-credit-card"></i> Card Payments
+                    </a>
+                    {% endif %}
                     <button id="refreshStatsBtn" class="btn btn-secondary btn-lg">
                         <i class="bi bi-arrow-clockwise"></i> Refresh Stats
                     </button>

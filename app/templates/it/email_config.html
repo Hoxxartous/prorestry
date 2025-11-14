@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+
+{% block title %}Email Configuration - IT Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i class="bi bi-envelope-gear me-2"></i>Email Configuration</h1>
+                    <p class="text-muted">Configure SMTP settings for system notifications</p>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-primary" id="loadConfigBtn">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Reload Config
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="resetFormBtn">
+                        <i class="bi bi-arrow-counterclockwise me-2"></i>Reset Form
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Status -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="alert alert-info" id="configStatus">
+                <i class="bi bi-info-circle me-2"></i>Loading configuration status...
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Configuration Form -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-gear-fill me-2"></i>SMTP Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form id="emailConfigForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="mailServer" class="form-label">
+                                        <i class="bi bi-server me-2"></i>Mail Server *
+                                    </label>
+                                    <input type="text" class="form-control" id="mailServer" 
+                                           placeholder="smtp.gmail.com" required>
+                                    <div class="form-text">SMTP server hostname</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="mailPort" class="form-label">
+                                        <i class="bi bi-ethernet me-2"></i>Port *
+                                    </label>
+                                    <input type="number" class="form-control" id="mailPort" 
+                                           value="587" min="1" max="65535" required>
+                                    <div class="form-text">Usually 587 for TLS or 465 for SSL</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="mailUsername" class="form-label">
+                                        <i class="bi bi-person me-2"></i>Username *
+                                    </label>
+                                    <input type="email" class="form-control" id="mailUsername" 
+                                           placeholder="your-email@gmail.com" required>
+                                    <div class="form-text">Email address for authentication</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="mailPassword" class="form-label">
+                                        <i class="bi bi-key me-2"></i>Password *
+                                    </label>
+                                    <input type="password" class="form-control" id="mailPassword" 
+                                           placeholder="Enter password or app password" required>
+                                    <div class="form-text">For Gmail, use App Password</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="mailSender" class="form-label">
+                                        <i class="bi bi-envelope me-2"></i>Default Sender *
+                                    </label>
+                                    <input type="email" class="form-control" id="mailSender" 
+                                           placeholder="noreply@yourcompany.com" required>
+                                    <div class="form-text">Email address shown as sender</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="mailTls" class="form-label">
+                                        <i class="bi bi-shield-lock me-2"></i>Encryption
+                                    </label>
+                                    <select class="form-select" id="mailTls">
+                                        <option value="true">TLS (Recommended)</option>
+                                        <option value="false">No Encryption</option>
+                                    </select>
+                                    <div class="form-text">TLS encryption for secure connection</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-info w-100" id="testEmailBtn">
+                                    <i class="bi bi-envelope-check me-2"></i>Test Email
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-warning w-100" id="testCashierNotificationBtn">
+                                    <i class="bi bi-bell-fill me-2"></i>Test Cashier Alert
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-success w-100" id="saveConfigBtn">
+                                    <i class="bi bi-check-circle me-2"></i>Save Configuration
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-question-circle me-2"></i>Setup Guide</h5>
+                </div>
+                <div class="card-body">
+                    <h6><i class="bi bi-google me-2"></i>Gmail Setup:</h6>
+                    <ol class="small">
+                        <li>Enable 2-Factor Authentication</li>
+                        <li>Go to Google Account → Security</li>
+                        <li>Generate App Password</li>
+                        <li>Use App Password here</li>
+                    </ol>
+
+                    <h6 class="mt-3"><i class="bi bi-microsoft me-2"></i>Outlook Setup:</h6>
+                    <ul class="small">
+                        <li><strong>Server:</strong> smtp-mail.outlook.com</li>
+                        <li><strong>Port:</strong> 587</li>
+                        <li><strong>TLS:</strong> Enabled</li>
+                    </ul>
+
+                    <h6 class="mt-3"><i class="bi bi-exclamation-triangle me-2"></i>Common Issues:</h6>
+                    <ul class="small">
+                        <li>Use App Passwords for Gmail</li>
+                        <li>Check firewall settings</li>
+                        <li>Verify SMTP server address</li>
+                        <li>Ensure TLS/SSL settings match</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="bi bi-shield-check me-2"></i>Security Note</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <small>
+                            <i class="bi bi-info-circle me-2"></i>
+                            Email credentials are stored as environment variables and are only accessible to IT Admins. 
+                            Regular admins cannot view or modify these settings.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('emailConfigForm');
+    const loadConfigBtn = document.getElementById('loadConfigBtn');
+    const testEmailBtn = document.getElementById('testEmailBtn');
+    const testCashierNotificationBtn = document.getElementById('testCashierNotificationBtn');
+    const resetFormBtn = document.getElementById('resetFormBtn');
+    const configStatus = document.getElementById('configStatus');
+    
+    // Check if required elements exist
+    if (!form || !loadConfigBtn || !testEmailBtn || !configStatus) {
+        console.error('Required elements not found in email config page');
+        return;
+    }
+
+    // Load configuration on page load
+    loadConfiguration();
+
+    // Load configuration
+    function loadConfiguration() {
+        loadConfigBtn.disabled = true;
+        loadConfigBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Loading...';
+
+        fetch('/it/get_email_config')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Populate form
+                document.getElementById('mailServer').value = data.config.MAIL_SERVER || '';
+                document.getElementById('mailPort').value = data.config.MAIL_PORT || '587';
+                document.getElementById('mailUsername').value = data.config.MAIL_USERNAME || '';
+                document.getElementById('mailPassword').value = data.config.MAIL_PASSWORD || '';
+                document.getElementById('mailSender').value = data.config.MAIL_DEFAULT_SENDER || '';
+                document.getElementById('mailTls').value = data.config.MAIL_USE_TLS || 'true';
+
+                // Update status
+                const isConfigured = data.config.MAIL_SERVER && data.config.MAIL_USERNAME && 
+                                   data.config.MAIL_PASSWORD && data.config.MAIL_DEFAULT_SENDER;
+                
+                if (isConfigured) {
+                    configStatus.className = 'alert alert-success';
+                    configStatus.innerHTML = '<i class="bi bi-check-circle me-2"></i>Email is properly configured and ready to use.';
+                } else {
+                    configStatus.className = 'alert alert-warning';
+                    configStatus.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>Email configuration is incomplete. Please fill in all required fields.';
+                }
+            } else {
+                showAlert('Error loading configuration: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error loading configuration', 'danger');
+        })
+        .finally(() => {
+            loadConfigBtn.disabled = false;
+            loadConfigBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-2"></i>Reload Config';
+        });
+    }
+
+    // Save configuration
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const saveBtn = document.getElementById('saveConfigBtn');
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Saving...';
+        }
+
+        const formData = {
+            MAIL_SERVER: document.getElementById('mailServer').value,
+            MAIL_PORT: document.getElementById('mailPort').value,
+            MAIL_USERNAME: document.getElementById('mailUsername').value,
+            MAIL_PASSWORD: document.getElementById('mailPassword').value,
+            MAIL_DEFAULT_SENDER: document.getElementById('mailSender').value,
+            MAIL_USE_TLS: document.getElementById('mailTls').value
+        };
+
+        fetch('/it/update_email_config', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Email configuration saved successfully!', 'success');
+                loadConfiguration(); // Reload to update status
+            } else {
+                showAlert('Error saving configuration: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error saving configuration', 'danger');
+        })
+        .finally(() => {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Save Configuration';
+            }
+        });
+    });
+
+    // Test email
+    testEmailBtn.addEventListener('click', function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Testing...';
+
+        fetch('/it/test_email_config', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Test email sent successfully! Check your inbox.', 'success');
+            } else {
+                showAlert('Test email failed: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error testing email', 'danger');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-envelope-check me-2"></i>Test Email';
+        });
+    });
+
+    // Test cashier notification
+    if (testCashierNotificationBtn) {
+        testCashierNotificationBtn.addEventListener('click', function() {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Testing...';
+
+        fetch('/it/test_cashier_notification', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Cashier logout notification sent successfully! Check your email and admin notifications.', 'success');
+            } else {
+                showAlert('Cashier notification test failed: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error testing cashier notification', 'danger');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-bell-fill me-2"></i>Test Cashier Alert';
+        });
+        });
+    }
+
+    // Reset form
+    if (resetFormBtn) {
+        resetFormBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to reset the form? Unsaved changes will be lost.')) {
+                loadConfiguration();
+            }
+        });
+    }
+
+    // Alert function
+    function showAlert(message, type) {
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alert.style = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alert);
+        
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.parentNode.removeChild(alert);
+            }
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

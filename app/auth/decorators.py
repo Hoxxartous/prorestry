@@ -48,8 +48,8 @@ def branch_admin_required(f):
         if not current_user.is_authenticated:
             abort(401)
         
-        # Allow both super users and branch admins
-        allowed_roles = [UserRole.SUPER_USER, UserRole.BRANCH_ADMIN]
+        # Allow both super users, IT admins, and branch admins
+        allowed_roles = [UserRole.SUPER_USER, UserRole.IT_ADMIN, UserRole.BRANCH_ADMIN]
         if current_user.role not in allowed_roles:
             current_app.logger.warning(f"Branch admin access denied for user {current_user.username}")
             abort(403)
@@ -64,7 +64,7 @@ def cashier_or_above_required(f):
         if not current_user.is_authenticated:
             abort(401)
         
-        allowed_roles = [UserRole.SUPER_USER, UserRole.BRANCH_ADMIN, UserRole.CASHIER]
+        allowed_roles = [UserRole.SUPER_USER, UserRole.IT_ADMIN, UserRole.BRANCH_ADMIN, UserRole.CASHIER]
         if current_user.role not in allowed_roles:
             current_app.logger.warning(f"Cashier+ access denied for user {current_user.username}")
             abort(403)
@@ -98,8 +98,8 @@ def branch_isolation_required(f):
         if not current_user.is_authenticated:
             abort(401)
         
-        # Super users can access everything
-        if current_user.role == UserRole.SUPER_USER:
+        # Super users and IT admins can access everything
+        if current_user.role in [UserRole.SUPER_USER, UserRole.IT_ADMIN]:
             return f(*args, **kwargs)
         
         # Get branch_id from URL parameters or request data
@@ -136,7 +136,7 @@ def get_user_branch_filter():
     if not current_user.is_authenticated:
         return None
     
-    if current_user.role == UserRole.SUPER_USER:
+    if current_user.role in [UserRole.SUPER_USER, UserRole.IT_ADMIN]:
         return None  # No filter - can see all branches
     
     return current_user.branch_id
@@ -149,7 +149,7 @@ def filter_by_user_branch(query, model_class):
     if not current_user.is_authenticated:
         return query.filter(False)  # Return empty result
     
-    if current_user.role == UserRole.SUPER_USER:
+    if current_user.role in [UserRole.SUPER_USER, UserRole.IT_ADMIN]:
         return query  # No filter - can see all branches
     
     # Filter by user's branch

@@ -49,21 +49,42 @@
                                 <label for="role" class="form-label">Role *</label>
                                 <select class="form-control" id="role" name="role" required>
                                     <option value="">Select Role</option>
-                                    <option value="branch_admin">Branch Admin</option>
-                                    <option value="cashier">Cashier</option>
-                                    <option value="waiter">Waiter</option>
+                                    {% for role in roles %}
+                                        {% if role.name != 'SUPER_USER' %}
+                                            <option value="{{ role.name.lower() }}">
+                                                {% if role.name == 'IT_ADMIN' %}
+                                                    IT Admin
+                                                {% elif role.name == 'BRANCH_ADMIN' %}
+                                                    Branch Admin
+                                                {% elif role.name == 'MANAGER' %}
+                                                    Manager
+                                                {% elif role.name == 'CASHIER' %}
+                                                    Cashier
+                                                {% elif role.name == 'WAITER' %}
+                                                    Waiter
+                                                {% elif role.name == 'KITCHEN' %}
+                                                    Kitchen Staff
+                                                {% else %}
+                                                    {{ role.name.replace('_', ' ').title() }}
+                                                {% endif %}
+                                            </option>
+                                        {% endif %}
+                                    {% endfor %}
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="branch_id" class="form-label">Branch *</label>
+                                <label for="branch_id" class="form-label">Branch <span id="branch-required">*</span></label>
                                 <select class="form-control" id="branch_id" name="branch_id" required>
                                     <option value="">Select Branch</option>
                                     {% for branch in branches %}
                                     <option value="{{ branch.id }}">{{ branch.name }}</option>
                                     {% endfor %}
                                 </select>
+                                <div class="form-text" id="branch-help" style="display: none;">
+                                    IT Admins have system-wide access and don't need a specific branch assignment.
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -111,6 +132,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Password confirmation validation
     const password = document.getElementById('password');
     const confirmPassword = document.getElementById('confirm_password');
+    const roleSelect = document.getElementById('role');
+    const branchSelect = document.getElementById('branch_id');
+    const branchRequired = document.getElementById('branch-required');
+    const branchHelp = document.getElementById('branch-help');
     
     function validatePassword() {
         if (password.value !== confirmPassword.value) {
@@ -120,8 +145,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    function handleRoleChange() {
+        const selectedRole = roleSelect.value;
+        
+        if (selectedRole === 'it_admin') {
+            // IT Admin doesn't need a branch
+            branchSelect.required = false;
+            branchRequired.style.display = 'none';
+            branchHelp.style.display = 'block';
+            branchSelect.value = ''; // Clear selection
+        } else {
+            // Other roles need a branch
+            branchSelect.required = true;
+            branchRequired.style.display = 'inline';
+            branchHelp.style.display = 'none';
+        }
+    }
+    
     password.addEventListener('change', validatePassword);
     confirmPassword.addEventListener('keyup', validatePassword);
+    roleSelect.addEventListener('change', handleRoleChange);
+    
+    // Initialize on page load
+    handleRoleChange();
 });
 </script>
 {% endblock %}
