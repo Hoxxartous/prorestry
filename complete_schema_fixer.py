@@ -25,7 +25,7 @@ def get_model_columns():
             CashierUiSetting, AppSettings, AdminPinCode, CashierPin, 
             WaiterCashierAssignment, ManualCardPayment, OrderEditHistory,
             Kitchen, CategoryKitchenAssignment, KitchenOrder, KitchenOrderItem,
-            CategorySpecialItemAssignment
+            CategorySpecialItemAssignment, EmailConfiguration
         )
         
         app = create_app(ProductionConfig)
@@ -39,7 +39,7 @@ def get_model_columns():
                 CashierUiSetting, AppSettings, AdminPinCode, CashierPin, 
                 WaiterCashierAssignment, ManualCardPayment, OrderEditHistory,
                 Kitchen, CategoryKitchenAssignment, KitchenOrder, KitchenOrderItem,
-                CategorySpecialItemAssignment
+                CategorySpecialItemAssignment, EmailConfiguration
             ]
             
             model_schema = {}
@@ -324,6 +324,102 @@ def verify_schema():
         logger.error(f"Error verifying schema: {e}")
         return False
 
+def fix_userrole_enum():
+    """Fix UserRole enum values and invalid user roles"""
+    try:
+        from app import create_app, db
+        from config import ProductionConfig
+        
+        app = create_app(ProductionConfig)
+        
+        with app.app_context():
+            logger.info("🔧 Fixing UserRole enum and user role values...")
+            
+            # Get raw database connection
+            connection = db.engine.raw_connection()
+            cursor = connection.cursor()
+            
+            try:
+                # Check current enum values
+                cursor.execute("""
+                    SELECT enumlabel 
+                    FROM pg_enum 
+                    WHERE enumtypid = (
+                        SELECT oid 
+                        FROM pg_type 
+                        WHERE typname = 'userrole'
+                    );
+                """)
+                
+                existing_values = [row[0] for row in cursor.fetchall()]
+                logger.info(f"Current UserRole enum values: {existing_values}")
+                
+                # Define expected values (lowercase as per Python enum)
+                expected_values = [
+                    'super_user', 'it_admin', 'branch_admin', 
+                    'manager', 'cashier', 'waiter', 'kitchen'
+                ]
+                
+                # Add missing enum values
+                for value in expected_values:
+                    if value not in existing_values:
+                        try:
+                            cursor.execute(f"ALTER TYPE userrole ADD VALUE '{value}';")
+                            logger.info(f"✅ Added '{value}' to UserRole enum")
+                            connection.commit()
+                        except Exception as e:
+                            if "already exists" in str(e):
+                                logger.info(f"ℹ️ Value '{value}' already exists in UserRole enum")
+                            else:
+                                logger.warning(f"⚠️ Could not add '{value}' to UserRole enum: {e}")
+                
+                # Fix users with invalid role values
+                role_mappings = {
+                    'IT_ADMIN': 'it_admin',
+                    'SUPER_USER': 'super_user',
+                    'BRANCH_ADMIN': 'branch_admin',
+                    'MANAGER': 'manager',
+                    'CASHIER': 'cashier',
+                    'WAITER': 'waiter',
+                    'KITCHEN': 'kitchen'
+                }
+                
+                for old_role, new_role in role_mappings.items():
+                    cursor.execute(
+                        "UPDATE users SET role = %s WHERE role = %s;",
+                        (new_role, old_role)
+                    )
+                    if cursor.rowcount > 0:
+                        logger.info(f"✅ Fixed {cursor.rowcount} users: {old_role} -> {new_role}")
+                        connection.commit()
+                
+                # Check for any remaining invalid roles
+                cursor.execute("""
+                    SELECT COUNT(*) FROM users 
+                    WHERE role NOT IN ('super_user', 'it_admin', 'branch_admin', 'manager', 'cashier', 'waiter', 'kitchen');
+                """)
+                
+                invalid_count = cursor.fetchone()[0]
+                if invalid_count > 0:
+                    logger.warning(f"⚠️ Found {invalid_count} users with invalid roles - setting to 'cashier'")
+                    cursor.execute("""
+                        UPDATE users SET role = 'cashier' 
+                        WHERE role NOT IN ('super_user', 'it_admin', 'branch_admin', 'manager', 'cashier', 'waiter', 'kitchen');
+                    """)
+                    connection.commit()
+                    logger.info(f"✅ Fixed {cursor.rowcount} users with invalid roles")
+                
+                logger.info("✅ UserRole enum fixes completed successfully")
+                return True
+                
+            finally:
+                cursor.close()
+                connection.close()
+                
+    except Exception as e:
+        logger.error(f"❌ Failed to fix UserRole enum: {e}")
+        return False
+
 def main():
     """Main execution function"""
     logger.info("🔧 Starting Complete Database Schema Fix")
@@ -338,7 +434,12 @@ def main():
         logger.error("Failed to fix all columns")
         return False
     
-    # Step 3: Verify schema
+    # Step 3: Fix UserRole enum issues
+    if not fix_userrole_enum():
+        logger.error("Failed to fix UserRole enum")
+        return False
+    
+    # Step 4: Verify schema
     if not verify_schema():
         logger.error("Schema verification failed")
         return False
