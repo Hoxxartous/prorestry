@@ -354,10 +354,10 @@ def fix_userrole_enum():
                 existing_values = [row[0] for row in cursor.fetchall()]
                 logger.info(f"Current UserRole enum values: {existing_values}")
                 
-                # Define expected values (lowercase as per Python enum)
+                # Define expected enum labels as stored in PostgreSQL (UPPERCASE, matching Enum member names)
                 expected_values = [
-                    'super_user', 'it_admin', 'branch_admin', 
-                    'manager', 'cashier', 'waiter', 'kitchen'
+                    'SUPER_USER', 'IT_ADMIN', 'BRANCH_ADMIN',
+                    'MANAGER', 'CASHIER', 'WAITER', 'KITCHEN'
                 ]
                 
                 # Add missing enum values
@@ -374,24 +374,29 @@ def fix_userrole_enum():
                                 logger.warning(f"⚠️ Could not add '{value}' to UserRole enum: {e}")
                 
                 # Fix users with invalid role values
-                # First, check what invalid roles exist
+                # First, check what invalid roles exist (anything not in the canonical UPPERCASE set)
                 cursor.execute("""
                     SELECT DISTINCT role FROM users 
-                    WHERE role NOT IN ('super_user', 'it_admin', 'branch_admin', 'manager', 'cashier', 'waiter', 'kitchen');
+                    WHERE role::text NOT IN ('SUPER_USER','IT_ADMIN','BRANCH_ADMIN','MANAGER','CASHIER','WAITER','KITCHEN');
                 """)
                 
                 invalid_roles = [row[0] for row in cursor.fetchall()]
                 logger.info(f"Found invalid roles in database: {invalid_roles}")
                 
-                # Map invalid roles to valid ones
+                # Map invalid or legacy roles to valid canonical UPPERCASE labels
                 role_mappings = {
-                    'IT_ADMIN': 'it_admin',
-                    'SUPER_USER': 'super_user',
-                    'BRANCH_ADMIN': 'branch_admin',
-                    'MANAGER': 'manager',
-                    'CASHIER': 'cashier',
-                    'WAITER': 'waiter',
-                    'KITCHEN': 'kitchen'
+                    # lowercase -> uppercase
+                    'super_user': 'SUPER_USER',
+                    'it_admin': 'IT_ADMIN',
+                    'branch_admin': 'BRANCH_ADMIN',
+                    'manager': 'MANAGER',
+                    'cashier': 'CASHIER',
+                    'waiter': 'WAITER',
+                    'kitchen': 'KITCHEN',
+                    # common variants
+                    'ADMIN': 'BRANCH_ADMIN',
+                    'Super_User': 'SUPER_USER',
+                    'SuperUser': 'SUPER_USER'
                 }
                 
                 # Only try to fix roles that actually exist in the database
@@ -439,15 +444,15 @@ def fix_userrole_enum():
                 # Check for any remaining invalid roles
                 cursor.execute("""
                     SELECT COUNT(*) FROM users 
-                    WHERE role NOT IN ('super_user', 'it_admin', 'branch_admin', 'manager', 'cashier', 'waiter', 'kitchen');
+                    WHERE role::text NOT IN ('SUPER_USER','IT_ADMIN','BRANCH_ADMIN','MANAGER','CASHIER','WAITER','KITCHEN');
                 """)
                 
                 invalid_count = cursor.fetchone()[0]
                 if invalid_count > 0:
-                    logger.warning(f"⚠️ Found {invalid_count} users with invalid roles - setting to 'cashier'")
+                    logger.warning(f"⚠️ Found {invalid_count} users with invalid roles - setting to 'CASHIER'")
                     cursor.execute("""
-                        UPDATE users SET role = 'cashier' 
-                        WHERE role NOT IN ('super_user', 'it_admin', 'branch_admin', 'manager', 'cashier', 'waiter', 'kitchen');
+                        UPDATE users SET role = 'CASHIER'::userrole 
+                        WHERE role::text NOT IN ('SUPER_USER','IT_ADMIN','BRANCH_ADMIN','MANAGER','CASHIER','WAITER','KITCHEN');
                     """)
                     connection.commit()
                     logger.info(f"✅ Fixed {cursor.rowcount} users with invalid roles")
