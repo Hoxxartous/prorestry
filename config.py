@@ -162,6 +162,12 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')
     
+    # Email timeout and reliability settings
+    MAIL_TIMEOUT = int(os.environ.get('MAIL_TIMEOUT') or 30)  # 30 seconds timeout for SMTP connections
+    MAIL_SUPPRESS_SEND = os.environ.get('MAIL_SUPPRESS_SEND', 'false').lower() in ['true', 'on', '1']
+    MAIL_MAX_EMAILS = int(os.environ.get('MAIL_MAX_EMAILS') or 10)  # Max emails per connection
+    MAIL_ASCII_ATTACHMENTS = False  # Allow non-ASCII filenames in attachments
+    
     # Security settings (moved to main Config class)
     
     # Application settings
