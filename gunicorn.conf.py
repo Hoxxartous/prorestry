@@ -7,14 +7,14 @@ backlog = 2048
 
 # Optimized for Render FREE PLAN - very limited resources
 cpu_cores = multiprocessing.cpu_count()
+workers = 2  # Fixed 2 workers for free plan stability
 
-workers = 1  # Single worker for free plan to minimize memory usage
 # Worker class - eventlet for async performance and WebSocket support
 worker_class = "eventlet"
 
-# Worker connections - optimized for free plan
-# With eventlet, we can handle many concurrent connections efficiently
-worker_connections = 1000  # Eventlet can handle more connections with less memory
+# Worker connections - reduced for free plan
+# With eventlet, we can handle many concurrent connections but limit for free plan
+worker_connections = 500  # Reduced for free plan stability
 
 # Timeout settings optimized for restaurant POS
 timeout = 120  # Longer timeout for complex operations
@@ -49,7 +49,6 @@ pidfile = "/tmp/restaurant_pos.pid"
 
 # Reload on code changes (disable in production for performance)
 reload = os.environ.get('FLASK_ENV', 'production') != 'production'
-reload_extra_files = ["tmp/restart.txt"]
 
 # SSL (uncomment and configure for HTTPS)
 # keyfile = "/path/to/keyfile"

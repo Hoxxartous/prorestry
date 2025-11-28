@@ -7,7 +7,7 @@ services:
     buildCommand: |
       chmod +x build.sh
       ./build.sh
-    startCommand: "mkdir -p tmp && touch tmp/restart.txt && gunicorn --config gunicorn.conf.py wsgi:app"
+    startCommand: "gunicorn --config gunicorn.conf.py wsgi:app"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
