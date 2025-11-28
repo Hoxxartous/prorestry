@@ -518,32 +518,13 @@ def add_user():
                 return render_template('superuser/add_user.html', branches=branches, roles=UserRole)
             
             # Create user (removed branch admin restriction - superuser can create multiple admins per branch)
-            role_str = request.form.get('role').lower()  # Use lowercase to match enum values
-            try:
-                # Get the UserRole enum by its value, not by its name
-                role_enum = None
-                for role in UserRole:
-                    if role.value == role_str:
-                        role_enum = role
-                        break
-                
-                if role_enum is None:
-                    raise ValueError(f"Invalid role: {role_str}")
-                
-            except (KeyError, ValueError) as e:
-                error_msg = f'Invalid role selected: {role_str}'
-                if is_ajax:
-                    return jsonify({'success': False, 'message': error_msg}), 400
-                flash(error_msg, 'error')
-                branches = Branch.query.filter_by(is_active=True).all()
-                return render_template('superuser/add_user.html', branches=branches, roles=UserRole)
-            
+            role_str = request.form.get('role').upper()
             user = User(
                 username=request.form.get('username'),
                 email=request.form.get('email'),
                 first_name=request.form.get('first_name'),
                 last_name=request.form.get('last_name'),
-                role=role_enum,
+                role=UserRole[role_str],
                 branch_id=int(request.form.get('branch_id')) if request.form.get('branch_id') else None,
                 can_access_multiple_branches=bool(request.form.get('can_access_multiple_branches'))
             )
