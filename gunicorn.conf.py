@@ -49,6 +49,7 @@ pidfile = "/tmp/restaurant_pos.pid"
 
 # Reload on code changes (disable in production for performance)
 reload = os.environ.get('FLASK_ENV', 'production') != 'production'
+reload_extra_files = ["tmp/restart.txt"]
 
 # SSL (uncomment and configure for HTTPS)
 # keyfile = "/path/to/keyfile"
