@@ -156,6 +156,19 @@ def update_email_config():
         # Reinitialize mail with new config
         mail.init_app(current_app)
         
+        # Trigger graceful restart in production to apply settings across all workers
+        if os.environ.get('FLASK_ENV') == 'production':
+            try:
+                # Create tmp directory if it doesn't exist
+                if not os.path.exists('tmp'):
+                    os.makedirs('tmp')
+                # Touch the restart file to trigger gunicorn reload
+                with open('tmp/restart.txt', 'w') as f:
+                    f.write(f'Restart triggered at {datetime.utcnow()} UTC\n')
+            except Exception as e:
+                # Log error but don't fail the request
+                current_app.logger.error(f"Could not trigger app restart: {e}")
+
         # Log the configuration change
         audit_log = AuditLog(
             user_id=current_user.id,
