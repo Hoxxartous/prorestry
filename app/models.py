@@ -254,6 +254,8 @@ class Order(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     order_number = db.Column(db.String(32), index=True, nullable=False)
+    # Globally unique external id for cloud↔edge sync idempotency
+    external_id = db.Column(db.String(64), unique=True, index=True)
     order_counter = db.Column(db.Integer, nullable=True, index=True)  # Sequential counter per branch
     total_amount = db.Column(db.Numeric(10, 2), nullable=False)
     discount_amount = db.Column(db.Numeric(10, 2), default=0.00)
@@ -265,6 +267,8 @@ class Order(db.Model):
     notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # When this record was successfully synced to cloud (Edge only)
+    synced_at = db.Column(db.DateTime)
     paid_at = db.Column(db.DateTime)  # When the order was marked as paid
     cleared_from_waiter_requests = db.Column(db.Boolean, default=False)  # Hidden from waiter requests page
     

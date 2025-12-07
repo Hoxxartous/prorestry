@@ -158,6 +158,13 @@ def create_app(config_class=Config):
     from app.debug_routes import debug_bp
     app.register_blueprint(debug_bp)
     
+    # Register cloud sync API (safe to register everywhere; requires token on cloud)
+    try:
+        from app.sync_api import sync_api
+        app.register_blueprint(sync_api)
+    except Exception as e:
+        app.logger.warning(f"Sync API not registered: {e}")
+    
     # User loader for Flask-Login with comprehensive error handling
     @login_manager.user_loader
     def load_user(user_id):
@@ -367,8 +374,32 @@ def create_app(config_class=Config):
     with app.app_context():
         try:
             init_db()
+            # Ensure sync columns exist for Orders on both Postgres and SQLite
+            from sqlalchemy import text
+            try:
+                # Try Postgres-safe IF NOT EXISTS first
+                db.session.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS external_id VARCHAR(64)"))
+                db.session.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS synced_at TIMESTAMP"))
+                db.session.commit()
+            except Exception as e_alter_pg:
+                app.logger.info(f"Postgres-style alter failed or not applicable: {e_alter_pg}")
+                try:
+                    # Fallback for SQLite: try plain ADD COLUMN (will fail if exists)
+                    db.session.execute(text("ALTER TABLE orders ADD COLUMN external_id VARCHAR(64)"))
+                    db.session.execute(text("ALTER TABLE orders ADD COLUMN synced_at TIMESTAMP"))
+                    db.session.commit()
+                except Exception as e_alter_sqlite:
+                    db.session.rollback()
+                    app.logger.info(f"Sync columns already present or alter unsupported: {e_alter_sqlite}")
             # Load email configuration from database
             load_email_config_from_db(app)
+            # Start Edge sync worker if running in Edge mode
+            try:
+                if app.config.get('EDGE_MODE'):
+                    from app.edge_sync import start_edge_sync_worker
+                    start_edge_sync_worker(app)
+            except Exception as e_sync:
+                app.logger.warning(f"Edge sync worker not started: {e_sync}")
         except Exception as e:
             app.logger.error(f"Startup database initialization failed: {str(e)}")
             print(f"Startup initialization failed: {str(e)}")
