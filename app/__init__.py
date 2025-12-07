@@ -10,6 +10,8 @@ import sys
 import logging
 from logging.handlers import RotatingFileHandler
 import re
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 
 # PostgreSQL driver compatibility - prefer psycopg2-binary if available
 try:
@@ -24,6 +26,15 @@ from flask_login import LoginManager
 from flask_socketio import SocketIO
 from flask_mail import Mail
 from config import Config
+
+# Disable Postgres tuning hooks on platforms like Render unless explicitly allowed
+try:
+    if os.getenv('ALLOW_PG_TUNING', '0') not in ('1', 'true', 'True'):
+        # Monkey-patch the tuning function to a no-op to avoid unsafe SETs
+        Config._configure_postgresql_optimizations = staticmethod(lambda app: None)
+except Exception:
+    # Non-fatal if monkey patching fails
+    pass
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -59,6 +70,34 @@ def create_app(config_class=Config):
             app.logger.info('Sanitized Postgres options: removed default_transaction_isolation=read_committed')
     except Exception as se:
         app.logger.warning(f'Could not sanitize Postgres options: {se}')
+
+    # Prevent transaction aborts caused by unsafe session-level SETs in global connect hooks
+    # Ensure autocommit for the duration of any connect-time tuning, then restore it.
+    @event.listens_for(Engine, "connect", insert=True)
+    def _pre_connect_set_autocommit(dbapi_connection, connection_record):
+        try:
+            module_name = getattr(dbapi_connection, "__class__", type(dbapi_connection)).__module__
+            if 'psycopg' in module_name or 'psycopg2' in module_name:
+                if hasattr(dbapi_connection, 'autocommit'):
+                    dbapi_connection.autocommit = True
+        except Exception:
+            # Best effort: ignore if not supported
+            pass
+
+    @event.listens_for(Engine, "connect")
+    def _post_connect_restore_autocommit(dbapi_connection, connection_record):
+        try:
+            module_name = getattr(dbapi_connection, "__class__", type(dbapi_connection)).__module__
+            if 'psycopg' in module_name or 'psycopg2' in module_name:
+                if hasattr(dbapi_connection, 'autocommit'):
+                    # Rollback any aborted state just in case
+                    try:
+                        dbapi_connection.rollback()
+                    except Exception:
+                        pass
+                    dbapi_connection.autocommit = False
+        except Exception:
+            pass
 
     # Initialize extensions with app
     db.init_app(app)
