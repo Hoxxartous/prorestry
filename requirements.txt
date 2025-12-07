@@ -27,3 +27,6 @@ reportlab==4.0.4
 
 # Performance optimization for production
 ujson==5.8.0
+
+# HTTP client for Edge→Cloud sync
+requests==2.31.0
