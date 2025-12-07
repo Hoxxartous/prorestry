@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
+import os
 from app import db
 from app.models import AppSettings, Order, OrderStatus
 from sqlalchemy import text
@@ -8,13 +9,46 @@ import json
 sync_api = Blueprint('sync_api', __name__)
 
 
+def _normalize_token(val):
+    s = str(val or '').strip()
+    # Strip common accidental quotes from env/vars
+    if s.startswith('"') and s.endswith('"'):
+        s = s[1:-1].strip()
+    if s.startswith("'") and s.endswith("'"):
+        s = s[1:-1].strip()
+    return s
+
+
+def _get_expected_token():
+    """Return (token, source) without logging the secret. Prefer env > config > db."""
+    envv = os.environ.get('SYNC_API_TOKEN')
+    if envv:
+        return _normalize_token(envv), 'env'
+    cfg = current_app.config.get('SYNC_API_TOKEN')
+    if cfg:
+        return _normalize_token(cfg), 'config'
+    dbv = AppSettings.get_value('sync_api_token')
+    if dbv:
+        return _normalize_token(dbv), 'db'
+    return None, 'none'
+
+
 def _auth_ok():
     token_header = request.headers.get('X-Edge-Token') or request.headers.get('Authorization', '').replace('Bearer ', '')
-    expected = current_app.config.get('SYNC_API_TOKEN') or AppSettings.get_value('sync_api_token') or None
+    expected, src = _get_expected_token()
     if not expected:
         # If no token is configured, deny by default
+        current_app.logger.warning('Sync API token not configured (source=none)')
         return False
-    return str(token_header).strip() == str(expected).strip()
+    ok = _normalize_token(token_header) == expected
+    # Minimal diagnostics without leaking secrets
+    try:
+        current_app.logger.info(
+            f"sync_auth check: source={src} header_present={bool(token_header)} header_len={len(str(token_header or ''))}"
+        )
+    except Exception:
+        pass
+    return ok
 
 
 @sync_api.route('/api/sync/push', methods=['POST'])
@@ -143,3 +177,11 @@ def sync_push():
         current_app.logger.warning(f"Commit failed after merges: {e_commit}")
 
     return jsonify({'success': True, 'created': created, 'skipped': skipped, 'merged': merged, 'results': results})
+
+
+@sync_api.route('/api/sync/ping', methods=['GET'])
+def sync_ping():
+    """Quick auth check endpoint: returns 200 if token validated, else 401."""
+    if _auth_ok():
+        return jsonify({'success': True, 'status': 'ok'}), 200
+    return jsonify({'success': False, 'error': 'unauthorized'}), 401
