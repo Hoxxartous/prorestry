@@ -34,6 +34,14 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
+    # Apply configuration-specific initialization (engine options, DB tuning)
+    if hasattr(config_class, 'init_app'):
+        try:
+            config_class.init_app(app)
+        except Exception as e:
+            # Do not block startup if env-specific init raises
+            app.logger.warning(f"Config.init_app encountered an issue: {e}")
+    
     # Initialize extensions with app
     db.init_app(app)
     login_manager.init_app(app)

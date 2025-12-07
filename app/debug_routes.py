@@ -9,6 +9,19 @@ from sqlalchemy import text
 
 debug_bp = Blueprint('debug', __name__, url_prefix='/debug')
 
+@debug_bp.route('/health')
+def health():
+    """Lightweight health endpoint for edge/cloud liveness probes"""
+    try:
+        return jsonify({'status': 'ok'}), 200
+    except Exception as e:
+        return jsonify({'status': 'error', 'error': str(e)}), 500
+
+@debug_bp.route('/healthz')
+def healthz():
+    """Alias health endpoint"""
+    return health()
+
 @debug_bp.route('/db-status')
 def db_status():
     """Check database status and user data"""

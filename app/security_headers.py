@@ -107,7 +107,7 @@ class SecurityHeaders:
             # Image sources - self, data URIs, and HTTPS only
             "img-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
             # Connection sources - WebSocket and HTTPS connections
-            "connect-src 'self' wss://prorestry.onrender.com ws://localhost:* https://prorestry.onrender.com",
+            "connect-src 'self' https://prorestry.onrender.com wss://prorestry.onrender.com ws://localhost:* http://localhost:* http://127.0.0.1:* ws://127.0.0.1:* https://pos-edge.local:* http://pos-edge.local:* ws://pos-edge.local:* wss://pos-edge.local:*",
             # Frame ancestors - prevent clickjacking
             "frame-ancestors 'none'",
             # Base URI - prevent base tag injection

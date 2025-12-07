@@ -18,7 +18,7 @@ def init_multibranch_db(app):
     """Unified multi-branch database initialization with duplicate prevention"""
     with app.app_context():
         try:
-            # CRITICAL: Fix missing columns BEFORE any database operations
+            # CRITICAL: Fix missing columns BEFORE any database operations (PostgreSQL only)
             fix_missing_columns(app)
             
             # Create all tables
@@ -28,57 +28,52 @@ def init_multibranch_db(app):
             # Fix menu_items schema if needed (PostgreSQL column size issue)
             try:
                 from sqlalchemy import text
-                app.logger.info("[CONFIG] Checking menu_items schema for PostgreSQL compatibility...")
-                
-                # Check all problematic columns
-                result = db.session.execute(text("""
-                    SELECT column_name, character_maximum_length 
-                    FROM information_schema.columns 
-                    WHERE table_name = 'menu_items' 
-                    AND column_name IN ('card_color', 'size_flag', 'portion_type', 'visual_priority')
-                    ORDER BY column_name;
-                """)).fetchall()
-                
-                app.logger.info(f"Current column sizes: {[(r[0], r[1]) for r in result]}")
-                
-                # Check if any column needs fixing
-                needs_fix = any(r[1] and r[1] < 10 for r in result if r[1] is not None)
-                
-                if needs_fix or not result:
-                    app.logger.info("[CONFIG] Fixing menu_items column sizes for PostgreSQL compatibility...")
-                    migrations = [
-                        "ALTER TABLE menu_items ALTER COLUMN card_color TYPE VARCHAR(20);",
-                        "ALTER TABLE menu_items ALTER COLUMN size_flag TYPE VARCHAR(10);", 
-                        "ALTER TABLE menu_items ALTER COLUMN portion_type TYPE VARCHAR(20);",
-                        "ALTER TABLE menu_items ALTER COLUMN visual_priority TYPE VARCHAR(10);"
-                    ]
-                    
-                    for migration in migrations:
-                        try:
-                            db.session.execute(text(migration))
-                            app.logger.info(f"[OK] Applied: {migration}")
-                        except Exception as e:
-                            app.logger.warning(f"[WARNING] Migration warning: {migration} - {str(e)}")
-                    
-                    db.session.commit()
-                    app.logger.info("[OK] Menu items schema fixed successfully")
-                    
-                    # Verify the fix
-                    result_after = db.session.execute(text("""
+                if db.engine.dialect.name == 'postgresql':
+                    app.logger.info("[CONFIG] Checking menu_items schema for PostgreSQL compatibility...")
+                    # Check all problematic columns
+                    result = db.session.execute(text("""
                         SELECT column_name, character_maximum_length 
                         FROM information_schema.columns 
                         WHERE table_name = 'menu_items' 
                         AND column_name IN ('card_color', 'size_flag', 'portion_type', 'visual_priority')
                         ORDER BY column_name;
                     """)).fetchall()
-                    app.logger.info(f"Updated column sizes: {[(r[0], r[1]) for r in result_after]}")
+                    app.logger.info(f"Current column sizes: {[(r[0], r[1]) for r in result]}")
+                    # Check if any column needs fixing
+                    needs_fix = any(r[1] and r[1] < 10 for r in result if r[1] is not None)
+                    if needs_fix or not result:
+                        app.logger.info("[CONFIG] Fixing menu_items column sizes for PostgreSQL compatibility...")
+                        migrations = [
+                            "ALTER TABLE menu_items ALTER COLUMN card_color TYPE VARCHAR(20);",
+                            "ALTER TABLE menu_items ALTER COLUMN size_flag TYPE VARCHAR(10);", 
+                            "ALTER TABLE menu_items ALTER COLUMN portion_type TYPE VARCHAR(20);",
+                            "ALTER TABLE menu_items ALTER COLUMN visual_priority TYPE VARCHAR(10);"
+                        ]
+                        for migration in migrations:
+                            try:
+                                db.session.execute(text(migration))
+                                app.logger.info(f"[OK] Applied: {migration}")
+                            except Exception as e:
+                                app.logger.warning(f"[WARNING] Migration warning: {migration} - {str(e)}")
+                        db.session.commit()
+                        app.logger.info("[OK] Menu items schema fixed successfully")
+                        # Verify the fix
+                        result_after = db.session.execute(text("""
+                            SELECT column_name, character_maximum_length 
+                            FROM information_schema.columns 
+                            WHERE table_name = 'menu_items' 
+                            AND column_name IN ('card_color', 'size_flag', 'portion_type', 'visual_priority')
+                            ORDER BY column_name;
+                        """)).fetchall()
+                        app.logger.info(f"Updated column sizes: {[(r[0], r[1]) for r in result_after]}")
+                    else:
+                        app.logger.info("[OK] Menu items schema is already correct")
                 else:
-                    app.logger.info("[OK] Menu items schema is already correct")
-                    
+                    app.logger.info("[CONFIG] Skipping PostgreSQL-specific menu_items schema checks on non-PostgreSQL engine")
             except Exception as e:
                 app.logger.error(f"[ERROR] Schema fix failed: {str(e)}")
                 db.session.rollback()
-                # Don't continue if schema fix fails - this is critical
+                # Don't continue if schema fix fails - this is critical on Postgres
                 raise e
             
             # Check if data already exists - comprehensive check to prevent duplicates
@@ -527,6 +522,10 @@ def fix_missing_columns(app):
     try:
         from sqlalchemy import text
         app.logger.info("🔍 Checking for missing database columns...")
+        # Skip on non-PostgreSQL engines (uses information_schema)
+        if db.engine.dialect.name != 'postgresql':
+            app.logger.info("Skipping fix_missing_columns: not a PostgreSQL database engine")
+            return True
         
         # List of critical missing columns that need to be added
         missing_columns = [
