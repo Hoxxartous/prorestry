@@ -62,7 +62,7 @@ class Config:
             'connect_args': {
                 'connect_timeout': 30,
                 'application_name': 'restaurant_pos',
-                'options': '-c default_transaction_isolation=read_committed -c timezone=UTC',
+                'options': '-c TimeZone=UTC',
                 'sslmode': 'require',  # Changed from 'prefer' to 'require' for Render
                 'sslcert': None,
                 'sslkey': None,
@@ -113,6 +113,14 @@ class Config:
     @staticmethod
     def _configure_postgresql_optimizations(app):
         """Configure PostgreSQL for maximum performance and concurrency"""
+        # Guard: disable tuning on platforms like Render unless explicitly allowed
+        try:
+            if os.getenv('ALLOW_PG_TUNING', '0') not in ('1', 'true', 'True'):
+                app.logger.info("Skipping PostgreSQL optimizations on this platform")
+                return
+        except Exception:
+            # If env access fails for any reason, do not run tuning
+            return
         
         @event.listens_for(Engine, "connect")
         def set_postgresql_params(dbapi_connection, connection_record):
@@ -130,8 +138,9 @@ class Config:
                     cursor.execute("SET effective_cache_size = '256MB'")
                     
                     # Concurrency optimizations
-                    cursor.execute("SET max_connections = 200")
-                    cursor.execute("SET shared_buffers = '64MB'")
+                    # Disabled on managed Postgres (requires postmaster restart / superuser)
+                    # cursor.execute("SET max_connections = 200")
+                    # cursor.execute("SET shared_buffers = '64MB'")
                     
                     # Query optimization
                     cursor.execute("SET random_page_cost = 1.1")
@@ -139,8 +148,8 @@ class Config:
                     cursor.execute("SET cpu_tuple_cost = 0.01")
                     
                     # Logging optimizations (reduce I/O)
-                    cursor.execute("SET log_statement = 'none'")
-                    cursor.execute("SET log_min_duration_statement = 1000")  # Log slow queries only
+                    # cursor.execute("SET log_statement = 'none'")
+                    # cursor.execute("SET log_min_duration_statement = 1000")  # Log slow queries only
                     
                     # Commit the settings
                     dbapi_connection.commit()
@@ -148,6 +157,11 @@ class Config:
                 app.logger.info("PostgreSQL performance optimizations applied")
             except Exception as e:
                 app.logger.warning(f"Could not apply PostgreSQL optimizations: {e}")
+                # Ensure connection is not left in aborted transaction state
+                try:
+                    dbapi_connection.rollback()
+                except Exception:
+                    pass
         
         @event.listens_for(Engine, "first_connect")
         def receive_first_postgresql_connect(dbapi_connection, connection_record):
@@ -230,7 +244,7 @@ class ProductionConfig(Config):
             'connect_args': {
                 'connect_timeout': 30,
                 'application_name': 'restaurant_pos_prod',
-                'options': '-c default_transaction_isolation=read_committed -c timezone=UTC -c statement_timeout=60s',
+                'options': '-c TimeZone=UTC -c statement_timeout=60s',
                 'sslmode': 'require',  # Changed from 'prefer' to 'require' for Render
                 'sslcert': None,
                 'sslkey': None,
