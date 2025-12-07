@@ -70,6 +70,16 @@ def push_unsynced_orders(app):
         app.logger.info('Edge sync disabled: missing CLOUD_SYNC_BASE_URL or SYNC_API_TOKEN')
         return {'success': False, 'reason': 'not_configured'}
 
+    # Log minimal one-time config diagnostics (no secrets)
+    if not getattr(app, '_edge_sync_logged_cfg', False):
+        try:
+            app.logger.info(
+                f"Edge sync configured: base_url={base_url.rstrip('/')} token_len={len(token)}"
+            )
+        except Exception:
+            pass
+        app._edge_sync_logged_cfg = True
+
     url = base_url.rstrip('/') + '/api/sync/push'
 
     # Find orders that are new or updated since last sync
