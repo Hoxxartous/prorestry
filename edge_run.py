@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 from app import create_app, socketio
 from edge_config import EdgeConfig
 
@@ -9,6 +10,12 @@ def main():
     This runs the same Flask application in Edge mode so cashiers and kitchens
     can continue working over Wi‑Fi without internet.
     """
+    # Load environment from .env if present (CLOUD_SYNC_BASE_URL, SYNC_API_TOKEN, etc.)
+    try:
+        load_dotenv()
+    except Exception:
+        pass
+
     app = create_app(EdgeConfig)
 
     # Optional: allow overriding host/port via environment
