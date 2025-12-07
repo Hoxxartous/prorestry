@@ -9,6 +9,7 @@ import os
 import sys
 import logging
 from logging.handlers import RotatingFileHandler
+import re
 
 # PostgreSQL driver compatibility - prefer psycopg2-binary if available
 try:
@@ -42,6 +43,23 @@ def create_app(config_class=Config):
             # Do not block startup if env-specific init raises
             app.logger.warning(f"Config.init_app encountered an issue: {e}")
     
+    # Sanitize invalid Postgres options injected via config.py for Render
+    try:
+        engine_options = app.config.get('SQLALCHEMY_ENGINE_OPTIONS', {})
+        connect_args = engine_options.get('connect_args', {}) or {}
+        opts = connect_args.get('options')
+        if isinstance(opts, str) and 'default_transaction_isolation=read_committed' in opts:
+            # Remove the invalid GUC; keep everything else (timezone, statement_timeout)
+            sanitized = opts.replace('-c default_transaction_isolation=read_committed', '')
+            # Clean up extra whitespace
+            sanitized = ' '.join(sanitized.split())
+            connect_args['options'] = sanitized
+            engine_options['connect_args'] = connect_args
+            app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_options
+            app.logger.info('Sanitized Postgres options: removed default_transaction_isolation=read_committed')
+    except Exception as se:
+        app.logger.warning(f'Could not sanitize Postgres options: {se}')
+
     # Initialize extensions with app
     db.init_app(app)
     login_manager.init_app(app)
