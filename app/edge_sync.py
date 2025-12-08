@@ -82,6 +82,16 @@ def push_unsynced_orders(app):
 
     url = base_url.rstrip('/') + '/api/sync/push'
 
+    # Debug: count total orders and unsynced orders
+    try:
+        total_orders = Order.query.count()
+        unsynced_count = Order.query.filter(
+            (Order.synced_at.is_(None)) | (Order.updated_at > Order.synced_at)
+        ).count()
+        app.logger.info(f"Edge sync check: total_orders={total_orders}, unsynced={unsynced_count}")
+    except Exception as e:
+        app.logger.warning(f"Edge sync count query failed: {e}")
+
     # Find orders that are new or updated since last sync
     q = Order.query.filter(
         (Order.synced_at.is_(None)) | (Order.updated_at > Order.synced_at)
@@ -89,6 +99,7 @@ def push_unsynced_orders(app):
 
     orders = q.all()
     if not orders:
+        app.logger.info("Edge sync: No unsynced orders to push")
         return {'success': True, 'pushed': 0}
 
     # Serialize and ensure external_id exists
@@ -115,6 +126,7 @@ def push_unsynced_orders(app):
         for o in orders:
             o.synced_at = now
         db.session.commit()
+        app.logger.info(f'Edge sync SUCCESS: pushed {len(orders)} orders to cloud')
         return {'success': True, 'pushed': len(orders)}
     except Exception as e:
         app.logger.warning(f'Edge sync push exception: {e}')
