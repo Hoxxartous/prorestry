@@ -366,13 +366,23 @@ def _handle_legacy_push(payload):
             continue
         
         try:
-            # Map status
+            # Map status enum
             raw_status = (o.get('status') or '').lower()
             st = OrderStatus.PENDING
             if raw_status == 'paid':
                 st = OrderStatus.PAID
             elif raw_status == 'cancelled':
                 st = OrderStatus.CANCELLED
+            
+            # Map service_type enum
+            raw_service = (o.get('service_type') or '').lower()
+            service = ServiceType.ON_TABLE  # Default
+            if raw_service == 'take_away':
+                service = ServiceType.TAKE_AWAY
+            elif raw_service == 'delivery':
+                service = ServiceType.DELIVERY
+            elif raw_service == 'card':
+                service = ServiceType.CARD
             
             obj = Order.query.filter_by(external_id=ext_id).first()
             if obj is None:
@@ -388,24 +398,72 @@ def _handle_legacy_push(payload):
             else:
                 merged += 1
             
+            # ===== SYNC ALL CRITICAL FIELDS =====
             obj.total_amount = o.get('total_amount') or obj.total_amount
             obj.status = st
+            obj.service_type = service
             
+            # Order counter (Count #)
+            if o.get('order_counter') is not None:
+                obj.order_counter = o.get('order_counter')
+            
+            # Cashier (user who created the order)
+            if o.get('cashier_id') is not None:
+                obj.cashier_id = o.get('cashier_id')
+            
+            # Table reference
+            if o.get('table_id') is not None:
+                obj.table_id = o.get('table_id')
+            
+            # Delivery company
+            if o.get('delivery_company_id') is not None:
+                obj.delivery_company_id = o.get('delivery_company_id')
+            
+            # Customer reference
+            if o.get('customer_id') is not None:
+                obj.customer_id = o.get('customer_id')
+            
+            # Additional order details
+            if o.get('customer_name'):
+                obj.customer_name = o.get('customer_name')
+            if o.get('customer_phone'):
+                obj.customer_phone = o.get('customer_phone')
+            if o.get('notes'):
+                obj.notes = o.get('notes')
+            if o.get('discount_amount') is not None:
+                obj.discount_amount = o.get('discount_amount')
+            if o.get('discount_percentage') is not None:
+                obj.discount_percentage = o.get('discount_percentage')
+            
+            # Edit tracking fields
+            if o.get('edit_count') is not None:
+                obj.edit_count = o.get('edit_count')
+            if o.get('last_edited_by') is not None:
+                obj.last_edited_by = o.get('last_edited_by')
+            if o.get('last_edited_at'):
+                obj.last_edited_at = _parse_iso(o.get('last_edited_at'))
+            
+            # Timestamp handling
             try:
                 if o.get('created_at'):
                     obj.created_at = _parse_iso(o.get('created_at'))
                 if o.get('paid_at'):
                     obj.paid_at = _parse_iso(o.get('paid_at'))
+                if o.get('updated_at'):
+                    obj.updated_at = _parse_iso(o.get('updated_at'))
             except Exception:
                 pass
+            
+            # Mark as synced
+            obj.synced_at = datetime.utcnow()
             
             # Sync items if present
             if 'items' in o:
                 _sync_order_items(obj, o['items'])
             
-            note_tag = "[EDGE_SYNC]"
-            if not (obj.notes or '').startswith(note_tag):
-                obj.notes = f"{note_tag} Synced from Edge."
+            # Sync payments if present
+            if 'payments' in o:
+                _sync_order_payments(obj, o['payments'])
             
             db.session.flush()
             

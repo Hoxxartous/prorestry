@@ -51,6 +51,7 @@ PUSH_MODELS = [
     ('Customer', Customer, False),
     ('CashierSession', CashierSession, False),
     ('KitchenOrder', KitchenOrder, False),
+    ('OrderEditHistory', OrderEditHistory, False),  # Sync order edits to cloud
 ]
 
 # Models to pull from cloud to edge (reference/config data)

@@ -342,12 +342,15 @@ class OrderEditHistory(db.Model):
     __tablename__ = 'order_edit_history'
     
     id = db.Column(db.Integer, primary_key=True)
+    external_id = db.Column(db.String(64), unique=True, index=True)  # For sync
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
     edited_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     edited_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     original_total = db.Column(db.Numeric(10, 2), nullable=False)
     new_total = db.Column(db.Numeric(10, 2), nullable=False)
     changes_summary = db.Column(db.Text)
+    synced_at = db.Column(db.DateTime)  # For sync tracking
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     order = db.relationship('Order', backref='edit_history')
@@ -882,6 +885,7 @@ class AdminPinCode(db.Model):
     __tablename__ = 'admin_pin_codes'
     
     id = db.Column(db.Integer, primary_key=True)
+    external_id = db.Column(db.String(64), unique=True, index=True)  # For sync
     admin_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # Made nullable for new PIN types
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=False)
     pin_code_hash = db.Column(db.String(128), nullable=False)  # Hashed PIN for security
@@ -890,6 +894,7 @@ class AdminPinCode(db.Model):
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    synced_at = db.Column(db.DateTime)  # For sync tracking
     
     # Legacy field for backward compatibility
     pin_code = db.Column(db.String(4), nullable=True)  # Keep for existing data

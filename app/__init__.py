@@ -395,6 +395,8 @@ def create_app(config_class=Config):
                 ('tables', True, False, True),
                 ('cashier_sessions', True, True, True),
                 ('kitchen_orders', True, True, True),
+                ('admin_pin_codes', True, True, True),  # For AdminPinCode sync
+                ('order_edit_history', True, True, True),  # For OrderEditHistory sync
             ]
             
             for table_name, needs_ext_id, needs_synced, needs_updated in sync_tables:
