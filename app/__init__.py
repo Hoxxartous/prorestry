@@ -373,9 +373,14 @@ def create_app(config_class=Config):
     # Call init_db when app starts
     with app.app_context():
         try:
-            init_db()
-            # Ensure sync columns exist for all syncable tables (Orders, Customers, etc.)
-            from sqlalchemy import text
+            # CRITICAL: Run sync column migrations FIRST, before init_db()
+            # This ensures the database schema matches the model definitions
+            # before any queries are executed
+            from sqlalchemy import text, inspect
+            
+            # Check if tables exist before trying to add columns
+            inspector = inspect(db.engine)
+            existing_tables = set(inspector.get_table_names())
             
             # Tables that need sync columns (external_id, synced_at, updated_at)
             sync_tables = [
@@ -393,6 +398,10 @@ def create_app(config_class=Config):
             ]
             
             for table_name, needs_ext_id, needs_synced, needs_updated in sync_tables:
+                # Skip if table doesn't exist yet (will be created by init_db)
+                if table_name not in existing_tables:
+                    continue
+                    
                 try:
                     if needs_ext_id:
                         try:
@@ -427,6 +436,9 @@ def create_app(config_class=Config):
                     app.logger.debug(f"Sync column migration for {table_name}: {e_table}")
             
             app.logger.info("Sync column migrations completed")
+            
+            # NOW run init_db after schema is updated
+            init_db()
             
             # Load email configuration from database
             load_email_config_from_db(app)
