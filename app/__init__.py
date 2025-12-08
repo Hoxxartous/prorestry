@@ -374,23 +374,60 @@ def create_app(config_class=Config):
     with app.app_context():
         try:
             init_db()
-            # Ensure sync columns exist for Orders on both Postgres and SQLite
+            # Ensure sync columns exist for all syncable tables (Orders, Customers, etc.)
             from sqlalchemy import text
-            try:
-                # Try Postgres-safe IF NOT EXISTS first
-                db.session.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS external_id VARCHAR(64)"))
-                db.session.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS synced_at TIMESTAMP"))
-                db.session.commit()
-            except Exception as e_alter_pg:
-                app.logger.info(f"Postgres-style alter failed or not applicable: {e_alter_pg}")
+            
+            # Tables that need sync columns (external_id, synced_at, updated_at)
+            sync_tables = [
+                ('orders', True, True, True),           # (table, needs_external_id, needs_synced_at, needs_updated_at)
+                ('customers', True, True, True),
+                ('order_items', True, False, False),
+                ('payments', True, False, False),
+                ('branches', True, False, False),
+                ('users', True, False, True),
+                ('categories', True, False, True),
+                ('menu_items', True, False, False),
+                ('tables', True, False, True),
+                ('cashier_sessions', True, True, True),
+                ('kitchen_orders', True, True, True),
+            ]
+            
+            for table_name, needs_ext_id, needs_synced, needs_updated in sync_tables:
                 try:
-                    # Fallback for SQLite: try plain ADD COLUMN (will fail if exists)
-                    db.session.execute(text("ALTER TABLE orders ADD COLUMN external_id VARCHAR(64)"))
-                    db.session.execute(text("ALTER TABLE orders ADD COLUMN synced_at TIMESTAMP"))
+                    if needs_ext_id:
+                        try:
+                            db.session.execute(text(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS external_id VARCHAR(64)"))
+                        except Exception:
+                            try:
+                                db.session.execute(text(f"ALTER TABLE {table_name} ADD COLUMN external_id VARCHAR(64)"))
+                            except Exception:
+                                pass
+                    
+                    if needs_synced:
+                        try:
+                            db.session.execute(text(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS synced_at TIMESTAMP"))
+                        except Exception:
+                            try:
+                                db.session.execute(text(f"ALTER TABLE {table_name} ADD COLUMN synced_at TIMESTAMP"))
+                            except Exception:
+                                pass
+                    
+                    if needs_updated:
+                        try:
+                            db.session.execute(text(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP"))
+                        except Exception:
+                            try:
+                                db.session.execute(text(f"ALTER TABLE {table_name} ADD COLUMN updated_at TIMESTAMP"))
+                            except Exception:
+                                pass
+                    
                     db.session.commit()
-                except Exception as e_alter_sqlite:
+                except Exception as e_table:
                     db.session.rollback()
-                    app.logger.info(f"Sync columns already present or alter unsupported: {e_alter_sqlite}")
+                    app.logger.debug(f"Sync column migration for {table_name}: {e_table}")
+            
+            app.logger.info("Sync column migrations completed")
+            
             # Load email configuration from database
             load_email_config_from_db(app)
             # Start Edge sync worker if running in Edge mode

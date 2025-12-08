@@ -43,6 +43,8 @@ class Branch(db.Model):
     __tablename__ = 'branches'
     
     id = db.Column(db.Integer, primary_key=True)
+    # Sync support
+    external_id = db.Column(db.String(64), unique=True, index=True)
     name = db.Column(db.String(128), nullable=False)
     code = db.Column(db.String(16), unique=True, nullable=False)
     address = db.Column(db.Text)
@@ -77,6 +79,8 @@ class User(UserMixin, db.Model):
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
+    # Sync support
+    external_id = db.Column(db.String(64), unique=True, index=True)
     username = db.Column(db.String(64), index=True, unique=True, nullable=False)
     email = db.Column(db.String(120), index=True, unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
@@ -85,6 +89,7 @@ class User(UserMixin, db.Model):
     role = db.Column(db.Enum(UserRole), nullable=False, default=UserRole.CASHIER)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_login = db.Column(db.DateTime)
     
     # Multi-branch support
@@ -159,10 +164,13 @@ class Category(db.Model):
     __tablename__ = 'categories'
     
     id = db.Column(db.Integer, primary_key=True)
+    # Sync support
+    external_id = db.Column(db.String(64), unique=True, index=True)
     name = db.Column(db.String(64), index=True, nullable=False)
     description = db.Column(db.Text)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     order_index = db.Column(db.Integer, default=0)
     
     # Branch support
@@ -179,6 +187,8 @@ class MenuItem(db.Model):
     __tablename__ = 'menu_items'
     
     id = db.Column(db.Integer, primary_key=True)
+    # Sync support
+    external_id = db.Column(db.String(64), unique=True, index=True)
     name = db.Column(db.String(128), index=True, nullable=False)
     name_ar = db.Column(db.String(128), index=True)
     description = db.Column(db.Text)
@@ -213,11 +223,14 @@ class Table(db.Model):
     __tablename__ = 'tables'
     
     id = db.Column(db.Integer, primary_key=True)
+    # Sync support
+    external_id = db.Column(db.String(64), unique=True, index=True)
     table_number = db.Column(db.String(16), index=True, nullable=False)
     capacity = db.Column(db.Integer, nullable=False)
     description = db.Column(db.Text)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Branch support
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=False)
@@ -232,6 +245,9 @@ class Customer(db.Model):
     __tablename__ = 'customers'
     
     id = db.Column(db.Integer, primary_key=True)
+    # Sync support
+    external_id = db.Column(db.String(64), unique=True, index=True)
+    synced_at = db.Column(db.DateTime)
     name = db.Column(db.String(128), nullable=False)
     phone = db.Column(db.String(32), index=True)
     email = db.Column(db.String(128), index=True)
@@ -239,6 +255,7 @@ class Customer(db.Model):
     total_spent = db.Column(db.Numeric(12, 2), default=0.00)
     visits_count = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Branch support
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=False)
@@ -343,6 +360,8 @@ class OrderItem(db.Model):
     __tablename__ = 'order_items'
     
     id = db.Column(db.Integer, primary_key=True)
+    # Sync support
+    external_id = db.Column(db.String(64), unique=True, index=True)
     quantity = db.Column(db.Integer, nullable=False)
     unit_price = db.Column(db.Numeric(10, 2), nullable=False)
     total_price = db.Column(db.Numeric(10, 2), nullable=False)
@@ -432,6 +451,8 @@ class Payment(db.Model):
     __tablename__ = 'payments'
     
     id = db.Column(db.Integer, primary_key=True)
+    # Sync support
+    external_id = db.Column(db.String(64), unique=True, index=True)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     payment_method = db.Column(db.Enum(PaymentMethod), nullable=False)
     transaction_id = db.Column(db.String(128))
@@ -498,6 +519,9 @@ class CashierSession(db.Model):
     __tablename__ = 'cashier_sessions'
     
     id = db.Column(db.Integer, primary_key=True)
+    # Sync support
+    external_id = db.Column(db.String(64), unique=True, index=True)
+    synced_at = db.Column(db.DateTime)
     session_id = db.Column(db.String(128), nullable=False, index=True)
     login_date = db.Column(db.Date, nullable=False, index=True)
     initial_order_count = db.Column(db.Integer, default=0)
@@ -507,6 +531,7 @@ class CashierSession(db.Model):
     session_start = db.Column(db.DateTime, default=datetime.utcnow)
     last_activity = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean(), default=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Branch support
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=False)
@@ -1194,6 +1219,9 @@ class KitchenOrder(db.Model):
     __tablename__ = 'kitchen_orders'
     
     id = db.Column(db.Integer, primary_key=True)
+    # Sync support
+    external_id = db.Column(db.String(64), unique=True, index=True)
+    synced_at = db.Column(db.DateTime)
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
     kitchen_id = db.Column(db.Integer, db.ForeignKey('kitchens.id'), nullable=False)
     status = db.Column(db.Enum(KitchenOrderStatus), default=KitchenOrderStatus.RECEIVED, nullable=False)
@@ -1203,6 +1231,7 @@ class KitchenOrder(db.Model):
     started_preparing_at = db.Column(db.DateTime)
     ready_at = db.Column(db.DateTime)
     served_at = db.Column(db.DateTime)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Notes from kitchen
     kitchen_notes = db.Column(db.Text)
