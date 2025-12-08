@@ -1092,7 +1092,11 @@ def orders():
                 # Add branch information for super users
                 'branch': {
                     'name': order.branch.name if order.branch else None
-                } if order.branch else None
+                } if order.branch else None,
+                # Add edge sync indicator - orders with synced_at and external_id were synced from local app
+                'is_edge_synced': bool(order.synced_at and order.external_id),
+                'branch_name': order.branch.name if order.branch else None,
+                'cashier_role': order.cashier.role.value if order.cashier and order.cashier.role else None
             })
         
         return jsonify({
